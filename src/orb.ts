@@ -1,0 +1,232 @@
+/**
+ * ORB (Object Request Broker) Implementation
+ * Based on CORBA 3.4 specification
+ */
+
+import { CORBA } from "./types.ts";
+import { TypeCode } from "./typecode.ts";
+import { ObjectReference } from "./object.ts";
+import { Policy } from "./policy.ts";
+import { Context } from "./context.ts";
+import { ValueFactory } from "./valuetype.ts";
+
+/**
+ * ORB initialization options
+ */
+export interface ORBInitOptions {
+  orb_id?: string;
+  args?: string[];
+}
+
+/**
+ * Core ORB interface
+ */
+export interface ORB {
+  /**
+   * Get ORB identifier
+   */
+  id(): string;
+  
+  /**
+   * Initialize the ORB
+   */
+  init(): Promise<void>;
+  
+  /**
+   * Shutdown the ORB
+   */
+  shutdown(wait_for_completion: boolean): Promise<void>;
+  
+  /**
+   * Check if ORB is running
+   */
+  is_running(): boolean;
+  
+  /**
+   * Run the ORB event loop
+   */
+  run(): Promise<void>;
+  
+  /**
+   * Convert a stringified object reference to an object
+   */
+  string_to_object(str: string): Promise<CORBA.ObjectRef>;
+  
+  /**
+   * Convert an object reference to a string
+   */
+  object_to_string(obj: CORBA.ObjectRef): Promise<string>;
+  
+  /**
+   * Get a reference to the Root POA
+   */
+  resolve_initial_references(id: string): Promise<CORBA.ObjectRef>;
+  
+  /**
+   * List available initial references
+   */
+  list_initial_services(): Promise<string[]>;
+  
+  /**
+   * Register an initial reference
+   */
+  register_initial_reference(id: string, obj: CORBA.ObjectRef): Promise<void>;
+  
+  /**
+   * Create a typecode for a simple type
+   */
+  create_typecode(tc_kind: TypeCode.Kind): TypeCode;
+  
+  /**
+   * Register a value factory
+   */
+  register_value_factory(id: string, factory: ValueFactory): ValueFactory | null;
+  
+  /**
+   * Lookup a value factory
+   */
+  lookup_value_factory(id: string): ValueFactory | null;
+  
+  /**
+   * Unregister a value factory
+   */
+  unregister_value_factory(id: string): ValueFactory | null;
+  
+  /**
+   * Create a new Policy object with the specified type and value
+   */
+  create_policy(type: number, value: any): Policy;
+}
+
+/**
+ * ORB implementation
+ */
+export class ORBImpl implements ORB {
+  private _id: string;
+  private _running: boolean = false;
+  private _initial_references: Map<string, CORBA.ObjectRef> = new Map();
+  private _value_factories: Map<string, ValueFactory> = new Map();
+  
+  constructor(id: string = "default") {
+    this._id = id;
+  }
+  
+  id(): string {
+    return this._id;
+  }
+  
+  async init(): Promise<void> {
+    // Initialize the ORB infrastructure
+    this._running = true;
+  }
+  
+  async shutdown(wait_for_completion: boolean): Promise<void> {
+    this._running = false;
+    if (wait_for_completion) {
+      // Wait for all pending operations to complete
+    }
+  }
+  
+  is_running(): boolean {
+    return this._running;
+  }
+  
+  async run(): Promise<void> {
+    if (!this._running) {
+      throw new CORBA.BAD_PARAM("ORB is not running");
+    }
+    
+    // Run the event loop until shutdown is called
+    while(this._running) {
+      // Process incoming requests
+      await this.processRequests();
+    }
+  }
+  
+  private async processRequests(): Promise<void> {
+    // Process pending requests
+    // This would handle network communication, invocations, etc.
+    await new Promise(resolve => setTimeout(resolve, 100)); // Simulate work
+  }
+  
+  async string_to_object(str: string): Promise<CORBA.ObjectRef> {
+    // Convert a stringified IOR to an object reference
+    // In a real implementation, this would parse the IOR format
+    return {} as CORBA.ObjectRef;
+  }
+  
+  async object_to_string(obj: CORBA.ObjectRef): Promise<string> {
+    // Convert an object reference to a stringified IOR
+    return "IOR:...";
+  }
+  
+  async resolve_initial_references(id: string): Promise<CORBA.ObjectRef> {
+    const ref = this._initial_references.get(id);
+    if (!ref) {
+      throw new CORBA.INV_OBJREF(`Initial reference '${id}' not found`);
+    }
+    return ref;
+  }
+  
+  async list_initial_services(): Promise<string[]> {
+    return Array.from(this._initial_references.keys());
+  }
+  
+  async register_initial_reference(id: string, obj: CORBA.ObjectRef): Promise<void> {
+    if (this._initial_references.has(id)) {
+      throw new CORBA.BAD_PARAM(`Initial reference '${id}' already exists`);
+    }
+    this._initial_references.set(id, obj);
+  }
+  
+  create_typecode(tc_kind: TypeCode.Kind): TypeCode {
+    return new TypeCode(tc_kind);
+  }
+  
+  register_value_factory(id: string, factory: ValueFactory): ValueFactory | null {
+    const existing = this._value_factories.get(id) || null;
+    this._value_factories.set(id, factory);
+    return existing;
+  }
+  
+  lookup_value_factory(id: string): ValueFactory | null {
+    return this._value_factories.get(id) || null;
+  }
+  
+  unregister_value_factory(id: string): ValueFactory | null {
+    const factory = this._value_factories.get(id) || null;
+    if (factory) {
+      this._value_factories.delete(id);
+    }
+    return factory;
+  }
+  
+  create_policy(type: number, value: any): Policy {
+    return new Policy(type, value);
+  }
+}
+
+/**
+ * Global ORB instance
+ */
+let _orb_instance: ORB | null = null;
+
+/**
+ * Initialize a new ORB or get the existing one
+ */
+export function init(options: ORBInitOptions = {}): ORB {
+  if (!_orb_instance) {
+    _orb_instance = new ORBImpl(options.orb_id);
+  }
+  return _orb_instance;
+}
+
+/**
+ * Get the singleton ORB instance
+ */
+export function ORB_instance(): ORB {
+  if (!_orb_instance) {
+    throw new CORBA.INTERNAL("ORB not initialized");
+  }
+  return _orb_instance;
+}

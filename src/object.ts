@@ -1,0 +1,283 @@
+/**
+ * CORBA Object Reference Implementation
+ * Based on CORBA 3.4 specification
+ */
+
+import { CORBA } from "./types.ts";
+import { ORB_instance } from "./orb.ts";
+import { Policy } from "./policy.ts";
+import { TypeCode } from "./typecode.ts";
+
+/**
+ * Interface for all CORBA Objects
+ */
+export interface Object {
+  /**
+   * Get the interface definition for this object
+   */
+  get_interface(): Promise<InterfaceDef>;
+  
+  /**
+   * Check if this object is nil
+   */
+  is_nil(): boolean;
+  
+  /**
+   * Check if this object is equivalent to another
+   */
+  is_equivalent(other_object: Object): boolean;
+  
+  /**
+   * Check if this object is a proxy
+   */
+  is_a(repository_id: string): Promise<boolean>;
+  
+  /**
+   * Get a non-existent object reference
+   */
+  non_existent(): Promise<boolean>;
+  
+  /**
+   * Hash this object reference
+   */
+  hash(max: number): number;
+  
+  /**
+   * Create a duplicate of this object reference
+   */
+  duplicate(): Object;
+  
+  /**
+   * Release this object reference
+   */
+  release(): void;
+  
+  /**
+   * Get all policies associated with this object
+   */
+  get_policy(policy_type: number): Policy;
+  
+  /**
+   * Get the domain managers associated with this object
+   */
+  get_domain_managers(): Promise<CORBA.ObjectRef[]>;
+  
+  /**
+   * Set multiple policies on this object
+   */
+  set_policy_overrides(policies: Policy[], set_add: SetOverrideType): Object;
+  
+  /**
+   * Get the object's type id
+   */
+  get_type_id(): Promise<string>;
+  
+  /**
+   * Convert to string representation
+   */
+  toString(): string;
+}
+
+/**
+ * Interface repository object definition
+ */
+export interface InterfaceDef {
+  name: string;
+  id: string;
+  operations: OperationDef[];
+  attributes: AttributeDef[];
+}
+
+/**
+ * Operation definition
+ */
+export interface OperationDef {
+  name: string;
+  id: string;
+  return_type: TypeCode;
+  parameters: ParameterDef[];
+  exceptions: ExceptionDef[];
+}
+
+/**
+ * Parameter definition
+ */
+export interface ParameterDef {
+  name: string;
+  type: TypeCode;
+  mode: ParameterMode;
+}
+
+/**
+ * Attribute definition
+ */
+export interface AttributeDef {
+  name: string;
+  id: string;
+  type: TypeCode;
+  readonly: boolean;
+}
+
+/**
+ * Exception definition
+ */
+export interface ExceptionDef {
+  name: string;
+  id: string;
+  members: { name: string; type: TypeCode }[];
+}
+
+/**
+ * Parameter mode enum
+ */
+export enum ParameterMode {
+  PARAM_IN,
+  PARAM_OUT,
+  PARAM_INOUT
+}
+
+/**
+ * Policy override type
+ */
+export enum SetOverrideType {
+  SET_OVERRIDE,
+  ADD_OVERRIDE
+}
+
+/**
+ * Base implementation of a CORBA object reference
+ */
+export class ObjectReference implements Object {
+  protected _type_id: string;
+  protected _is_nil: boolean;
+  protected _policies: Map<number, Policy>;
+  
+  constructor(type_id: string = "") {
+    this._type_id = type_id;
+    this._is_nil = type_id === "";
+    this._policies = new Map();
+  }
+  
+  async get_interface(): Promise<InterfaceDef> {
+    // In a complete implementation, this would query the Interface Repository
+    throw new CORBA.NO_IMPLEMENT("get_interface not implemented");
+  }
+  
+  is_nil(): boolean {
+    return this._is_nil;
+  }
+  
+  is_equivalent(other_object: Object): boolean {
+    // In a complete implementation, this would check for equivalent object references
+    return this === other_object;
+  }
+  
+  async is_a(repository_id: string): Promise<boolean> {
+    if (this._is_nil) {
+      return false;
+    }
+    
+    return this._type_id === repository_id;
+  }
+  
+  async non_existent(): Promise<boolean> {
+    // In a complete implementation, this would check if the object exists
+    return this._is_nil;
+  }
+  
+  hash(max: number): number {
+    if (this._is_nil) {
+      return 0;
+    }
+    
+    // Simple hash function
+    let hash = 0;
+    for (let i = 0; i < this._type_id.length; i++) {
+      hash = (hash * 31 + this._type_id.charCodeAt(i)) % max;
+    }
+    return hash;
+  }
+  
+  duplicate(): Object {
+    // Create a new object with the same state
+    const obj = new ObjectReference(this._type_id);
+    obj._is_nil = this._is_nil;
+    this._policies.forEach((value, key) => {
+      obj._policies.set(key, value);
+    });
+    return obj;
+  }
+  
+  release(): void {
+    // In a complete implementation, this would release resources
+    // In JavaScript/TypeScript with garbage collection, this is mostly a no-op
+  }
+  
+  get_policy(policy_type: number): Policy {
+    const policy = this._policies.get(policy_type);
+    if (!policy) {
+      throw new CORBA.INV_OBJREF(`Policy of type ${policy_type} not found`);
+    }
+    return policy;
+  }
+  
+  async get_domain_managers(): Promise<CORBA.ObjectRef[]> {
+    // In a complete implementation, this would return domain managers
+    return [];
+  }
+  
+  set_policy_overrides(policies: Policy[], set_add: SetOverrideType): Object {
+    const new_obj = this.duplicate() as ObjectReference;
+    
+    if (set_add === SetOverrideType.SET_OVERRIDE) {
+      // Clear existing policies
+      new_obj._policies.clear();
+    }
+    
+    // Add new policies
+    for (const policy of policies) {
+      new_obj._policies.set(policy.policy_type(), policy);
+    }
+    
+    return new_obj;
+  }
+  
+  async get_type_id(): Promise<string> {
+    return this._type_id;
+  }
+  
+  toString(): string {
+    if (this._is_nil) {
+      return "nil";
+    }
+    
+    // In a complete implementation, this would convert to an IOR string
+    return `Object(${this._type_id})`;
+  }
+}
+
+/**
+ * Create a nil object reference
+ */
+export function create_nil_reference(): Object {
+  return new ObjectReference();
+}
+
+/**
+ * Create an object reference with a type id
+ */
+export function create_object_reference(type_id: string): Object {
+  return new ObjectReference(type_id);
+}
+
+/**
+ * Check if an object reference is nil
+ */
+export function is_nil(obj: CORBA.ObjectRef | null | undefined): boolean {
+  if (!obj) {
+    return true;
+  }
+  
+  const o = obj as Object;
+  return o.is_nil ? o.is_nil() : true;
+}

@@ -1,0 +1,6 @@
+// Hello World IDL
+module HelloWorld {
+  interface Hello {
+    string sayHello(in string name);
+  };
+};
