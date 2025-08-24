@@ -30,9 +30,6 @@ export * from "./poa.ts";
 // Export GIOP/IIOP
 export * from "./giop.ts";
 
-// Export IDL mapping
-export * from "./idl.ts";
-
 // Export DII
 export * from "./dii.ts";
 
