@@ -195,4 +195,17 @@ export namespace CORBA {
       this.name = "CORBA.BAD_OPERATION";
     }
   }
+
+  /**
+   * Base class for CORBA User Exceptions
+   */
+  export class UserException extends Error {
+    repositoryId: string;
+
+    constructor(repositoryId: string, message?: string) {
+      super(message || "User exception");
+      this.name = "CORBA.UserException";
+      this.repositoryId = repositoryId;
+    }
+  }
 }

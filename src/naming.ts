@@ -8,6 +8,58 @@ import { ObjectReference } from "./object.ts";
 import { ORB_instance } from "./orb.ts";
 
 /**
+ * CosNaming Exceptions
+ */
+// deno-lint-ignore no-namespace
+export namespace CosNaming {
+  export class NotFound extends CORBA.UserException {
+    why: NotFoundReason;
+    rest_of_name: Name;
+
+    constructor(why: NotFoundReason, rest_of_name: Name) {
+      super("IDL:omg.org/CosNaming/NamingContext/NotFound:1.0");
+      this.why = why;
+      this.rest_of_name = rest_of_name;
+    }
+  }
+
+  export enum NotFoundReason {
+    missing_node,
+    not_context,
+    not_object,
+  }
+
+  export class CannotProceed extends CORBA.UserException {
+    cxt: NamingContext;
+    rest_of_name: Name;
+
+    constructor(cxt: NamingContext, rest_of_name: Name) {
+      super("IDL:omg.org/CosNaming/NamingContext/CannotProceed:1.0");
+      this.cxt = cxt;
+      this.rest_of_name = rest_of_name;
+    }
+  }
+
+  export class InvalidName extends CORBA.UserException {
+    constructor() {
+      super("IDL:omg.org/CosNaming/NamingContext/InvalidName:1.0");
+    }
+  }
+
+  export class AlreadyBound extends CORBA.UserException {
+    constructor() {
+      super("IDL:omg.org/CosNaming/NamingContext/AlreadyBound:1.0");
+    }
+  }
+
+  export class NotEmpty extends CORBA.UserException {
+    constructor() {
+      super("IDL:omg.org/CosNaming/NamingContext/NotEmpty:1.0");
+    }
+  }
+}
+
+/**
  * NameComponent - a single component of a compound name
  */
 export interface NameComponent {
@@ -169,11 +221,29 @@ export class NamingContextImpl extends ObjectReference implements NamingContext 
   }
 
   /**
+   * Parse a key back to a Name (inverse of getKey)
+   */
+  private parseKey(key: string): Name {
+    if (!key) return [];
+
+    return key.split("/").map((component) => {
+      const lastDotIndex = component.lastIndexOf(".");
+      if (lastDotIndex === -1) {
+        return { id: component, kind: "" };
+      }
+      return {
+        id: component.substring(0, lastDotIndex),
+        kind: component.substring(lastDotIndex + 1),
+      };
+    });
+  }
+
+  /**
    * Get the parent context and last component of a Name
    */
   private async getContext(n: Name): Promise<{ parent: NamingContext; last: NameComponent }> {
     if (n.length === 0) {
-      throw new CORBA.BAD_PARAM("Empty name");
+      throw new CosNaming.InvalidName();
     }
 
     if (n.length === 1) {
@@ -189,13 +259,13 @@ export class NamingContextImpl extends ObjectReference implements NamingContext 
 
   async bind(n: Name, obj: CORBA.ObjectRef): Promise<void> {
     if (n.length === 0) {
-      throw new CORBA.BAD_PARAM("Empty name");
+      throw new CosNaming.InvalidName();
     }
 
     if (n.length === 1) {
       const key = this.getKey(n);
       if (this._bindings.has(key)) {
-        throw new CORBA.BAD_PARAM("Name already bound");
+        throw new CosNaming.AlreadyBound();
       }
       this._bindings.set(key, { obj, type: BindingType.nobject });
       return;
@@ -207,13 +277,13 @@ export class NamingContextImpl extends ObjectReference implements NamingContext 
 
   async bind_context(n: Name, nc: NamingContext): Promise<void> {
     if (n.length === 0) {
-      throw new CORBA.BAD_PARAM("Empty name");
+      throw new CosNaming.InvalidName();
     }
 
     if (n.length === 1) {
       const key = this.getKey(n);
       if (this._bindings.has(key)) {
-        throw new CORBA.BAD_PARAM("Name already bound");
+        throw new CosNaming.AlreadyBound();
       }
       this._bindings.set(key, { obj: nc, type: BindingType.ncontext });
       return;
@@ -240,7 +310,7 @@ export class NamingContextImpl extends ObjectReference implements NamingContext 
 
   async rebind_context(n: Name, nc: NamingContext): Promise<void> {
     if (n.length === 0) {
-      throw new CORBA.BAD_PARAM("Empty name");
+      throw new CosNaming.InvalidName();
     }
 
     if (n.length === 1) {
@@ -255,14 +325,14 @@ export class NamingContextImpl extends ObjectReference implements NamingContext 
 
   resolve(n: Name): Promise<CORBA.ObjectRef> {
     if (n.length === 0) {
-      return Promise.reject(new CORBA.BAD_PARAM("Empty name"));
+      return Promise.reject(new CosNaming.InvalidName());
     }
 
     if (n.length === 1) {
       const key = this.getKey(n);
       const binding = this._bindings.get(key);
       if (!binding) {
-        return Promise.reject(new CORBA.BAD_PARAM(`Name not bound: ${key}`));
+        return Promise.reject(new CosNaming.NotFound(CosNaming.NotFoundReason.missing_node, n));
       }
       return Promise.resolve(binding.obj);
     }
@@ -273,11 +343,15 @@ export class NamingContextImpl extends ObjectReference implements NamingContext 
     const binding = this._bindings.get(key);
 
     if (!binding) {
-      return Promise.reject(new CORBA.BAD_PARAM(`Name not bound: ${key}`));
+      return Promise.reject(
+        new CosNaming.NotFound(CosNaming.NotFoundReason.missing_node, n.slice(1)),
+      );
     }
 
     if (binding.type !== BindingType.ncontext) {
-      return Promise.reject(new CORBA.BAD_PARAM(`Not a context: ${key}`));
+      return Promise.reject(
+        new CosNaming.NotFound(CosNaming.NotFoundReason.not_context, n.slice(1)),
+      );
     }
 
     const context = binding.obj as NamingContext;
@@ -286,13 +360,13 @@ export class NamingContextImpl extends ObjectReference implements NamingContext 
 
   async unbind(n: Name): Promise<void> {
     if (n.length === 0) {
-      throw new CORBA.BAD_PARAM("Empty name");
+      throw new CosNaming.InvalidName();
     }
 
     if (n.length === 1) {
       const key = this.getKey(n);
       if (!this._bindings.has(key)) {
-        throw new CORBA.BAD_PARAM(`Name not bound: ${key}`);
+        throw new CosNaming.NotFound(CosNaming.NotFoundReason.missing_node, n);
       }
       this._bindings.delete(key);
       return;
@@ -315,7 +389,7 @@ export class NamingContextImpl extends ObjectReference implements NamingContext 
   destroy(): Promise<void> {
     // Check if the context is empty
     if (this._bindings.size > 0) {
-      return Promise.reject(new CORBA.BAD_PARAM("Context not empty"));
+      return Promise.reject(new CosNaming.NotEmpty());
     }
 
     // Cleanup resources
@@ -323,18 +397,43 @@ export class NamingContextImpl extends ObjectReference implements NamingContext 
     return Promise.resolve();
   }
 
+  /**
+   * Check if a name exists in this context
+   */
+  exists(n: Name): boolean {
+    if (n.length === 0) return false;
+    if (n.length === 1) {
+      return this._bindings.has(this.getKey(n));
+    }
+    // For compound names, would need to check recursively
+    // This is a simplified implementation
+    return false;
+  }
+
+  /**
+   * Get the number of bindings in this context
+   */
+  size(): number {
+    return this._bindings.size;
+  }
+
+  /**
+   * Check if the context is empty
+   */
+  isEmpty(): boolean {
+    return this._bindings.size === 0;
+  }
+
   list(how_many: number): Promise<{ bl: BindingList; bi: BindingIterator }> {
     const all_bindings: BindingList = [];
 
     // Convert the internal map to the expected format
     for (const [key, binding] of this._bindings.entries()) {
-      // Parse the key back to a NameComponent
-      const parts = key.split(".");
-      const id = parts[0];
-      const kind = parts.slice(1).join(".");
+      // Parse the key back to a Name
+      const name = this.parseKey(key);
 
       all_bindings.push({
-        binding_name: [{ id, kind }],
+        binding_name: name,
         binding_type: binding.type,
       });
     }
@@ -411,33 +510,150 @@ export class NamingContextExtImpl extends NamingContextImpl implements NamingCon
   }
 
   to_name(sn: string): Promise<Name> {
-    // Parse a stringified name like "id1.kind1/id2.kind2"
-    const components = sn.split("/");
-
-    const name: Name = [];
-    for (const component of components) {
-      const parts = component.split(".");
-      const id = parts[0];
-      const kind = parts.length > 1 ? parts.slice(1).join(".") : "";
-      name.push({ id, kind });
+    if (!sn || sn.trim() === "") {
+      return Promise.reject(new CosNaming.InvalidName());
     }
 
-    return Promise.resolve(name);
+    try {
+      // Parse a stringified name like "id1.kind1/id2.kind2"
+      const components = sn.split("/").filter((comp) => comp.length > 0);
+
+      const name: Name = [];
+      for (const component of components) {
+        // Handle escaped characters if needed
+        const unescaped = component.replace(/\\([./])/g, "$1");
+        const lastDotIndex = unescaped.lastIndexOf(".");
+
+        let id: string;
+        let kind: string;
+
+        if (lastDotIndex === -1) {
+          id = unescaped;
+          kind = "";
+        } else {
+          id = unescaped.substring(0, lastDotIndex);
+          kind = unescaped.substring(lastDotIndex + 1);
+        }
+
+        name.push({ id, kind });
+      }
+
+      return Promise.resolve(name);
+    } catch (_error) {
+      return Promise.reject(new CosNaming.InvalidName());
+    }
   }
 
   to_string(n: Name): Promise<string> {
-    // Convert a Name to a string like "id1.kind1/id2.kind2"
-    return Promise.resolve(n.map((component) => `${component.id}.${component.kind}`).join("/"));
+    if (!n || n.length === 0) {
+      return Promise.reject(new CosNaming.InvalidName());
+    }
+
+    try {
+      // Convert a Name to a string like "id1.kind1/id2.kind2"
+      const stringified = n.map((component) => {
+        // Escape special characters
+        const escapedId = component.id.replace(/([./])/g, "\\$1");
+        const escapedKind = component.kind.replace(/([./])/g, "\\$1");
+        return `${escapedId}.${escapedKind}`;
+      }).join("/");
+
+      return Promise.resolve(stringified);
+    } catch (_error) {
+      return Promise.reject(new CosNaming.InvalidName());
+    }
   }
 
   to_url(addr: string, sn: string): Promise<string> {
-    // Convert an address and stringified name to a corbaname URL
-    return Promise.resolve(`corbaname:${addr}#${sn}`);
+    if (!addr || addr.trim() === "") {
+      return Promise.reject(new CORBA.BAD_PARAM("Invalid address"));
+    }
+
+    if (!sn || sn.trim() === "") {
+      return Promise.reject(new CosNaming.InvalidName());
+    }
+
+    try {
+      // Convert an address and stringified name to a corbaname URL
+      // Format: corbaname:iiop:host:port#stringified_name
+      const url = `corbaname:${addr}#${encodeURIComponent(sn)}`;
+      return Promise.resolve(url);
+    } catch (_error) {
+      return Promise.reject(new CORBA.BAD_PARAM("Failed to create URL"));
+    }
   }
 
   async resolve_str(sn: string): Promise<CORBA.ObjectRef> {
     const name = await this.to_name(sn);
     return this.resolve(name);
+  }
+}
+
+/**
+ * Utility functions for name manipulation
+ */
+export class NameUtil {
+  /**
+   * Create a simple name with a single component
+   */
+  static createSimpleName(id: string, kind: string = ""): Name {
+    return [{ id, kind }];
+  }
+
+  /**
+   * Create a compound name from individual components
+   */
+  static createCompoundName(...components: Array<{ id: string; kind?: string }>): Name {
+    return components.map((comp) => ({ id: comp.id, kind: comp.kind || "" }));
+  }
+
+  /**
+   * Check if two names are equal
+   */
+  static areEqual(n1: Name, n2: Name): boolean {
+    if (n1.length !== n2.length) return false;
+
+    return n1.every((comp1, index) => {
+      const comp2 = n2[index];
+      return comp1.id === comp2.id && comp1.kind === comp2.kind;
+    });
+  }
+
+  /**
+   * Get the string representation of a name for display
+   */
+  static toString(n: Name): string {
+    return n.map((comp) => `${comp.id}${comp.kind ? `.${comp.kind}` : ""}`).join("/");
+  }
+
+  /**
+   * Validate that a name is well-formed
+   */
+  static isValid(n: Name): boolean {
+    if (!n || n.length === 0) return false;
+
+    return n.every((comp) =>
+      comp.id !== undefined &&
+      comp.id !== null &&
+      comp.kind !== undefined &&
+      comp.kind !== null
+    );
+  }
+
+  /**
+   * Get the parent name (all components except the last)
+   */
+  static getParentName(n: Name): Name {
+    if (n.length <= 1) return [];
+    return n.slice(0, n.length - 1);
+  }
+
+  /**
+   * Get the last component of a name
+   */
+  static getLastComponent(n: Name): NameComponent | null {
+    if (n.length === 0) return null;
+    return n[n.length - 1];
   }
 }
 
