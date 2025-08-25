@@ -276,4 +276,13 @@ export class CDRInputStream {
     this.position += length;
     return new CDRInputStream(subBuffer, this.littleEndian);
   }
+
+  /**
+   * Read all remaining bytes
+   */
+  readRemaining(): Uint8Array {
+    const result = this.buffer.subarray(this.position);
+    this.position = this.buffer.length;
+    return result;
+  }
 }

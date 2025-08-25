@@ -4,7 +4,7 @@
  */
 
 import { CORBA } from "./types.ts";
-import { ObjectReference, Object } from "./object.ts";
+import { Object, ObjectReference } from "./object.ts";
 import { Policy } from "./policy.ts";
 
 /**
@@ -22,6 +22,7 @@ export interface AdapterActivator {
  */
 export interface ServantManager {
   // Base interface for servant managers
+  readonly _servant_manager_id?: string;
 }
 
 /**
@@ -32,7 +33,7 @@ export interface ServantActivator extends ServantManager {
    * Called when a servant is needed
    */
   incarnate(oid: Uint8Array, adapter: POA): Promise<Servant>;
-  
+
   /**
    * Called when a servant is deactivated
    */
@@ -41,7 +42,7 @@ export interface ServantActivator extends ServantManager {
     adapter: POA,
     serv: Servant,
     cleanup_in_progress: boolean,
-    remaining_activations: boolean
+    remaining_activations: boolean,
   ): Promise<void>;
 }
 
@@ -55,9 +56,9 @@ export interface ServantLocator extends ServantManager {
   preinvoke(
     oid: Uint8Array,
     adapter: POA,
-    operation: string
-  ): Promise<{ servant: Servant; cookie: any }>;
-  
+    operation: string,
+  ): Promise<{ servant: Servant; cookie: unknown }>;
+
   /**
    * Called after a request is completed
    */
@@ -65,8 +66,8 @@ export interface ServantLocator extends ServantManager {
     oid: Uint8Array,
     adapter: POA,
     operation: string,
-    cookie: any,
-    servant: Servant
+    cookie: unknown,
+    servant: Servant,
   ): Promise<void>;
 }
 
@@ -80,7 +81,7 @@ export abstract class Servant {
   _default_POA(): POA {
     return getRootPOA();
   }
-  
+
   /**
    * Check if this servant supports an interface
    */
@@ -88,7 +89,7 @@ export abstract class Servant {
     // Default implementation, should be overridden by derived classes
     return repository_id === "IDL:omg.org/CORBA/Object:1.0";
   }
-  
+
   /**
    * Get the interface repository ID
    */
@@ -96,14 +97,14 @@ export abstract class Servant {
     // Default implementation, should be overridden by derived classes
     return "IDL:omg.org/CORBA/Object:1.0";
   }
-  
+
   /**
    * Get list of all repository IDs this servant supports
    */
-  _all_interfaces(poa: POA, oid: Uint8Array): string[] {
+  _all_interfaces(_poa: POA, _oid: Uint8Array): string[] {
     return [this._repository_id()];
   }
-  
+
   /**
    * Handle a non-existent operation
    */
@@ -122,119 +123,119 @@ export interface POA extends CORBA.ObjectRef {
   create_POA(
     adapter_name: string,
     a_POAManager: POAManager | null,
-    policies: Policy[]
+    policies: Policy[],
   ): Promise<POA>;
-  
+
   /**
    * Find a child POA
    */
   find_POA(adapter_name: string, activate_it: boolean): Promise<POA>;
-  
+
   /**
    * Destroy the POA
    */
   destroy(etherialize_objects: boolean, wait_for_completion: boolean): Promise<void>;
-  
+
   /**
    * Get the POA's name
    */
   the_name(): string;
-  
+
   /**
    * Get the parent POA
    */
   the_parent(): POA | null;
-  
+
   /**
    * Get the POAManager for this POA
    */
   the_POAManager(): POAManager;
-  
+
   /**
    * Get the adapter activator
    */
   the_activator(): AdapterActivator | null;
-  
+
   /**
    * Set the adapter activator
    */
   set_activator(activator: AdapterActivator | null): AdapterActivator | null;
-  
+
   /**
    * Get all child POAs
    */
   the_children(): string[];
-  
+
   /**
    * Get the servant manager
    */
   get_servant_manager(): Promise<ServantManager>;
-  
+
   /**
    * Set the servant manager
    */
   set_servant_manager(imgr: ServantManager): Promise<void>;
-  
+
   /**
    * Get the default servant
    */
   get_servant(): Promise<Servant>;
-  
+
   /**
    * Set the default servant
    */
   set_servant(servant: Servant): Promise<void>;
-  
+
   /**
    * Activate an object with a specific ID
    */
   activate_object_with_id(id: Uint8Array, servant: Servant): Promise<void>;
-  
+
   /**
    * Activate an object and generate an ID
    */
   activate_object(servant: Servant): Promise<Uint8Array>;
-  
+
   /**
    * Deactivate an object
    */
   deactivate_object(oid: Uint8Array): Promise<void>;
-  
+
   /**
    * Create a reference with a specific ID
    */
   create_reference_with_id(oid: Uint8Array, intf: string): Object;
-  
+
   /**
    * Create a reference
    */
   create_reference(intf: string): Object;
-  
+
   /**
    * Get the ID for a servant
    */
   servant_to_id(servant: Servant): Promise<Uint8Array>;
-  
+
   /**
    * Get the reference for a servant
    */
   servant_to_reference(servant: Servant): Promise<Object>;
-  
+
   /**
    * Get the servant for a reference
    */
   reference_to_servant(reference: Object): Promise<Servant>;
-  
+
   /**
    * Get the ID for a reference
    */
   reference_to_id(reference: Object): Promise<Uint8Array>;
-  
+
   /**
    * Get the servant for an ID
    */
   id_to_servant(oid: Uint8Array): Promise<Servant>;
-  
+
   /**
    * Get the reference for an ID
    */
@@ -248,7 +249,7 @@ export enum POAManagerState {
   HOLDING,
   ACTIVE,
   DISCARDING,
-  INACTIVE
+  INACTIVE,
 }
 
 /**
@@ -259,25 +260,25 @@ export interface POAManager extends CORBA.ObjectRef {
    * Activate the POA manager
    */
   activate(): Promise<void>;
-  
+
   /**
    * Hold requests
    */
   hold_requests(wait_for_completion: boolean): Promise<void>;
-  
+
   /**
    * Discard requests
    */
   discard_requests(wait_for_completion: boolean): Promise<void>;
-  
+
   /**
    * Deactivate the POA manager
    */
   deactivate(
     etherealize_objects: boolean,
-    wait_for_completion: boolean
+    wait_for_completion: boolean,
   ): Promise<void>;
-  
+
   /**
    * Get the current state
    */
@@ -288,61 +289,66 @@ export interface POAManager extends CORBA.ObjectRef {
  * Simple POA Manager implementation
  */
 class POAManagerImpl extends ObjectReference implements POAManager {
+  [key: string]: unknown;
   private _state: POAManagerState;
-  
+
   constructor() {
     super("IDL:omg.org/PortableServer/POAManager:1.0");
     this._state = POAManagerState.HOLDING;
   }
-  
-  async activate(): Promise<void> {
+
+  activate(): Promise<void> {
     if (this._state === POAManagerState.INACTIVE) {
       throw new CORBA.BAD_PARAM("POAManager is in INACTIVE state");
     }
     this._state = POAManagerState.ACTIVE;
+    return Promise.resolve();
   }
-  
-  async hold_requests(wait_for_completion: boolean): Promise<void> {
+
+  hold_requests(_wait_for_completion: boolean): Promise<void> {
     if (this._state === POAManagerState.INACTIVE) {
       throw new CORBA.BAD_PARAM("POAManager is in INACTIVE state");
     }
     this._state = POAManagerState.HOLDING;
-    
+
     // In a complete implementation, we would wait for in-progress requests
-    if (wait_for_completion) {
-      // Wait for in-progress requests to complete
-    }
+    // if (_wait_for_completion) {
+    // Wait for in-progress requests to complete
+    // }
+    return Promise.resolve();
   }
-  
-  async discard_requests(wait_for_completion: boolean): Promise<void> {
+
+  discard_requests(_wait_for_completion: boolean): Promise<void> {
     if (this._state === POAManagerState.INACTIVE) {
       throw new CORBA.BAD_PARAM("POAManager is in INACTIVE state");
     }
     this._state = POAManagerState.DISCARDING;
-    
+
     // In a complete implementation, we would wait for in-progress requests
-    if (wait_for_completion) {
-      // Wait for in-progress requests to complete
-    }
+    // if (_wait_for_completion) {
+    // Wait for in-progress requests to complete
+    // }
+    return Promise.resolve();
   }
-  
-  async deactivate(
-    etherealize_objects: boolean,
-    wait_for_completion: boolean
+
+  deactivate(
+    _etherealize_objects: boolean,
+    _wait_for_completion: boolean,
   ): Promise<void> {
     if (this._state === POAManagerState.INACTIVE) {
-      return;
+      return Promise.resolve();
     }
-    
+
     this._state = POAManagerState.INACTIVE;
-    
+
     // In a complete implementation, we would etherealize objects
     // and wait for in-progress requests
-    if (wait_for_completion) {
-      // Wait for in-progress requests to complete
-    }
+    // if (_wait_for_completion) {
+    // Wait for in-progress requests to complete
+    // }
+    return Promise.resolve();
   }
-  
+
   get_state(): POAManagerState {
     return this._state;
   }
@@ -352,6 +358,7 @@ class POAManagerImpl extends ObjectReference implements POAManager {
  * Simple POA implementation
  */
 class POAImpl extends ObjectReference implements POA {
+  [key: string]: unknown;
   private _name: string;
   private _parent: POA | null;
   private _manager: POAManager;
@@ -360,39 +367,39 @@ class POAImpl extends ObjectReference implements POA {
   private _children: Map<string, POA> = new Map();
   private _servant_manager: ServantManager | null = null;
   private _default_servant: Servant | null = null;
-  
+
   constructor(name: string, parent: POA | null = null, manager: POAManager | null = null) {
     super("IDL:omg.org/PortableServer/POA:1.0");
     this._name = name;
     this._parent = parent;
     this._manager = manager || new POAManagerImpl();
   }
-  
-  async create_POA(
+
+  create_POA(
     adapter_name: string,
     a_POAManager: POAManager | null,
-    policies: Policy[]
+    _policies: Policy[],
   ): Promise<POA> {
     if (this._children.has(adapter_name)) {
-      throw new CORBA.BAD_PARAM(`Child POA '${adapter_name}' already exists`);
+      return Promise.reject(new CORBA.BAD_PARAM(`Child POA '${adapter_name}' already exists`));
     }
-    
+
     const child = new POAImpl(
       adapter_name,
       this,
-      a_POAManager || this._manager
+      a_POAManager || this._manager,
     );
-    
+
     this._children.set(adapter_name, child);
-    return child;
+    return Promise.resolve(child);
   }
-  
+
   async find_POA(adapter_name: string, activate_it: boolean): Promise<POA> {
     const child = this._children.get(adapter_name);
     if (child) {
       return child;
     }
-    
+
     if (activate_it && this._activator) {
       const activated = await this._activator.unknown_adapter(this, adapter_name);
       if (activated) {
@@ -402,23 +409,23 @@ class POAImpl extends ObjectReference implements POA {
         }
       }
     }
-    
+
     throw new CORBA.BAD_PARAM(`Child POA '${adapter_name}' not found`);
   }
-  
+
   async destroy(etherialize_objects: boolean, wait_for_completion: boolean): Promise<void> {
     // Destroy all child POAs
-    for (const [name, child] of this._children) {
+    for (const [_name, child] of this._children) {
       await child.destroy(etherialize_objects, wait_for_completion);
     }
-    
+
     this._children.clear();
-    
+
     // In a complete implementation, we would etherialize objects if needed
     if (etherialize_objects) {
       // Etherialize objects
     }
-    
+
     // Remove this POA from parent's children
     if (this._parent) {
       // Need to cast to POAImpl to access _children
@@ -426,132 +433,136 @@ class POAImpl extends ObjectReference implements POA {
       parentImpl._children.delete(this._name);
     }
   }
-  
+
   the_name(): string {
     return this._name;
   }
-  
+
   the_parent(): POA | null {
     return this._parent;
   }
-  
+
   the_POAManager(): POAManager {
     return this._manager;
   }
-  
+
   the_activator(): AdapterActivator | null {
     return this._activator;
   }
-  
+
   set_activator(activator: AdapterActivator | null): AdapterActivator | null {
     const old = this._activator;
     this._activator = activator;
     return old;
   }
-  
+
   the_children(): string[] {
     return Array.from(this._children.keys());
   }
-  
-  async get_servant_manager(): Promise<ServantManager> {
+
+  get_servant_manager(): Promise<ServantManager> {
     if (!this._servant_manager) {
-      throw new CORBA.BAD_PARAM("No ServantManager set");
+      return Promise.reject(new CORBA.BAD_PARAM("No ServantManager set"));
     }
-    return this._servant_manager;
+    return Promise.resolve(this._servant_manager);
   }
-  
-  async set_servant_manager(imgr: ServantManager): Promise<void> {
+
+  set_servant_manager(imgr: ServantManager): Promise<void> {
     if (this._servant_manager) {
-      throw new CORBA.BAD_PARAM("ServantManager already set");
+      return Promise.reject(new CORBA.BAD_PARAM("ServantManager already set"));
     }
     this._servant_manager = imgr;
+    return Promise.resolve();
   }
-  
-  async get_servant(): Promise<Servant> {
+
+  get_servant(): Promise<Servant> {
     if (!this._default_servant) {
-      throw new CORBA.BAD_PARAM("No default servant set");
+      return Promise.reject(new CORBA.BAD_PARAM("No default servant set"));
     }
-    return this._default_servant;
+    return Promise.resolve(this._default_servant);
   }
-  
-  async set_servant(servant: Servant): Promise<void> {
+
+  set_servant(servant: Servant): Promise<void> {
     this._default_servant = servant;
+    return Promise.resolve();
   }
-  
-  async activate_object_with_id(id: Uint8Array, servant: Servant): Promise<void> {
+
+  activate_object_with_id(id: Uint8Array, servant: Servant): Promise<void> {
     const oid = bytesToHex(id);
     if (this._servants.has(oid)) {
-      throw new CORBA.BAD_PARAM("Object already active");
+      return Promise.reject(new CORBA.BAD_PARAM("Object already active"));
     }
     this._servants.set(oid, servant);
+    return Promise.resolve();
   }
-  
-  async activate_object(servant: Servant): Promise<Uint8Array> {
+
+  activate_object(servant: Servant): Promise<Uint8Array> {
     // Generate a random object ID
     const id = generateObjectId();
     const oid = bytesToHex(id);
     this._servants.set(oid, servant);
-    return id;
+    return Promise.resolve(id);
   }
-  
-  async deactivate_object(oid: Uint8Array): Promise<void> {
+
+  deactivate_object(oid: Uint8Array): Promise<void> {
     const id = bytesToHex(oid);
     if (!this._servants.has(id)) {
-      throw new CORBA.BAD_PARAM("Object not active");
+      return Promise.reject(new CORBA.BAD_PARAM("Object not active"));
     }
     this._servants.delete(id);
+    return Promise.resolve();
   }
-  
-  create_reference_with_id(oid: Uint8Array, intf: string): Object {
+
+  create_reference_with_id(_oid: Uint8Array, intf: string): Object {
     // In a real implementation, this would create a proper object reference
     // with the given interface repository ID
     const obj = new ObjectReference(intf);
     return obj;
   }
-  
+
   create_reference(intf: string): Object {
     // Generate an object ID
     const oid = generateObjectId();
     return this.create_reference_with_id(oid, intf);
   }
-  
-  async servant_to_id(servant: Servant): Promise<Uint8Array> {
+
+  servant_to_id(servant: Servant): Promise<Uint8Array> {
     // Find the servant in the active objects
     for (const [id, s] of this._servants.entries()) {
       if (s === servant) {
-        return hexToBytes(id);
+        return Promise.resolve(hexToBytes(id));
       }
     }
-    
+
     // If not found, activate it
     return this.activate_object(servant);
   }
-  
+
   async servant_to_reference(servant: Servant): Promise<Object> {
     const oid = await this.servant_to_id(servant);
     return this.create_reference_with_id(oid, servant._repository_id());
   }
-  
+
   async reference_to_servant(reference: Object): Promise<Servant> {
     const oid = await this.reference_to_id(reference);
     return this.id_to_servant(oid);
   }
-  
-  async reference_to_id(reference: Object): Promise<Uint8Array> {
+
+  reference_to_id(_reference: Object): Promise<Uint8Array> {
     // In a real implementation, this would extract the object ID from the reference
     // For simplicity, we're just creating a new ID
-    return generateObjectId();
+    return Promise.resolve(generateObjectId());
   }
-  
-  async id_to_servant(oid: Uint8Array): Promise<Servant> {
+
+  id_to_servant(oid: Uint8Array): Promise<Servant> {
     const id = bytesToHex(oid);
     const servant = this._servants.get(id);
     if (!servant) {
-      throw new CORBA.BAD_PARAM("No servant found for the given ID");
+      return Promise.reject(new CORBA.BAD_PARAM("No servant found for the given ID"));
     }
-    return servant;
+    return Promise.resolve(servant);
   }
-  
+
   async id_to_reference(oid: Uint8Array): Promise<Object> {
     const servant = await this.id_to_servant(oid);
     return this.create_reference_with_id(oid, servant._repository_id());
@@ -563,7 +574,7 @@ class POAImpl extends ObjectReference implements POA {
  */
 function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
-    .map(b => b.toString(16).padStart(2, "0"))
+    .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
 }
 

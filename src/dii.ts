@@ -4,10 +4,9 @@
  */
 
 import { CORBA } from "./types.ts";
-import { ObjectReference, Object, ParameterMode } from "./object.ts";
+import { ParameterMode } from "./object.ts";
 import { Context } from "./context.ts";
 import { TypeCode } from "./typecode.ts";
-import { ORB_instance } from "./orb.ts";
 
 /**
  * Request interface
@@ -16,88 +15,88 @@ export interface Request {
   /**
    * Add a named parameter to the request
    */
-  add_named_in_arg(name: string, value: any, type: TypeCode): any;
-  
+  add_named_in_arg(name: string, value: unknown, type: TypeCode): unknown;
+
   /**
    * Add an unnamed input parameter to the request
    */
-  add_in_arg(value: any, type: TypeCode): any;
-  
+  add_in_arg(value: unknown, type: TypeCode): unknown;
+
   /**
    * Add an unnamed output parameter to the request
    */
-  add_out_arg(type: TypeCode): any;
-  
+  add_out_arg(type: TypeCode): unknown;
+
   /**
    * Add an unnamed input/output parameter to the request
    */
-  add_inout_arg(value: any, type: TypeCode): any;
-  
+  add_inout_arg(value: unknown, type: TypeCode): unknown;
+
   /**
    * Set the return type for the request
    */
   set_return_type(tc: TypeCode): void;
-  
+
   /**
    * Get the return value from the request
    */
-  return_value(): any;
-  
+  return_value(): unknown;
+
   /**
    * Get a specific parameter value
    */
-  arguments(): any[];
-  
+  arguments(): unknown[];
+
   /**
    * Get a specific parameter value
    */
-  get_arg(index: number): any;
-  
+  get_arg(index: number): unknown;
+
   /**
    * Get the exception of the request if any
    */
-  get_exception(): any;
-  
+  get_exception(): unknown;
+
   /**
    * Set the context for the request
    */
   ctx(context: Context): void;
-  
+
   /**
    * Get the context for the request
    */
   get_ctx(): Context | null;
-  
+
   /**
    * Get the target object
    */
-  target(): Object;
-  
+  target(): object;
+
   /**
    * Get the operation name
    */
   operation(): string;
-  
+
   /**
    * Send the request and wait for the response
    */
   invoke(): void;
-  
+
   /**
    * Send the request asynchronously
    */
   send_deferred(): void;
-  
+
   /**
    * Send the request as a one-way operation
    */
   send_oneway(): void;
-  
+
   /**
    * Poll to see if the response has arrived
    */
   poll_response(): boolean;
-  
+
   /**
    * Get the response
    */
@@ -108,51 +107,51 @@ export interface Request {
  * Parameter placeholder for DII
  */
 export class Parameter {
-  private _value: any;
+  private _value: unknown;
   private _type: TypeCode;
   private _mode: ParameterMode;
   private _name: string;
-  
+
   constructor(
-    value: any,
+    value: unknown,
     type: TypeCode,
     mode: ParameterMode,
-    name: string = ""
+    name: string = "",
   ) {
     this._value = value;
     this._type = type;
     this._mode = mode;
     this._name = name;
   }
-  
+
   /**
    * Get the parameter value
    */
-  get value(): any {
+  get value(): unknown {
     return this._value;
   }
-  
+
   /**
    * Set the parameter value
    */
-  set value(value: any) {
+  set value(value: unknown) {
     this._value = value;
   }
-  
+
   /**
    * Get the parameter type
    */
   get type(): TypeCode {
     return this._type;
   }
-  
+
   /**
    * Get the parameter mode
    */
   get mode(): ParameterMode {
     return this._mode;
   }
-  
+
   /**
    * Get the parameter name
    */
@@ -165,89 +164,89 @@ export class Parameter {
  * DII Request implementation
  */
 export class RequestImpl implements Request {
-  private _target: Object;
+  private _target: object;
   private _operation: string;
   private _params: Parameter[] = [];
   private _return_type: TypeCode | null = null;
-  private _return_value: any = null;
+  private _return_value: unknown = null;
   private _context: Context | null = null;
-  private _exception: any = null;
+  private _exception: unknown = null;
   private _response_received: boolean = false;
-  
-  constructor(target: Object, operation: string) {
+
+  constructor(target: object, operation: string) {
     this._target = target;
     this._operation = operation;
   }
-  
-  add_named_in_arg(name: string, value: any, type: TypeCode): any {
+
+  add_named_in_arg(name: string, value: unknown, type: TypeCode): unknown {
     const param = new Parameter(value, type, ParameterMode.PARAM_IN, name);
     this._params.push(param);
     return value;
   }
-  
-  add_in_arg(value: any, type: TypeCode): any {
+
+  add_in_arg(value: unknown, type: TypeCode): unknown {
     const param = new Parameter(value, type, ParameterMode.PARAM_IN);
     this._params.push(param);
     return value;
   }
-  
-  add_out_arg(type: TypeCode): any {
+
+  add_out_arg(type: TypeCode): unknown {
     const param = new Parameter(null, type, ParameterMode.PARAM_OUT);
     this._params.push(param);
     return null;
   }
-  
-  add_inout_arg(value: any, type: TypeCode): any {
+
+  add_inout_arg(value: unknown, type: TypeCode): unknown {
     const param = new Parameter(value, type, ParameterMode.PARAM_INOUT);
     this._params.push(param);
     return value;
   }
-  
+
   set_return_type(tc: TypeCode): void {
     this._return_type = tc;
   }
-  
-  return_value(): any {
+
+  return_value(): unknown {
     return this._return_value;
   }
-  
-  arguments(): any[] {
-    return this._params.map(p => p.value);
+
+  arguments(): unknown[] {
+    return this._params.map((p) => p.value);
   }
-  
-  get_arg(index: number): any {
+
+  get_arg(index: number): unknown {
     if (index < 0 || index >= this._params.length) {
       throw new CORBA.BAD_PARAM(`Parameter index ${index} out of range`);
     }
     return this._params[index].value;
   }
-  
-  get_exception(): any {
+
+  get_exception(): unknown {
     return this._exception;
   }
-  
+
   ctx(context: Context): void {
     this._context = context;
   }
-  
+
   get_ctx(): Context | null {
     return this._context;
   }
-  
-  target(): Object {
+
+  target(): object {
     return this._target;
   }
-  
+
   operation(): string {
     return this._operation;
   }
-  
+
   invoke(): void {
     // Reset any previous response state
     this._response_received = false;
     this._return_value = null;
     this._exception = null;
-    
+
     try {
       // In a real implementation, this would use GIOP to invoke the operation
       // For now, we'll just simulate a successful call
@@ -259,13 +258,13 @@ export class RequestImpl implements Request {
       throw e;
     }
   }
-  
+
   send_deferred(): void {
     // Reset any previous response state
     this._response_received = false;
     this._return_value = null;
     this._exception = null;
-    
+
     // In a real implementation, this would use GIOP to invoke the operation asynchronously
     // For now, we'll just simulate a call after a short delay
     setTimeout(() => {
@@ -278,32 +277,32 @@ export class RequestImpl implements Request {
       }
     }, 100);
   }
-  
+
   send_oneway(): void {
     // Reset any previous response state
     this._response_received = true; // One-way calls don't have responses
     this._return_value = null;
     this._exception = null;
-    
+
     // In a real implementation, this would use GIOP to send a one-way request
     // For one-way calls, we don't wait for or expect a response
   }
-  
+
   poll_response(): boolean {
     return this._response_received;
   }
-  
+
   get_response(): void {
     if (!this._response_received) {
       // In a real implementation, this would block until the response is received
       throw new CORBA.BAD_PARAM("Response not yet available");
     }
-    
+
     if (this._exception) {
       throw this._exception;
     }
   }
-  
+
   /**
    * Helper method to simulate an invocation
    * In a real implementation, this would be replaced with GIOP communication
@@ -316,17 +315,17 @@ export class RequestImpl implements Request {
         param.value = this.create_dummy_value(param.type);
       }
     }
-    
+
     // Set a dummy return value if a return type was specified
     if (this._return_type) {
       this._return_value = this.create_dummy_value(this._return_type);
     }
   }
-  
+
   /**
    * Helper method to create a dummy value of the appropriate type
    */
-  private create_dummy_value(tc: TypeCode): any {
+  private create_dummy_value(tc: TypeCode): unknown {
     switch (tc.kind()) {
       case TypeCode.Kind.tk_void:
         return null;
@@ -341,7 +340,7 @@ export class RequestImpl implements Request {
         return false;
       case TypeCode.Kind.tk_char:
       case TypeCode.Kind.tk_wchar:
-        return '';
+        return "";
       case TypeCode.Kind.tk_string:
       case TypeCode.Kind.tk_wstring:
         return "";
@@ -372,24 +371,24 @@ export class RequestImpl implements Request {
  * Create a request on an object
  */
 export function create_request(
-  target: Object,
+  target: object,
   operation: string,
-  arg_list: any[] = [],
-  result: any = null,
+  _arg_list: unknown[] = [],
+  _result: unknown = null,
   ctx: Context | null = null,
-  return_type: TypeCode | null = null
+  return_type: TypeCode | null = null,
 ): Request {
   const request = new RequestImpl(target, operation);
-  
+
   if (ctx) {
     request.ctx(ctx);
   }
-  
+
   if (return_type) {
     request.set_return_type(return_type);
   }
-  
+
   // In a real implementation, we would add arguments from arg_list
-  
+
   return request;
 }

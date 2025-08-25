@@ -3,8 +3,6 @@
  * Based on CORBA 3.4 specification
  */
 
-import { CORBA } from "./types.ts";
-
 /**
  * GIOP Message Types
  */
@@ -16,7 +14,7 @@ export enum GIOPMessageType {
   LocateReply = 4,
   CloseConnection = 5,
   MessageError = 6,
-  Fragment = 7
+  Fragment = 7,
 }
 
 /**
@@ -42,7 +40,7 @@ export enum GIOPReplyStatusType {
   SYSTEM_EXCEPTION = 2,
   LOCATION_FORWARD = 3,
   LOCATION_FORWARD_PERM = 4,
-  NEEDS_ADDRESSING_MODE = 5
+  NEEDS_ADDRESSING_MODE = 5,
 }
 
 /**
@@ -50,25 +48,25 @@ export enum GIOPReplyStatusType {
  */
 export abstract class GIOPMessage {
   header: GIOPHeader;
-  
+
   constructor(messageType: GIOPMessageType) {
     this.header = {
       magic: "GIOP",
       version: {
         major: 1,
-        minor: 2
+        minor: 2,
       },
       flags: 0,
       message_type: messageType,
-      message_size: 0
+      message_size: 0,
     };
   }
-  
+
   /**
    * Serialize the message to a buffer
    */
   abstract serialize(): Uint8Array;
-  
+
   /**
    * Deserialize a message from a buffer
    */
@@ -85,7 +83,7 @@ export class GIOPRequestMessage extends GIOPMessage {
   object_key: Uint8Array;
   operation: string;
   service_context: unknown[]; // Simplified - would be properly typed in a complete implementation
-  
+
   constructor() {
     super(GIOPMessageType.Request);
     this.request_id = 0;
@@ -95,28 +93,28 @@ export class GIOPRequestMessage extends GIOPMessage {
     this.operation = "";
     this.service_context = [];
   }
-  
+
   serialize(): Uint8Array {
     // This is a placeholder implementation
     // A real implementation would properly serialize the message
-    
+
     // Calculate message size
     const operation_length = this.operation.length;
     const object_key_length = this.object_key.length;
-    
+
     // Size would include header (12 bytes) + request fields
     this.header.message_size = 12 + 4 + 1 + 3 + 4 + object_key_length + 4 + operation_length;
-    
+
     // Create buffer
     const buffer = new Uint8Array(this.header.message_size);
-    
+
     // Serialize header and message
     // This is just a placeholder - real implementation would be more complex
-    
+
     return buffer;
   }
-  
-  deserialize(buffer: Uint8Array, offset: number): number {
+
+  deserialize(_buffer: Uint8Array, offset: number): number {
     // This is a placeholder implementation
     // A real implementation would properly deserialize the message
     // and return the new offset
@@ -131,30 +129,30 @@ export class GIOPReplyMessage extends GIOPMessage {
   request_id: number;
   reply_status: GIOPReplyStatusType;
   service_context: unknown[]; // Simplified - would be properly typed in a complete implementation
-  
+
   constructor() {
     super(GIOPMessageType.Reply);
     this.request_id = 0;
     this.reply_status = GIOPReplyStatusType.NO_EXCEPTION;
     this.service_context = [];
   }
-  
+
   serialize(): Uint8Array {
     // This is a placeholder implementation
     // A real implementation would properly serialize the message
-    
+
     // Calculate message size
-    
+
     // Create buffer
     const buffer = new Uint8Array(12); // Just header for now
-    
+
     // Serialize header and message
     // This is just a placeholder - real implementation would be more complex
-    
+
     return buffer;
   }
-  
-  deserialize(buffer: Uint8Array, offset: number): number {
+
+  deserialize(_buffer: Uint8Array, offset: number): number {
     // This is a placeholder implementation
     // A real implementation would properly deserialize the message
     // and return the new offset
@@ -191,18 +189,18 @@ export function createGIOPMessage(buffer: Uint8Array): GIOPMessage | null {
   if (buffer.length < 12) {
     return null; // Not enough data for header
   }
-  
+
   // Check GIOP magic
   const magic = String.fromCharCode(buffer[0], buffer[1], buffer[2], buffer[3]);
   if (magic !== "GIOP") {
     return null;
   }
-  
+
   // Get message type
   const messageType = buffer[7] as GIOPMessageType;
-  
+
   let message: GIOPMessage;
-  
+
   switch (messageType) {
     case GIOPMessageType.Request:
       message = new GIOPRequestMessage();
@@ -214,10 +212,10 @@ export function createGIOPMessage(buffer: Uint8Array): GIOPMessage | null {
       // Other message types would be implemented in a complete implementation
       return null;
   }
-  
+
   // Deserialize the message
   message.deserialize(buffer, 0);
-  
+
   return message;
 }
 
@@ -228,38 +226,38 @@ export function parseIOR(iorString: string): IIOPProfile | null {
   if (!iorString.startsWith("IOR:")) {
     return null;
   }
-  
+
   // Remove "IOR:" prefix
   const hexString = iorString.substring(4);
-  
+
   // Convert hex to bytes
   const bytes = new Uint8Array(hexString.length / 2);
   for (let i = 0; i < hexString.length; i += 2) {
     bytes[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
   }
-  
+
   // Parse the IOR data
   // This is a placeholder - a real implementation would properly parse the IOR
-  
+
   // Return a dummy profile for now
   return {
     version: {
       major: 1,
-      minor: 0
+      minor: 0,
     },
     host: "localhost",
     port: 2809,
     object_key: new Uint8Array(0),
-    components: []
+    components: [],
   };
 }
 
 /**
  * Create an IOR string
  */
-export function createIOR(profile: IIOPProfile): string {
+export function createIOR(_profile: IIOPProfile): string {
   // This is a placeholder - a real implementation would properly serialize the IOR
-  
+
   // Return a dummy IOR for now
   return "IOR:000000000000000100000000000000000001000000000000003a00010000000000016c6f63616c686f7374000af90000000014010000000000000001000000010000000100000020000101000000010001000100010001000100010001000100010001000101";
 }

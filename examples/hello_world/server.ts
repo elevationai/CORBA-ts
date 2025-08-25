@@ -2,7 +2,7 @@
  * Hello World CORBA Server Example
  */
 
-import { init, ORB_instance, getRootPOA } from "../../mod.ts";
+import { getRootPOA, init, ORB_instance } from "../../mod.ts";
 import { Servant } from "../../src/poa.ts";
 
 // Define a Hello interface
@@ -16,9 +16,9 @@ class HelloServant extends Servant implements Hello {
     return "IDL:Hello:1.0";
   }
 
-  async sayHello(name: string): Promise<string> {
+  sayHello(name: string): Promise<string> {
     console.log(`Saying hello to ${name}`);
-    return `Hello, ${name}!`;
+    return Promise.resolve(`Hello, ${name}!`);
   }
 }
 

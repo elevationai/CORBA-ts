@@ -13,28 +13,28 @@ export abstract class ValueBase {
    * Get the type id for this value type
    */
   abstract _type_id(): string;
-  
+
   /**
    * Create a copy of this value
    */
   abstract _copy_value(): ValueBase;
-  
+
   /**
    * Marshal the value to a stream
    * This would be implemented in a complete CORBA implementation
    */
-  _marshal(output_stream: any): void {
+  _marshal(_output_stream: unknown): void {
     throw new CORBA.NO_IMPLEMENT("_marshal not implemented");
   }
-  
+
   /**
    * Unmarshal the value from a stream
    * This would be implemented in a complete CORBA implementation
    */
-  _unmarshal(input_stream: any): void {
+  _unmarshal(_input_stream: unknown): void {
     throw new CORBA.NO_IMPLEMENT("_unmarshal not implemented");
   }
-  
+
   /**
    * Convert to truncatable base type
    */
@@ -62,7 +62,7 @@ export abstract class DefaultValueFactory implements ValueFactory {
    * The repository ID this factory creates
    */
   abstract _repository_id(): string;
-  
+
   /**
    * Create a new instance - must be implemented by subclasses
    */
@@ -75,9 +75,9 @@ export abstract class DefaultValueFactory implements ValueFactory {
 export class ValueFactoryRegistry {
   private static _instance: ValueFactoryRegistry | null = null;
   private _factories: Map<string, ValueFactory> = new Map();
-  
+
   private constructor() {}
-  
+
   /**
    * Get the singleton instance
    */
@@ -87,7 +87,7 @@ export class ValueFactoryRegistry {
     }
     return ValueFactoryRegistry._instance;
   }
-  
+
   /**
    * Register a value factory
    */
@@ -96,14 +96,14 @@ export class ValueFactoryRegistry {
     this._factories.set(id, factory);
     return existing;
   }
-  
+
   /**
    * Find a factory by id
    */
   lookup_factory(id: string): ValueFactory | null {
     return this._factories.get(id) || null;
   }
-  
+
   /**
    * Unregister a factory
    */
@@ -122,31 +122,31 @@ export class ValueFactoryRegistry {
 export class BoxedValueBase<T> extends ValueBase {
   private _id: string;
   private _value: T;
-  
+
   constructor(id: string, value: T) {
     super();
     this._id = id;
     this._value = value;
   }
-  
+
   /**
    * Get the contained value
    */
   get value(): T {
     return this._value;
   }
-  
+
   /**
    * Set the contained value
    */
   set value(value: T) {
     this._value = value;
   }
-  
+
   _type_id(): string {
     return this._id;
   }
-  
+
   _copy_value(): ValueBase {
     // This is a simplified implementation
     // A complete implementation would need to handle deep copying
@@ -160,17 +160,17 @@ export class BoxedValueBase<T> extends ValueBase {
 export class BoxedValueFactory<T> extends DefaultValueFactory {
   private _id: string;
   private _default_value: T;
-  
+
   constructor(id: string, default_value: T) {
     super();
     this._id = id;
     this._default_value = default_value;
   }
-  
+
   _repository_id(): string {
     return this._id;
   }
-  
+
   create_for_unmarshal(): ValueBase {
     return new BoxedValueBase<T>(this._id, this._default_value);
   }
@@ -184,7 +184,7 @@ export abstract class AbstractBase {
    * Check if this object supports a specific interface
    */
   abstract _is_a(id: string): boolean;
-  
+
   /**
    * Get a local servant for this abstract object
    */

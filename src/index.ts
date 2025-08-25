@@ -48,10 +48,10 @@ export async function init(args: string[] = []): Promise<void> {
   // Initialize ORB
   const orb = initORB({ args });
   await orb.init();
-  
+
   // Initialize POA
   initPOA();
-  
+
   // Initialize Naming Service
   await init_naming_service();
 }

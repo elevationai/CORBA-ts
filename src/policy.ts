@@ -45,12 +45,12 @@ export interface PolicyInterface {
    * Get the policy type
    */
   policy_type(): number;
-  
+
   /**
    * Copy the policy
    */
   copy(): PolicyInterface;
-  
+
   /**
    * Destroy the policy
    */
@@ -61,35 +61,36 @@ export interface PolicyInterface {
  * Policy implementation
  */
 export class Policy extends ObjectReference implements PolicyInterface {
+  [key: string]: unknown;
   private _policy_type: number;
-  private _policy_value: any;
-  
-  constructor(policy_type: number, policy_value: any) {
+  private _policy_value: unknown;
+
+  constructor(policy_type: number, policy_value: unknown) {
     super("IDL:omg.org/CORBA/Policy:1.0");
     this._policy_type = policy_type;
     this._policy_value = policy_value;
   }
-  
+
   policy_type(): number {
     return this._policy_type;
   }
-  
+
   copy(): PolicyInterface {
     return new Policy(this._policy_type, this._policy_value);
   }
-  
+
   destroy(): void {
     // In TypeScript with garbage collection, this is a no-op
     // In a complete CORBA implementation, this would release resources
   }
-  
+
   /**
    * Get the policy value
    */
   value<T>(): T {
     return this._policy_value as T;
   }
-  
+
   /**
    * Check if this policy is equal to another
    */
@@ -97,11 +98,11 @@ export class Policy extends ObjectReference implements PolicyInterface {
     if (!(other instanceof Policy)) {
       return false;
     }
-    
+
     if (this._policy_type !== other._policy_type) {
       return false;
     }
-    
+
     // This is a simplified comparison
     // A complete implementation would need to compare the policy values properly
     return JSON.stringify(this._policy_value) === JSON.stringify(other._policy_value);
@@ -113,7 +114,7 @@ export class Policy extends ObjectReference implements PolicyInterface {
  */
 export class PolicyError extends CORBA.SystemException {
   reason: number;
-  
+
   constructor(reason: number) {
     super("PolicyError", 0, CORBA.CompletionStatus.COMPLETED_NO);
     this.name = "PolicyError";
@@ -129,12 +130,12 @@ export enum PolicyErrorCode {
   UNSUPPORTED_POLICY = 1,
   BAD_POLICY_TYPE = 2,
   BAD_POLICY_VALUE = 3,
-  UNSUPPORTED_POLICY_VALUE = 4
+  UNSUPPORTED_POLICY_VALUE = 4,
 }
 
 /**
  * Create a policy with the specified type and value
  */
-export function create_policy(policy_type: number, policy_value: any): Policy {
+export function create_policy(policy_type: number, policy_value: unknown): Policy {
   return new Policy(policy_type, policy_value);
 }

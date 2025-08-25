@@ -4,7 +4,7 @@
  */
 
 import { CORBA } from "./types.ts";
-import { ObjectReference, Object } from "./object.ts";
+import { ObjectReference } from "./object.ts";
 import { ORB_instance } from "./orb.ts";
 
 /**
@@ -25,7 +25,7 @@ export type Name = NameComponent[];
  */
 export enum BindingType {
   nobject,
-  ncontext
+  ncontext,
 }
 
 /**
@@ -49,47 +49,47 @@ export interface NamingContext extends CORBA.ObjectRef {
    * Bind an object to a name within this context
    */
   bind(n: Name, obj: CORBA.ObjectRef): Promise<void>;
-  
+
   /**
    * Bind a naming context to a name within this context
    */
   bind_context(n: Name, nc: NamingContext): Promise<void>;
-  
+
   /**
    * Rebind an object to a name within this context
    */
   rebind(n: Name, obj: CORBA.ObjectRef): Promise<void>;
-  
+
   /**
    * Rebind a naming context to a name within this context
    */
   rebind_context(n: Name, nc: NamingContext): Promise<void>;
-  
+
   /**
    * Resolve a name to an object reference
    */
   resolve(n: Name): Promise<CORBA.ObjectRef>;
-  
+
   /**
    * Unbind a name from this context
    */
   unbind(n: Name): Promise<void>;
-  
+
   /**
    * Create a new context
    */
   new_context(): Promise<NamingContext>;
-  
+
   /**
    * Create a new subcontext
    */
   bind_new_context(n: Name): Promise<NamingContext>;
-  
+
   /**
    * Destroy this context
    */
   destroy(): Promise<void>;
-  
+
   /**
    * List the bindings in this context
    */
@@ -110,7 +110,7 @@ export interface BindingIterator extends CORBA.ObjectRef {
     b: Binding;
     success: boolean;
   }>;
-  
+
   /**
    * Get the next n bindings
    */
@@ -118,7 +118,7 @@ export interface BindingIterator extends CORBA.ObjectRef {
     bl: BindingList;
     success: boolean;
   }>;
-  
+
   /**
    * Destroy this iterator
    */
@@ -133,17 +133,17 @@ export interface NamingContextExt extends NamingContext {
    * Convert a string name to a Name
    */
   to_name(sn: string): Promise<Name>;
-  
+
   /**
    * Convert a Name to a string
    */
   to_string(n: Name): Promise<string>;
-  
+
   /**
    * Convert a URL to a string name
    */
   to_url(addr: string, sn: string): Promise<string>;
-  
+
   /**
    * Resolve a stringified name to an object reference
    */
@@ -154,19 +154,20 @@ export interface NamingContextExt extends NamingContext {
  * Implementation of NamingContext
  */
 export class NamingContextImpl extends ObjectReference implements NamingContext {
+  [key: string]: unknown;
   private _bindings: Map<string, { obj: CORBA.ObjectRef; type: BindingType }> = new Map();
-  
+
   constructor() {
     super("IDL:omg.org/CosNaming/NamingContext:1.0");
   }
-  
+
   /**
    * Get a string key from a Name
    */
   private getKey(n: Name): string {
-    return n.map(component => `${component.id}.${component.kind}`).join("/");
+    return n.map((component) => `${component.id}.${component.kind}`).join("/");
   }
-  
+
   /**
    * Get the parent context and last component of a Name
    */
@@ -174,23 +175,23 @@ export class NamingContextImpl extends ObjectReference implements NamingContext 
     if (n.length === 0) {
       throw new CORBA.BAD_PARAM("Empty name");
     }
-    
+
     if (n.length === 1) {
       return { parent: this, last: n[0] };
     }
-    
+
     const prefix = n.slice(0, n.length - 1);
     const last = n[n.length - 1];
-    
+
     const context = await this.resolve(prefix) as NamingContext;
     return { parent: context, last };
   }
-  
+
   async bind(n: Name, obj: CORBA.ObjectRef): Promise<void> {
     if (n.length === 0) {
       throw new CORBA.BAD_PARAM("Empty name");
     }
-    
+
     if (n.length === 1) {
       const key = this.getKey(n);
       if (this._bindings.has(key)) {
@@ -199,16 +200,16 @@ export class NamingContextImpl extends ObjectReference implements NamingContext 
       this._bindings.set(key, { obj, type: BindingType.nobject });
       return;
     }
-    
+
     const { parent, last } = await this.getContext(n);
     await parent.bind([last], obj);
   }
-  
+
   async bind_context(n: Name, nc: NamingContext): Promise<void> {
     if (n.length === 0) {
       throw new CORBA.BAD_PARAM("Empty name");
     }
-    
+
     if (n.length === 1) {
       const key = this.getKey(n);
       if (this._bindings.has(key)) {
@@ -217,77 +218,77 @@ export class NamingContextImpl extends ObjectReference implements NamingContext 
       this._bindings.set(key, { obj: nc, type: BindingType.ncontext });
       return;
     }
-    
+
     const { parent, last } = await this.getContext(n);
     await parent.bind_context([last], nc);
   }
-  
+
   async rebind(n: Name, obj: CORBA.ObjectRef): Promise<void> {
     if (n.length === 0) {
       throw new CORBA.BAD_PARAM("Empty name");
     }
-    
+
     if (n.length === 1) {
       const key = this.getKey(n);
       this._bindings.set(key, { obj, type: BindingType.nobject });
       return;
     }
-    
+
     const { parent, last } = await this.getContext(n);
     await parent.rebind([last], obj);
   }
-  
+
   async rebind_context(n: Name, nc: NamingContext): Promise<void> {
     if (n.length === 0) {
       throw new CORBA.BAD_PARAM("Empty name");
     }
-    
+
     if (n.length === 1) {
       const key = this.getKey(n);
       this._bindings.set(key, { obj: nc, type: BindingType.ncontext });
       return;
     }
-    
+
     const { parent, last } = await this.getContext(n);
     await parent.rebind_context([last], nc);
   }
-  
-  async resolve(n: Name): Promise<CORBA.ObjectRef> {
+
+  resolve(n: Name): Promise<CORBA.ObjectRef> {
     if (n.length === 0) {
-      throw new CORBA.BAD_PARAM("Empty name");
+      return Promise.reject(new CORBA.BAD_PARAM("Empty name"));
     }
-    
+
     if (n.length === 1) {
       const key = this.getKey(n);
       const binding = this._bindings.get(key);
       if (!binding) {
-        throw new CORBA.BAD_PARAM(`Name not bound: ${key}`);
+        return Promise.reject(new CORBA.BAD_PARAM(`Name not bound: ${key}`));
       }
-      return binding.obj;
+      return Promise.resolve(binding.obj);
     }
-    
+
     // Resolve the first component and delegate
     const first = n[0];
     const key = this.getKey([first]);
     const binding = this._bindings.get(key);
-    
+
     if (!binding) {
-      throw new CORBA.BAD_PARAM(`Name not bound: ${key}`);
+      return Promise.reject(new CORBA.BAD_PARAM(`Name not bound: ${key}`));
     }
-    
+
     if (binding.type !== BindingType.ncontext) {
-      throw new CORBA.BAD_PARAM(`Not a context: ${key}`);
+      return Promise.reject(new CORBA.BAD_PARAM(`Not a context: ${key}`));
     }
-    
+
     const context = binding.obj as NamingContext;
     return context.resolve(n.slice(1));
   }
-  
+
   async unbind(n: Name): Promise<void> {
     if (n.length === 0) {
       throw new CORBA.BAD_PARAM("Empty name");
     }
-    
+
     if (n.length === 1) {
       const key = this.getKey(n);
       if (!this._bindings.has(key)) {
@@ -296,63 +297,64 @@ export class NamingContextImpl extends ObjectReference implements NamingContext 
       this._bindings.delete(key);
       return;
     }
-    
+
     const { parent, last } = await this.getContext(n);
     await parent.unbind([last]);
   }
-  
-  async new_context(): Promise<NamingContext> {
-    return new NamingContextImpl();
+
+  new_context(): Promise<NamingContext> {
+    return Promise.resolve(new NamingContextImpl());
   }
-  
+
   async bind_new_context(n: Name): Promise<NamingContext> {
     const ctx = await this.new_context();
     await this.bind_context(n, ctx);
     return ctx;
   }
-  
-  async destroy(): Promise<void> {
+
+  destroy(): Promise<void> {
     // Check if the context is empty
     if (this._bindings.size > 0) {
-      throw new CORBA.BAD_PARAM("Context not empty");
+      return Promise.reject(new CORBA.BAD_PARAM("Context not empty"));
     }
-    
+
     // Cleanup resources
     this._bindings.clear();
+    return Promise.resolve();
   }
-  
-  async list(how_many: number): Promise<{ bl: BindingList; bi: BindingIterator }> {
+
+  list(how_many: number): Promise<{ bl: BindingList; bi: BindingIterator }> {
     const all_bindings: BindingList = [];
-    
+
     // Convert the internal map to the expected format
     for (const [key, binding] of this._bindings.entries()) {
       // Parse the key back to a NameComponent
       const parts = key.split(".");
       const id = parts[0];
       const kind = parts.slice(1).join(".");
-      
+
       all_bindings.push({
         binding_name: [{ id, kind }],
-        binding_type: binding.type
+        binding_type: binding.type,
       });
     }
-    
+
     // If we have less bindings than requested, return them all
     if (all_bindings.length <= how_many) {
-      return {
+      return Promise.resolve({
         bl: all_bindings,
-        bi: new BindingIteratorImpl([]) // Empty iterator
-      };
+        bi: new BindingIteratorImpl([]), // Empty iterator
+      });
     }
-    
+
     // Otherwise, return the first how_many and create an iterator for the rest
     const returned_bindings = all_bindings.slice(0, how_many);
     const remaining_bindings = all_bindings.slice(how_many);
-    
-    return {
+
+    return Promise.resolve({
       bl: returned_bindings,
-      bi: new BindingIteratorImpl(remaining_bindings)
-    };
+      bi: new BindingIteratorImpl(remaining_bindings),
+    });
   }
 }
 
@@ -360,37 +362,42 @@ export class NamingContextImpl extends ObjectReference implements NamingContext 
  * Implementation of BindingIterator
  */
 export class BindingIteratorImpl extends ObjectReference implements BindingIterator {
+  [key: string]: unknown;
   private _bindings: BindingList;
-  
+
   constructor(bindings: BindingList) {
     super("IDL:omg.org/CosNaming/BindingIterator:1.0");
     this._bindings = bindings;
   }
-  
-  async next_one(): Promise<{ b: Binding; success: boolean }> {
+
+  next_one(): Promise<{ b: Binding; success: boolean }> {
     if (this._bindings.length === 0) {
-      return { b: { binding_name: [], binding_type: BindingType.nobject }, success: false };
+      return Promise.resolve({
+        b: { binding_name: [], binding_type: BindingType.nobject },
+        success: false,
+      });
     }
-    
+
     const b = this._bindings.shift()!;
-    return { b, success: true };
+    return Promise.resolve({ b, success: true });
   }
-  
-  async next_n(how_many: number): Promise<{ bl: BindingList; success: boolean }> {
+
+  next_n(how_many: number): Promise<{ bl: BindingList; success: boolean }> {
     if (this._bindings.length === 0) {
-      return { bl: [], success: false };
+      return Promise.resolve({ bl: [], success: false });
     }
-    
+
     const count = Math.min(how_many, this._bindings.length);
     const bl = this._bindings.slice(0, count);
     this._bindings = this._bindings.slice(count);
-    
-    return { bl, success: true };
+
+    return Promise.resolve({ bl, success: true });
   }
-  
-  async destroy(): Promise<void> {
+
+  destroy(): Promise<void> {
     // Clear the internal list
     this._bindings = [];
+    return Promise.resolve();
   }
 }
 
@@ -398,14 +405,15 @@ export class BindingIteratorImpl extends ObjectReference implements BindingItera
  * Implementation of NamingContextExt
  */
 export class NamingContextExtImpl extends NamingContextImpl implements NamingContextExt {
+  [key: string]: unknown;
   constructor() {
     super();
   }
-  
-  async to_name(sn: string): Promise<Name> {
+
+  to_name(sn: string): Promise<Name> {
     // Parse a stringified name like "id1.kind1/id2.kind2"
     const components = sn.split("/");
-    
+
     const name: Name = [];
     for (const component of components) {
       const parts = component.split(".");
@@ -413,20 +421,20 @@ export class NamingContextExtImpl extends NamingContextImpl implements NamingCon
       const kind = parts.length > 1 ? parts.slice(1).join(".") : "";
       name.push({ id, kind });
     }
-    
-    return name;
+
+    return Promise.resolve(name);
   }
-  
-  async to_string(n: Name): Promise<string> {
+
+  to_string(n: Name): Promise<string> {
     // Convert a Name to a string like "id1.kind1/id2.kind2"
-    return n.map(component => `${component.id}.${component.kind}`).join("/");
+    return Promise.resolve(n.map((component) => `${component.id}.${component.kind}`).join("/"));
   }
-  
-  async to_url(addr: string, sn: string): Promise<string> {
+
+  to_url(addr: string, sn: string): Promise<string> {
     // Convert an address and stringified name to a corbaname URL
-    return `corbaname:${addr}#${sn}`;
+    return Promise.resolve(`corbaname:${addr}#${sn}`);
   }
-  
+
   async resolve_str(sn: string): Promise<CORBA.ObjectRef> {
     const name = await this.to_name(sn);
     return this.resolve(name);
@@ -453,9 +461,9 @@ export function create_naming_context_ext(): NamingContextExt {
 export async function init_naming_service(): Promise<NamingContextExt> {
   const orb = ORB_instance();
   const root_context = create_naming_context_ext();
-  
+
   // Register the root naming context with the ORB
   await orb.register_initial_reference("NameService", root_context);
-  
+
   return root_context;
 }

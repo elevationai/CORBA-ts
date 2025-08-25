@@ -26,7 +26,7 @@ import * as CORBA from "https://deno.land/x/corba_ts/mod.ts";
 ## Basic Usage
 
 ```typescript
-import { init, ORB_instance, getRootPOA, CORBA } from "https://deno.land/x/corba_ts/mod.ts";
+import { CORBA, getRootPOA, init, ORB_instance } from "https://deno.land/x/corba_ts/mod.ts";
 import { Servant } from "https://deno.land/x/corba_ts/src/poa.ts";
 
 // Initialize CORBA runtime
@@ -47,7 +47,7 @@ class HelloServant extends Servant {
   _repository_id(): string {
     return "IDL:Hello:1.0";
   }
-  
+
   sayHello(name: string): string {
     return `Hello, ${name}!`;
   }
@@ -73,7 +73,7 @@ await orb.run();
 ## Creating a Client
 
 ```typescript
-import { init, ORB_instance, CORBA } from "https://deno.land/x/corba_ts/mod.ts";
+import { CORBA, init, ORB_instance } from "https://deno.land/x/corba_ts/mod.ts";
 
 // Initialize CORBA runtime
 await init();
@@ -206,8 +206,8 @@ const structTC = TypeCode.create_struct_tc(
   "MyStruct",
   [
     { name: "field1", type: new TypeCode(TypeCode.Kind.tk_string) },
-    { name: "field2", type: new TypeCode(TypeCode.Kind.tk_long) }
-  ]
+    { name: "field2", type: new TypeCode(TypeCode.Kind.tk_long) },
+  ],
 );
 ```
 
@@ -238,11 +238,11 @@ class MyValue extends ValueBase {
   constructor(public data: string) {
     super();
   }
-  
+
   _type_id(): string {
     return "IDL:MyValue:1.0";
   }
-  
+
   _copy_value(): ValueBase {
     return new MyValue(this.data);
   }
