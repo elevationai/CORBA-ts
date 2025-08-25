@@ -3,8 +3,15 @@
  * Based on CORBA 3.4 specification
  */
 
+// Export all GIOP types and classes
+export * from "./giop/types.ts";
+export * from "./giop/messages.ts";
+export * from "./giop/ior.ts";
+export * from "./giop/connection.ts";
+export * from "./giop/transport.ts";
+
 /**
- * GIOP Message Types
+ * Legacy GIOP Message Types (deprecated, use giop/types.ts)
  */
 export enum GIOPMessageType {
   Request = 0,

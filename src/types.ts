@@ -181,4 +181,18 @@ export namespace CORBA {
       this.name = "CORBA.INTERNAL";
     }
   }
+
+  export class BAD_OPERATION extends SystemException {
+    constructor(
+      minor: number | string = 0,
+      completed: CompletionStatus = CompletionStatus.COMPLETED_NO,
+    ) {
+      super(
+        typeof minor === "string" ? `CORBA.BAD_OPERATION: ${minor}` : "CORBA.BAD_OPERATION",
+        minor,
+        completed,
+      );
+      this.name = "CORBA.BAD_OPERATION";
+    }
+  }
 }

@@ -56,6 +56,13 @@ export abstract class GIOPMessage {
   }
 
   /**
+   * Get GIOP version
+   */
+  get version(): GIOPVersion {
+    return this.header.version;
+  }
+
+  /**
    * Serialize the message to a buffer
    */
   abstract serialize(): Uint8Array;

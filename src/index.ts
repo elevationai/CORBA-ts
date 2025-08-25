@@ -36,6 +36,9 @@ export * from "./dii.ts";
 // Export Naming Service
 export * from "./naming.ts";
 
+// Export Proxy functionality
+export * from "./proxy.ts";
+
 // Main initialization function
 import { init as initORB } from "./orb.ts";
 import { initPOA } from "./poa.ts";

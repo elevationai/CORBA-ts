@@ -7,6 +7,9 @@ import { CORBA } from "./types.ts";
 import { TypeCode } from "./typecode.ts";
 import { Policy } from "./policy.ts";
 import { ValueFactory } from "./valuetype.ts";
+import { GIOPServer, GIOPTransport } from "./giop/transport.ts";
+import { IORUtil } from "./giop/ior.ts";
+import { IOR } from "./giop/types.ts";
 
 /**
  * ORB initialization options
@@ -44,6 +47,11 @@ export interface ORB {
    * Run the ORB event loop
    */
   run(): Promise<void>;
+
+  /**
+   * Make a remote method invocation
+   */
+  invoke(target: CORBA.ObjectRef, operation: string, args: unknown[]): Promise<unknown>;
 
   /**
    * Convert a stringified object reference to an object
@@ -104,9 +112,12 @@ export class ORBImpl implements ORB {
   private _running: boolean = false;
   private _initial_references: Map<string, CORBA.ObjectRef> = new Map();
   private _value_factories: Map<string, ValueFactory> = new Map();
+  private _transport: GIOPTransport;
+  private _servers: Map<string, GIOPServer> = new Map();
 
   constructor(id: string = "default") {
     this._id = id;
+    this._transport = new GIOPTransport();
   }
 
   id(): string {
@@ -119,12 +130,20 @@ export class ORBImpl implements ORB {
     return Promise.resolve();
   }
 
-  shutdown(wait_for_completion: boolean): Promise<void> {
+  async shutdown(wait_for_completion: boolean): Promise<void> {
     this._running = false;
     if (wait_for_completion) {
       // Wait for all pending operations to complete
     }
-    return Promise.resolve();
+
+    // Close all servers
+    for (const server of this._servers.values()) {
+      await server.stop();
+    }
+    this._servers.clear();
+
+    // Close transport
+    await this._transport.close();
   }
 
   is_running(): boolean {
@@ -149,15 +168,54 @@ export class ORBImpl implements ORB {
     await new Promise((resolve) => setTimeout(resolve, 100)); // Simulate work
   }
 
-  string_to_object(_str: string): Promise<CORBA.ObjectRef> {
-    // Convert a stringified IOR to an object reference
-    // In a real implementation, this would parse the IOR format
-    return Promise.resolve({} as CORBA.ObjectRef);
+  string_to_object(str: string): Promise<CORBA.ObjectRef> {
+    // Parse IOR or corbaloc URL
+    let ior: IOR;
+
+    if (str.startsWith("IOR:")) {
+      ior = IORUtil.fromString(str);
+    } else if (str.startsWith("corbaloc:")) {
+      ior = IORUtil.fromString(str);
+    } else {
+      throw new CORBA.BAD_PARAM(`Invalid object reference format: ${str}`);
+    }
+
+    // Create object reference with IOR
+    const objRef: CORBA.ObjectRef = {
+      _ior: ior,
+      _is_a: (repositoryId: string): Promise<boolean> => {
+        // Implementation would check if object supports the interface
+        return Promise.resolve(ior.typeId === repositoryId);
+      },
+      _hash: (maximum: number): number => {
+        // Simple hash based on IOR string
+        let hash = 0;
+        const iorStr = IORUtil.toString(ior);
+        for (let i = 0; i < iorStr.length; i++) {
+          hash = ((hash << 5) - hash + iorStr.charCodeAt(i)) & 0xffffffff;
+        }
+        return Math.abs(hash) % maximum;
+      },
+      _is_equivalent: (other: CORBA.ObjectRef): boolean => {
+        return IORUtil.toString(ior) === IORUtil.toString((other as { _ior: IOR })._ior);
+      },
+      _non_existent: (): Promise<boolean> => {
+        // Would ping the object to check if it exists
+        return Promise.resolve(false);
+      },
+    };
+
+    return Promise.resolve(objRef);
   }
 
-  object_to_string(_obj: CORBA.ObjectRef): Promise<string> {
-    // Convert an object reference to a stringified IOR
-    return Promise.resolve("IOR:...");
+  object_to_string(obj: CORBA.ObjectRef): Promise<string> {
+    // Extract IOR from object reference
+    const ior = (obj as { _ior: IOR })._ior;
+    if (!ior) {
+      throw new CORBA.BAD_PARAM("Object reference does not contain IOR");
+    }
+
+    return Promise.resolve(IORUtil.toString(ior));
   }
 
   resolve_initial_references(id: string): Promise<CORBA.ObjectRef> {
@@ -204,6 +262,35 @@ export class ORBImpl implements ORB {
 
   create_policy(type: number, value: unknown): Policy {
     return new Policy(type, value);
+  }
+
+  async invoke(target: CORBA.ObjectRef, operation: string, args: unknown[]): Promise<unknown> {
+    const ior = (target as { _ior: IOR })._ior;
+    if (!ior) {
+      throw new CORBA.BAD_PARAM("Object reference does not contain IOR");
+    }
+
+    // Serialize arguments using CDR (simplified)
+    // In a real implementation, this would use proper CDR encoding
+    const requestBody = new TextEncoder().encode(JSON.stringify(args));
+
+    // Send request through transport
+    const reply = await this._transport.sendRequest(ior, operation, requestBody);
+
+    // Check reply status
+    if (reply.replyStatus === 0) { // NO_EXCEPTION
+      // Deserialize result (simplified)
+      const resultText = new TextDecoder().decode(reply.body);
+      return JSON.parse(resultText);
+    } else if (reply.replyStatus === 2) { // SYSTEM_EXCEPTION
+      const sysEx = reply.getSystemException();
+      if (sysEx) {
+        throw new CORBA.SystemException(sysEx.exceptionId, sysEx.minor, sysEx.completionStatus);
+      }
+      throw new CORBA.INTERNAL("System exception with no details");
+    } else {
+      throw new CORBA.INTERNAL(`Unhandled reply status: ${reply.replyStatus}`);
+    }
   }
 }
 
