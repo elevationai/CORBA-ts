@@ -1,7 +1,23 @@
 {
-  "name": "corba_ts",
-  "version": "0.1.0",
+  "name": "@eai/corba",
+  "version": "1.0.0",
+  "license": "MIT",
   "exports": "./mod.ts",
+  "publish": {
+    "include": [
+      "mod.ts",
+      "src/**/*.ts",
+      "README.md",
+      "LICENSE"
+    ],
+    "exclude": [
+      "tests/**/*",
+      "examples/**/*",
+      "specs/**/*",
+      "*.test.ts",
+      "*_test.ts"
+    ]
+  },
   "fmt": {
     "useTabs": false,
     "lineWidth": 100,

@@ -19,15 +19,18 @@ A TypeScript implementation of CORBA 3.4 for Deno, following the OMG CORBA speci
 ## Installation
 
 ```typescript
-// Import from Deno.land
+// Import from JSR
+import * as CORBA from "jsr:@eai/corba";
+
+// Or import from Deno.land
 import * as CORBA from "https://deno.land/x/corba_ts/mod.ts";
 ```
 
 ## Basic Usage
 
 ```typescript
-import { CORBA, getRootPOA, init, ORB_instance } from "https://deno.land/x/corba_ts/mod.ts";
-import { Servant } from "https://deno.land/x/corba_ts/src/poa.ts";
+import { CORBA, getRootPOA, init, ORB_instance } from "jsr:@eai/corba";
+import { Servant } from "jsr:@eai/corba/poa";
 
 // Initialize CORBA runtime
 await init();
