@@ -3,7 +3,7 @@
  * Handles TCP connections for GIOP message transport
  */
 
-import { GIOPMessage, GIOPRequest } from "./messages.ts";
+import { GIOPMessage, GIOPReply, GIOPRequest } from "./messages.ts";
 import { IOR } from "./types.ts";
 import { IORUtil } from "./ior.ts";
 
@@ -97,6 +97,8 @@ export class IIOPConnectionImpl implements IIOPConnection {
 
     this._state = ConnectionState.CONNECTING;
 
+    let timeoutTimer: number | undefined;
+    
     try {
       // Create connection with timeout
       const connectPromise = Deno.connect({
@@ -105,11 +107,16 @@ export class IIOPConnectionImpl implements IIOPConnection {
         transport: "tcp",
       });
 
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Connection timeout")), this._config.connectTimeout)
-      );
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutTimer = setTimeout(() => reject(new Error("Connection timeout")), this._config.connectTimeout);
+      });
 
       this._conn = await Promise.race([connectPromise, timeoutPromise]);
+      
+      // Clear the timeout timer after successful connection
+      if (timeoutTimer !== undefined) {
+        clearTimeout(timeoutTimer);
+      }
 
       // Configure socket options if available
       if (this._config.keepAlive && "setKeepAlive" in this._conn) {
@@ -124,6 +131,11 @@ export class IIOPConnectionImpl implements IIOPConnection {
       // Start background reading
       this._startReading();
     } catch (error) {
+      // Clear the timeout timer on failure
+      if (timeoutTimer !== undefined) {
+        clearTimeout(timeoutTimer);
+      }
+      
       this._state = ConnectionState.DISCONNECTED;
       this._conn = null;
       throw new Error(
@@ -260,10 +272,22 @@ export class IIOPConnectionImpl implements IIOPConnection {
       this._readBuffer = this._readBuffer.subarray(totalSize);
 
       try {
-        // Deserialize the message (this is a simplified approach)
-        // In a real implementation, we'd need to determine the message type first
-        // For now, create a request message to parse
-        const message = new GIOPRequest({ major: 1, minor: 2 });
+        // Check message type to create appropriate message object
+        const messageType = messageData[7];
+        let message: GIOPMessage;
+        
+        switch (messageType) {
+          case 0: // Request
+            message = new GIOPRequest({ major: messageData[4], minor: messageData[5] });
+            break;
+          case 1: // Reply
+            message = new GIOPReply({ major: messageData[4], minor: messageData[5] });
+            break;
+          default:
+            console.error(`Unsupported message type: ${messageType}`);
+            continue;
+        }
+        
         message.deserialize(messageData);
 
         // Deliver message to waiting reader or queue it
@@ -286,6 +310,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
  */
 export class ConnectionManager {
   private _connections: Map<string, IIOPConnectionImpl> = new Map();
+  private _connectingPromises: Map<string, Promise<IIOPConnection>> = new Map();
   private _config: ConnectionConfig;
   private _cleanupTimer: number | null = null;
   private _maxIdleTime: number = 300000; // 5 minutes
@@ -299,8 +324,14 @@ export class ConnectionManager {
   /**
    * Get or create a connection to the specified endpoint
    */
-  async getConnection(endpoint: ConnectionEndpoint): Promise<IIOPConnection> {
+  getConnection(endpoint: ConnectionEndpoint): Promise<IIOPConnection> {
     const key = `${endpoint.host}:${endpoint.port}`;
+
+    // Check if we're already connecting to this endpoint
+    const connectingPromise = this._connectingPromises.get(key);
+    if (connectingPromise) {
+      return connectingPromise;
+    }
 
     let connection = this._connections.get(key);
     if (!connection || connection.state === ConnectionState.CLOSED) {
@@ -309,10 +340,20 @@ export class ConnectionManager {
     }
 
     if (!connection.isConnected) {
-      await connection.connect();
+      // Store the connecting promise to prevent concurrent connect attempts
+      const connectPromise = connection.connect().then(() => {
+        this._connectingPromises.delete(key);
+        return connection as IIOPConnection;
+      }).catch((error) => {
+        this._connectingPromises.delete(key);
+        throw error;
+      });
+      
+      this._connectingPromises.set(key, connectPromise);
+      return connectPromise;
     }
 
-    return connection;
+    return Promise.resolve(connection);
   }
 
   /**
@@ -323,7 +364,7 @@ export class ConnectionManager {
     if (!endpoint) {
       throw new Error("No IIOP endpoint found in IOR");
     }
-    return Promise.resolve(this.getConnection(endpoint));
+    return this.getConnection(endpoint);
   }
 
   /**
@@ -334,6 +375,10 @@ export class ConnectionManager {
       clearInterval(this._cleanupTimer);
       this._cleanupTimer = null;
     }
+
+    // Wait for any pending connections to complete or fail
+    await Promise.allSettled(Array.from(this._connectingPromises.values()));
+    this._connectingPromises.clear();
 
     const closePromises = Array.from(this._connections.values()).map((conn) => conn.close());
     await Promise.all(closePromises);

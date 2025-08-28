@@ -5,7 +5,7 @@
 
 import { GIOPMessage, GIOPReply, GIOPRequest } from "./messages.ts";
 import { ConnectionEndpoint, ConnectionManager, IIOPConnection } from "./connection.ts";
-import { GIOPVersion, IOR, ServiceContext } from "./types.ts";
+import { GIOPVersion, GIOPMessageType, IOR, ReplyStatusType, ServiceContext } from "./types.ts";
 import { IORUtil } from "./ior.ts";
 
 /**
@@ -35,6 +35,8 @@ export class GIOPTransport {
   private _config: Required<TransportConfig>;
   private _nextRequestId: number = 1;
   private _pendingRequests: Map<number, RequestContext> = new Map();
+  private _retryTimers: Set<number> = new Set();
+  private _closed: boolean = false;
 
   constructor(config: TransportConfig = {}) {
     this._connectionManager = new ConnectionManager();
@@ -126,12 +128,20 @@ export class GIOPTransport {
    * Close all connections and cleanup
    */
   async close(): Promise<void> {
+    this._closed = true;
+    
     // Cancel all pending requests
     for (const [_requestId, context] of this._pendingRequests) {
       clearTimeout(context.timer);
       context.reject(new Error("Transport closed"));
     }
     this._pendingRequests.clear();
+
+    // Clear retry timers
+    for (const timer of this._retryTimers) {
+      clearTimeout(timer);
+    }
+    this._retryTimers.clear();
 
     await this._connectionManager.closeAll();
   }
@@ -148,9 +158,15 @@ export class GIOPTransport {
       } catch (error) {
         lastError = error as Error;
 
-        if (attempt < this._config.maxRetries) {
+        if (attempt < this._config.maxRetries && !this._closed) {
           // Wait before retry
-          await new Promise((resolve) => setTimeout(resolve, this._config.retryDelay));
+          await new Promise<void>((resolve) => {
+            const timer = setTimeout(() => {
+              this._retryTimers.delete(timer);
+              resolve();
+            }, this._config.retryDelay);
+            this._retryTimers.add(timer);
+          });
         }
       }
     }
@@ -191,7 +207,7 @@ export class GIOPTransport {
 
   private async _processReplies(connection: IIOPConnection): Promise<void> {
     try {
-      while (connection.isConnected) {
+      while (connection.isConnected && !this._closed) {
         const message = await connection.receive();
 
         if (message instanceof GIOPReply) {
@@ -204,7 +220,9 @@ export class GIOPTransport {
         }
       }
     } catch (error) {
-      console.error("Error processing replies:", error);
+      if (!this._closed) {
+        console.error("Error processing replies:", error);
+      }
     }
   }
 
@@ -283,6 +301,13 @@ export class GIOPServer {
   }
 
   /**
+   * Get the actual address the server is listening on
+   */
+  getAddress(): Deno.NetAddr | null {
+    return this._listener?.addr as Deno.NetAddr || null;
+  }
+
+  /**
    * Stop the server
    */
   stop(): Promise<void> {
@@ -354,6 +379,24 @@ export class GIOPServer {
 
   private async _processMessage(messageData: Uint8Array, conn: Deno.TcpConn): Promise<void> {
     try {
+      // Check GIOP magic bytes
+      if (
+        messageData[0] !== 0x47 || messageData[1] !== 0x49 ||
+        messageData[2] !== 0x4F || messageData[3] !== 0x50
+      ) {
+        console.error("Invalid GIOP magic bytes");
+        return;
+      }
+
+      // Check message type (byte 7)
+      const messageType = messageData[7];
+      
+      // Only handle Request messages
+      if (messageType !== GIOPMessageType.Request) {
+        console.warn(`Unexpected message type on server: ${messageType}`);
+        return;
+      }
+
       // Parse as request
       const request = new GIOPRequest();
       request.deserialize(messageData);
@@ -362,6 +405,12 @@ export class GIOPServer {
       const handler = this._handlers.get(request.operation);
       if (!handler) {
         console.warn(`No handler for operation: ${request.operation}`);
+        // Send exception reply
+        const errorReply = new GIOPReply(request.version);
+        errorReply.requestId = request.requestId;
+        errorReply.replyStatus = ReplyStatusType.SYSTEM_EXCEPTION;
+        const replyData = errorReply.serialize();
+        await conn.write(replyData);
         return;
       }
 
@@ -386,7 +435,8 @@ export class GIOPServer {
       // Send reply if expected
       if (request.responseExpected) {
         reply.requestId = request.requestId;
-        await connectionWrapper.send(reply);
+        const replyData = reply.serialize();
+        await conn.write(replyData);
       }
     } catch (error) {
       console.error("Error processing message:", error);

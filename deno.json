@@ -1,6 +1,6 @@
 {
   "name": "@eai/corba",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A TypeScript implementation of CORBA 3.4 for Deno, providing Object Request Broker (ORB), GIOP/IIOP protocol support, and IDL mapping",
   "license": "MIT",
   "exports": "./mod.ts",
@@ -35,7 +35,7 @@
     }
   },
   "tasks": {
-    "test": "deno test",
+    "test": "deno test --allow-net --allow-read --allow-write",
     "lint": "deno lint",
     "fmt": "deno fmt"
   }

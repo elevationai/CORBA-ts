@@ -287,9 +287,12 @@ export class GIOPRequest extends GIOPMessage {
     this.readHeader(buffer);
 
     const cdr = new CDRInputStream(
-      buffer.slice(12),
+      buffer,
       this.isLittleEndian(),
     );
+    
+    // Start reading after the header
+    cdr.setPosition(12);
 
     if (this.header.version.minor <= 1) {
       this.deserializeRequest_1_0(cdr);
@@ -484,9 +487,12 @@ export class GIOPReply extends GIOPMessage {
     this.readHeader(buffer);
 
     const cdr = new CDRInputStream(
-      buffer.slice(12),
+      buffer,
       this.isLittleEndian(),
     );
+    
+    // Start reading after the header
+    cdr.setPosition(12);
 
     if (this.header.version.minor <= 1) {
       this.deserializeReply_1_0(cdr);
@@ -520,10 +526,9 @@ export class GIOPReply extends GIOPMessage {
     this.serviceContext = this.readServiceContext(cdr);
 
     // GIOP 1.2 aligns body to 8-byte boundary from start of GIOP message
-    // But the CDR stream starts AFTER the header, so we need to account for that
+    // The CDR stream now includes the header, so position is already absolute
     const beforeAlignPos = cdr.getPosition();
-    const totalPos = 12 + beforeAlignPos; // Add 12 bytes for GIOP header
-    const remainder = totalPos % 8;
+    const remainder = beforeAlignPos % 8;
     if (remainder !== 0) {
       const padding = 8 - remainder;
       cdr.skip(padding);
@@ -532,7 +537,7 @@ export class GIOPReply extends GIOPMessage {
     // Calculate actual body size
     // Message size includes everything after the header
     // We've read: request ID (4), reply status (4), service context, and alignment padding
-    const bytesReadSoFar = cdr.getPosition();
+    const bytesReadSoFar = cdr.getPosition() - 12; // Subtract header size to get body-relative position
     const bodySize = this.header.messageSize - bytesReadSoFar;
 
     // Read only the actual body bytes, not any trailing data
@@ -592,9 +597,12 @@ export class GIOPCancelRequest extends GIOPMessage {
     this.readHeader(buffer);
 
     const cdr = new CDRInputStream(
-      buffer.slice(12),
+      buffer,
       this.isLittleEndian(),
     );
+    
+    // Start reading after the header  
+    cdr.setPosition(12);
 
     this.requestId = cdr.readULong();
   }

@@ -30,7 +30,7 @@ jobs:
         run: deno check mod.ts
 
       - name: Run tests
-        run: deno test --allow-net --allow-read
+        run: deno task test
 
   publish:
     runs-on: ubuntu-latest

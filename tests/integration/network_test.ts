@@ -25,12 +25,6 @@ Deno.test("Network: Basic client-server communication", async () => {
     // Start server
     const server = await transport.startServer(TEST_ENDPOINT);
 
-    // Get the actual port assigned
-    // Note: In a real implementation, we'd need to expose the listener port
-    // For this test, we'll use a fixed port
-    const testPort = 8901;
-    const testEndpoint = { host: "127.0.0.1", port: testPort };
-
     // Create a simple echo handler
     server.registerHandler("echo", (request: GIOPRequest) => {
       const reply = new GIOPReply(request.version);
@@ -41,10 +35,15 @@ Deno.test("Network: Basic client-server communication", async () => {
 
     await server.start();
 
+    // Get the actual port assigned by the system
+    const actualAddr = server.getAddress();
+    assertExists(actualAddr, "Server should have an address");
+    const testEndpoint = { host: "127.0.0.1", port: actualAddr.port };
+
     // Give server time to start
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // Create test IOR
+    // Create test IOR with actual server address
     const ior = IORUtil.createSimpleIOR(
       "IDL:Test/Echo:1.0",
       testEndpoint.host,
@@ -68,12 +67,10 @@ Deno.test("Network: Basic client-server communication", async () => {
 
 Deno.test("Network: Multiple concurrent requests", async () => {
   const transport = new GIOPTransport();
-  const testPort = 8902;
-  const testEndpoint = { host: "127.0.0.1", port: testPort };
 
   try {
     // Start server
-    const server = await transport.startServer(testEndpoint);
+    const server = await transport.startServer(TEST_ENDPOINT);
 
     // Create a counter handler
     let counter = 0;
@@ -86,6 +83,12 @@ Deno.test("Network: Multiple concurrent requests", async () => {
     });
 
     await server.start();
+    
+    // Get actual server address
+    const actualAddr = server.getAddress();
+    assertExists(actualAddr, "Server should have an address");
+    const testEndpoint = { host: "127.0.0.1", port: actualAddr.port };
+    
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Create test IOR
@@ -125,12 +128,10 @@ Deno.test("Network: Multiple concurrent requests", async () => {
 
 Deno.test("Network: Oneway requests", async () => {
   const transport = new GIOPTransport();
-  const testPort = 8903;
-  const testEndpoint = { host: "127.0.0.1", port: testPort };
 
   try {
     // Start server
-    const server = await transport.startServer(testEndpoint);
+    const server = await transport.startServer(TEST_ENDPOINT);
 
     // Create a notification handler (no reply)
     const notifications: string[] = [];
@@ -145,6 +146,12 @@ Deno.test("Network: Oneway requests", async () => {
     });
 
     await server.start();
+    
+    // Get actual server address
+    const actualAddr = server.getAddress();
+    assertExists(actualAddr, "Server should have an address");
+    const testEndpoint = { host: "127.0.0.1", port: actualAddr.port };
+    
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Create test IOR
@@ -167,7 +174,7 @@ Deno.test("Network: Oneway requests", async () => {
     assertEquals(notifications.length, 3);
     assertEquals(notifications[0], "message1");
     assertEquals(notifications[1], "message2");
-    assertEquals(notifications[2], "message2");
+    assertEquals(notifications[2], "message3");
 
     await server.stop();
   } finally {
@@ -228,12 +235,10 @@ Deno.test("Network: ORB integration with proxies", async () => {
 
 Deno.test("Network: Connection pooling and reuse", async () => {
   const transport = new GIOPTransport();
-  const testPort = 8905;
-  const testEndpoint = { host: "127.0.0.1", port: testPort };
 
   try {
     // Start server
-    const server = await transport.startServer(testEndpoint);
+    const server = await transport.startServer(TEST_ENDPOINT);
 
     server.registerHandler("ping", (request: GIOPRequest) => {
       const reply = new GIOPReply(request.version);
@@ -243,6 +248,12 @@ Deno.test("Network: Connection pooling and reuse", async () => {
     });
 
     await server.start();
+    
+    // Get actual server address
+    const actualAddr = server.getAddress();
+    assertExists(actualAddr, "Server should have an address");
+    const testEndpoint = { host: "127.0.0.1", port: actualAddr.port };
+    
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Create test IOR
