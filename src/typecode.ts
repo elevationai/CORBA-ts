@@ -295,4 +295,59 @@ export namespace TypeCode {
     tc.set_param("name", name);
     return tc;
   }
+
+  /**
+   * Create a TypeCode for an enum
+   */
+  export function create_enum_tc(
+    id: string,
+    name: string,
+    members: string[],
+  ): TypeCode {
+    const tc = new TypeCode(Kind.tk_enum);
+    tc.set_param("id", id);
+    tc.set_param("name", name);
+    tc.set_param("members", members);
+    return tc;
+  }
+
+  /**
+   * Create a TypeCode for a union
+   */
+  export function create_union_tc(
+    id: string,
+    name: string,
+    discriminator_type: TypeCode,
+    members: Array<{
+      label: unknown;
+      name: string;
+      type: TypeCode;
+    }>,
+  ): TypeCode {
+    const tc = new TypeCode(Kind.tk_union);
+    tc.set_param("id", id);
+    tc.set_param("name", name);
+    tc.set_param("discriminator_type", discriminator_type);
+    tc.set_param("members", members);
+    return tc;
+  }
+
+  // Basic TypeCode constants
+  export const TC_void = new TypeCode(Kind.tk_void);
+  export const TC_short = new TypeCode(Kind.tk_short);
+  export const TC_long = new TypeCode(Kind.tk_long);
+  export const TC_longlong = new TypeCode(Kind.tk_longlong);
+  export const TC_ushort = new TypeCode(Kind.tk_ushort);
+  export const TC_ulong = new TypeCode(Kind.tk_ulong);
+  export const TC_ulonglong = new TypeCode(Kind.tk_ulonglong);
+  export const TC_float = new TypeCode(Kind.tk_float);
+  export const TC_double = new TypeCode(Kind.tk_double);
+  export const TC_longdouble = new TypeCode(Kind.tk_longdouble);
+  export const TC_char = new TypeCode(Kind.tk_char);
+  export const TC_wchar = new TypeCode(Kind.tk_wchar);
+  export const TC_boolean = new TypeCode(Kind.tk_boolean);
+  export const TC_octet = new TypeCode(Kind.tk_octet);
+  export const TC_any = new TypeCode(Kind.tk_any);
+  export const TC_string = new TypeCode(Kind.tk_string);
+  export const TC_wstring = new TypeCode(Kind.tk_wstring);
 }

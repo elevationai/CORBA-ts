@@ -30,14 +30,16 @@ export namespace CORBA {
   // Special types
   export type TypeCode = unknown; // Will be defined fully later
 
-  // ObjectRef is defined as an interface with known static members
+  // ObjectRef is a minimal interface for CORBA objects
+  // It does NOT include duplicate/release to avoid conflicts with CUSS IDL
   export interface ObjectRef {
-    // Minimum required interface for all CORBA objects
+    // Basic CORBA object methods (with underscore prefix to avoid conflicts)
     _is_a?: (repository_id: string) => Promise<boolean>;
     _non_existent?: () => Promise<boolean>;
     _is_equivalent?: (other_object: ObjectRef) => boolean;
     _hash?: (maximum: number) => number;
-    [key: string]: unknown; // Allow any other method
+    // Allow any other method/property
+    [key: string]: unknown;
   }
 
   // Sequence - maps to array in TypeScript

@@ -3,7 +3,7 @@
  * Handles TCP connections for GIOP message transport
  */
 
-import { GIOPMessage, GIOPReply, GIOPRequest } from "./messages.ts";
+import { GIOPMessage, GIOPReply, GIOPRequest, GIOPCloseConnection, GIOPMessageError } from "./messages.ts";
 import { IOR } from "./types.ts";
 import { IORUtil } from "./ior.ts";
 
@@ -62,7 +62,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
   private _readBuffer: Uint8Array = new Uint8Array(0);
   private _pendingMessages: GIOPMessage[] = [];
   private _readers: Array<(message: GIOPMessage) => void> = [];
-  private _lastUsed: number = Date.now();
+  _lastUsed: number = Date.now(); // Package-private for ConnectionManager access
 
   constructor(endpoint: ConnectionEndpoint, config: ConnectionConfig = {}) {
     this._endpoint = endpoint;
@@ -176,7 +176,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
 
     // If we have pending messages, return the first one
     if (this._pendingMessages.length > 0) {
-      return Promise.resolve(this._pendingMessages.shift()!);
+        return Promise.resolve(this._pendingMessages.shift()!);
     }
 
     // Otherwise, wait for a new message
@@ -222,7 +222,6 @@ export class IIOPConnectionImpl implements IIOPConnection {
           // Connection closed by peer
           break;
         }
-
         // Add to read buffer
         this._appendToBuffer(buffer.subarray(0, bytesRead));
 
@@ -257,9 +256,13 @@ export class IIOPConnectionImpl implements IIOPConnection {
         throw new Error("Invalid GIOP magic bytes");
       }
 
+      // Check byte order flag (bit 0 of flags byte)
+      const flags = this._readBuffer[6];
+      const isLittleEndian = (flags & 0x01) !== 0;
+      
       // Read message size from header (bytes 8-11)
       const view = new DataView(this._readBuffer.buffer, this._readBuffer.byteOffset + 8, 4);
-      const messageSize = view.getUint32(0, false); // Big-endian
+      const messageSize = view.getUint32(0, isLittleEndian);
       const totalSize = 12 + messageSize; // Header + body
 
       if (this._readBuffer.length < totalSize) {
@@ -283,13 +286,18 @@ export class IIOPConnectionImpl implements IIOPConnection {
           case 1: // Reply
             message = new GIOPReply({ major: messageData[4], minor: messageData[5] });
             break;
+          case 5: // CloseConnection
+            message = new GIOPCloseConnection({ major: messageData[4], minor: messageData[5] });
+            break;
+          case 6: // MessageError
+            message = new GIOPMessageError({ major: messageData[4], minor: messageData[5] });
+            break;
           default:
             console.error(`Unsupported message type: ${messageType}`);
             continue;
         }
         
         message.deserialize(messageData);
-
         // Deliver message to waiting reader or queue it
         if (this._readers.length > 0) {
           const reader = this._readers.shift()!;
@@ -318,7 +326,8 @@ export class ConnectionManager {
 
   constructor(config: ConnectionConfig = {}) {
     this._config = config;
-    this._startCleanupTimer();
+    // Don't start cleanup timer automatically to avoid leaks in tests
+    // Call startCleanupTimer() explicitly when needed
   }
 
   /**
@@ -401,13 +410,16 @@ export class ConnectionManager {
    * Get last used time for a connection
    */
   getLastUsed(connection: IIOPConnectionImpl): number {
-    return (connection as unknown as { _lastUsed: number })._lastUsed;
+    return connection._lastUsed;
   }
 
   /**
    * Start periodic cleanup of idle connections
    */
-  private _startCleanupTimer(): void {
+  startCleanupTimer(): void {
+    if (this._cleanupTimer !== null) {
+      return; // Already started
+    }
     this._cleanupTimer = setInterval(() => {
       this._cleanupIdleConnections();
     }, this._cleanupInterval);
@@ -451,6 +463,6 @@ export class ConnectionManager {
       clearInterval(this._cleanupTimer);
     }
     this._cleanupInterval = ms;
-    this._startCleanupTimer();
+    this.startCleanupTimer();
   }
 }

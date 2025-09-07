@@ -31,17 +31,10 @@ export class NamingClient {
   private _orb: ORB;
   private _rootContext: NamingContextExt | null = null;
   private _proxyFactory: ProxyFactory;
-  private _config: Required<
-    Omit<NamingClientConfig, "orb" | "namingServiceIOR" | "namingServiceEndpoint">
-  >;
 
   constructor(config: NamingClientConfig) {
     this._orb = config.orb || ORB_instance();
     this._proxyFactory = new ProxyFactory(this._orb);
-    this._config = {
-      timeout: config.timeout ?? 30000,
-      retries: config.retries ?? 3,
-    };
   }
 
   /**

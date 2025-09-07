@@ -3,7 +3,7 @@
  * High-level interface for sending and receiving GIOP messages
  */
 
-import { GIOPMessage, GIOPReply, GIOPRequest } from "./messages.ts";
+import { GIOPMessage, GIOPReply, GIOPRequest, GIOPCloseConnection, GIOPMessageError } from "./messages.ts";
 import { ConnectionEndpoint, ConnectionManager, IIOPConnection } from "./connection.ts";
 import { GIOPVersion, GIOPMessageType, IOR, ReplyStatusType, ServiceContext } from "./types.ts";
 import { IORUtil } from "./ior.ts";
@@ -174,6 +174,8 @@ export class GIOPTransport {
     throw lastError || new Error("Request failed after retries");
   }
 
+  private _processingConnections = new WeakSet<IIOPConnection>();
+
   private _sendRequestOnce(
     connection: IIOPConnection,
     request: GIOPRequest,
@@ -200,8 +202,11 @@ export class GIOPTransport {
         reject(error);
       });
 
-      // Start processing replies for this connection
-      this._processReplies(connection);
+      // Start processing replies for this connection (only once per connection)
+      if (!this._processingConnections.has(connection)) {
+        this._processingConnections.add(connection);
+        this._processReplies(connection);
+      }
     });
   }
 
@@ -217,6 +222,28 @@ export class GIOPTransport {
             clearTimeout(context.timer);
             context.resolve(message);
           }
+        } else if (message instanceof GIOPCloseConnection) {
+          console.error("Server closed connection - rejecting all pending requests");
+          // Reject all pending requests for this connection
+          for (const [requestId, context] of this._pendingRequests) {
+            this._pendingRequests.delete(requestId);
+            clearTimeout(context.timer);
+            context.reject(new Error("Connection closed by server"));
+          }
+          // Close the connection
+          await connection.disconnect();
+          break;
+        } else if (message instanceof GIOPMessageError) {
+          console.error("Received MessageError from server - protocol error");
+          // Reject all pending requests due to protocol error
+          for (const [requestId, context] of this._pendingRequests) {
+            this._pendingRequests.delete(requestId);
+            clearTimeout(context.timer);
+            context.reject(new Error("GIOP protocol error"));
+          }
+          // Close the connection after protocol error
+          await connection.disconnect();
+          break;
         }
       }
     } catch (error) {
@@ -256,7 +283,6 @@ export class GIOPTransport {
  */
 export class GIOPServer {
   private _endpoint: ConnectionEndpoint;
-  private _connectionManager: ConnectionManager;
   private _listener: Deno.TcpListener | null = null;
   private _running: boolean = false;
   private _handlers: Map<
@@ -264,9 +290,8 @@ export class GIOPServer {
     (request: GIOPRequest, connection: IIOPConnection) => Promise<GIOPReply>
   > = new Map();
 
-  constructor(endpoint: ConnectionEndpoint, connectionManager: ConnectionManager) {
+  constructor(endpoint: ConnectionEndpoint, _connectionManager: ConnectionManager) {
     this._endpoint = endpoint;
-    this._connectionManager = connectionManager;
   }
 
   /**

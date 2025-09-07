@@ -3,8 +3,7 @@ import { init, ORB_instance } from "../src/orb.ts";
 import { CORBA, init as initCORBA } from "../src/index.ts";
 
 Deno.test("ORB initialization", async () => {
-  const orb = init();
-  await orb.init();
+  const orb = await init();
 
   assertEquals(orb.id(), "default");
   assertEquals(orb.is_running(), true);
@@ -13,16 +12,16 @@ Deno.test("ORB initialization", async () => {
   await orb.shutdown(true);
 });
 
-Deno.test("ORB singleton", () => {
-  const orb1 = init();
-  const orb2 = init();
+Deno.test("ORB singleton", async () => {
+  const orb1 = await init();
+  const orb2 = await init();
 
   // Both references should be to the same ORB instance
   assertEquals(orb1, orb2);
 });
 
 Deno.test("ORB initial references", async () => {
-  const orb = init();
+  const orb = await init();
   await orb.init();
 
   // Register an initial reference

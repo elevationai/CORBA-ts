@@ -76,6 +76,11 @@ export interface Object {
    * Convert to string representation
    */
   toString(): string;
+
+  /**
+   * Get the interface repository ID (for narrow support)
+   */
+  _get_interface_id(): string;
 }
 
 /**
@@ -255,6 +260,10 @@ export class ObjectReference implements Object {
     // In a complete implementation, this would convert to an IOR string
     return `Object(${this._type_id})`;
   }
+
+  _get_interface_id(): string {
+    return this._type_id;
+  }
 }
 
 /**
@@ -281,4 +290,48 @@ export function is_nil(obj: CORBA.ObjectRef | null | undefined): boolean {
 
   const o = obj as unknown as Object;
   return o.is_nil ? o.is_nil() : true;
+}
+
+/**
+ * Helper interface for types that support narrowing
+ */
+export interface NarrowableType<T extends Object> {
+  _repository_id: string;
+  _narrow(obj: Object): T | null;
+}
+
+/**
+ * Narrow an object reference to a specific interface type
+ * This is a synchronous version that assumes the object is already the correct type
+ */
+export function narrow<T extends Object>(
+  obj: Object | null | undefined,
+  targetType: NarrowableType<T>
+): T | null {
+  if (!obj || obj.is_nil()) {
+    return null;
+  }
+  
+  return targetType._narrow(obj);
+}
+
+/**
+ * Narrow an object reference to a specific interface type with type checking
+ * This version performs an async is_a() check before narrowing
+ */
+export async function narrow_async<T extends Object>(
+  obj: Object | null | undefined,
+  targetType: NarrowableType<T>
+): Promise<T | null> {
+  if (!obj || obj.is_nil()) {
+    return null;
+  }
+  
+  // Check if object supports the target interface
+  const supportsInterface = await obj.is_a(targetType._repository_id);
+  if (!supportsInterface) {
+    return null;
+  }
+  
+  return targetType._narrow(obj);
 }

@@ -9,10 +9,8 @@ export class CDROutputStream {
   private position: number = 0;
   private readonly littleEndian: boolean;
   private readonly growthFactor: number = 2;
-  private readonly initialSize: number;
 
   constructor(initialSize: number = 256, littleEndian: boolean = false) {
-    this.initialSize = initialSize;
     this.buffer = new Uint8Array(initialSize);
     this.view = new DataView(this.buffer.buffer);
     this.littleEndian = littleEndian;

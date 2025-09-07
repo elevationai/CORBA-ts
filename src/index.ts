@@ -9,8 +9,11 @@ export * from "./types.ts";
 // Export ORB interfaces and functions
 export * from "./orb.ts";
 
-// Export object interfaces
+// Export object interfaces and narrow support
 export * from "./object.ts";
+
+// Export stub base class
+export * from "./stub.ts";
 
 // Export TypeCode
 export * from "./typecode.ts";
@@ -60,9 +63,8 @@ import { init_naming_service } from "./naming.ts";
  * Initialize the CORBA runtime
  */
 export async function init(args: string[] = []): Promise<void> {
-  // Initialize ORB
-  const orb = initORB({ args });
-  await orb.init();
+  // Initialize ORB (now returns Promise<ORB> and already calls init internally)
+  await initORB({ args });
 
   // Initialize POA
   initPOA();

@@ -80,7 +80,7 @@ export interface Request {
   /**
    * Send the request and wait for the response
    */
-  invoke(): void;
+  invoke(): Promise<void>;
 
   /**
    * Send the request asynchronously
@@ -241,16 +241,91 @@ export class RequestImpl implements Request {
     return this._operation;
   }
 
-  invoke(): void {
+  async invoke(): Promise<void> {
     // Reset any previous response state
     this._response_received = false;
     this._return_value = null;
     this._exception = null;
 
     try {
-      // In a real implementation, this would use GIOP to invoke the operation
-      // For now, we'll just simulate a successful call
-      this.simulate_invocation();
+      // Import CDR encoder and TypeCode encoder
+      const { CDROutputStream } = await import("./core/cdr/encoder.ts");
+      const { encodeWithTypeCode } = await import("./core/cdr/typecode-encoder.ts");
+      
+      // Create CDR output stream for request body
+      const cdr = new CDROutputStream(1024, false); // Big-endian by default
+      
+      // Encode each IN and INOUT parameter using its TypeCode
+      for (const param of this._params) {
+        if (param.mode === ParameterMode.PARAM_IN || param.mode === ParameterMode.PARAM_INOUT) {
+          if (param.type) {
+            encodeWithTypeCode(cdr, param.value, param.type);
+          } else {
+            // Fallback for parameters without TypeCode
+            if (typeof param.value === 'string') {
+              cdr.writeString(param.value);
+            } else if (typeof param.value === 'number') {
+              cdr.writeLong(Math.floor(param.value));
+            } else if (typeof param.value === 'boolean') {
+              cdr.writeBoolean(param.value);
+            } else {
+              cdr.writeString(JSON.stringify(param.value));
+            }
+          }
+        }
+      }
+      
+      // Get the encoded buffer
+      const requestBody = cdr.getBuffer();
+      
+      // Get the ORB instance and invoke with encoded buffer
+      const { ORB_instance } = await import("./orb.ts");
+      const orb = ORB_instance();
+      
+      // Invoke through the ORB with pre-encoded buffer
+      const result = await orb.invokeWithEncodedArgs(
+        this._target as CORBA.ObjectRef, 
+        this._operation, 
+        requestBody
+      );
+      
+      // Set the return value
+      this._return_value = result.returnValue;
+      
+      // Decode output parameters from the reply buffer
+      const { CDRInputStream } = await import("./core/cdr/decoder.ts");
+      const { decodeWithTypeCode } = await import("./core/cdr/typecode-decoder.ts");
+      
+      // Create CDR input stream from the output buffer
+      // Note: We need to skip past the return value that was already read
+      const outCdr = new CDRInputStream(result.outputBuffer, false); // Assuming big-endian
+      
+      // Skip the return value (assuming it's a long for now)
+      try {
+        outCdr.readLong(); // Skip return value
+      } catch {
+        // If can't read as long, reset position
+      }
+      
+      // Decode output parameters in order
+      for (const param of this._params) {
+        if (param.mode === ParameterMode.PARAM_OUT || param.mode === ParameterMode.PARAM_INOUT) {
+          if (param.type) {
+            try {
+              // Decode the parameter value based on its TypeCode
+              param.value = decodeWithTypeCode(outCdr, param.type);
+            } catch (error) {
+              console.warn(`Failed to decode output parameter: ${error}`);
+              // Fallback to dummy value if decoding fails
+              param.value = this.create_dummy_value(param.type);
+            }
+          } else {
+            // No type info, use dummy value
+            param.value = this.create_dummy_value(param.type);
+          }
+        }
+      }
+      
       this._response_received = true;
     } catch (e) {
       this._exception = e;
