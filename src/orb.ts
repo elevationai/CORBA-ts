@@ -56,7 +56,11 @@ export interface ORB {
   /**
    * Make a remote method invocation with pre-encoded arguments
    */
-  invokeWithEncodedArgs(target: CORBA.ObjectRef, operation: string, encodedArgs: Uint8Array): Promise<{ returnValue: unknown; outputBuffer: Uint8Array }>;
+  invokeWithEncodedArgs(
+    target: CORBA.ObjectRef,
+    operation: string,
+    encodedArgs: Uint8Array,
+  ): Promise<{ returnValue: unknown; outputBuffer: Uint8Array }>;
 
   /**
    * Convert a stringified object reference to an object
@@ -132,12 +136,12 @@ export class ORBImpl implements ORB {
   async init(): Promise<void> {
     // Initialize the ORB infrastructure
     this._running = true;
-    
+
     // Register the RootPOA
     const { getRootPOA } = await import("./poa.ts");
     const rootPOA = getRootPOA();
     this._initial_references.set("RootPOA", rootPOA);
-    
+
     return Promise.resolve();
   }
 
@@ -153,9 +157,11 @@ export class ORBImpl implements ORB {
     }
     this._servers.clear();
 
-    // Close transport
-    await this._transport.close();
-    
+    // Close transport if it exists
+    if (this._transport) {
+      await this._transport.close();
+    }
+
     // Reset the singleton instance so next init() creates a fresh ORB
     if (_orb_instance === this) {
       _orb_instance = null;
@@ -281,72 +287,71 @@ export class ORBImpl implements ORB {
   }
 
   async invoke(target: CORBA.ObjectRef, operation: string, args: unknown[]): Promise<unknown> {
+    // Without TypeCodes, we can only handle basic types
+    // For complex types, use invokeWithEncodedArgs or DII
+
     const ior = (target as { _ior: IOR })._ior;
     if (!ior) {
       throw new CORBA.BAD_PARAM("Object reference does not contain IOR");
     }
 
-    // Import CDR encoder
+    // Import CDR encoder and TypeCode
     const { CDROutputStream } = await import("./core/cdr/encoder.ts");
-    
+    const { TypeCode } = await import("./typecode.ts");
+    const { encodeWithTypeCode } = await import("./core/cdr/typecode-encoder.ts");
+
     // Create CDR output stream for request body
     const cdr = new CDROutputStream(1024, false); // Big-endian by default
-    
-    // For now, encode each argument as an Any (simplified)
-    // Real implementation would need TypeCodes to properly encode
+
+    // Encode arguments using best-guess TypeCodes based on JavaScript types
     for (const arg of args) {
-      // This is a simplified encoding - just write the value
-      // Real CORBA would need proper type information
-      if (typeof arg === 'string') {
-        cdr.writeString(arg);
-      } else if (typeof arg === 'number') {
-        cdr.writeLong(Math.floor(arg));
-      } else if (typeof arg === 'boolean') {
-        cdr.writeBoolean(arg);
-      } else if (typeof arg === 'object' && arg !== null) {
-        // For structs, we need to encode each field
-        // This is where we need TypeCodes to know the structure
-        // For now, just encode as JSON string (wrong but better than crashing)
-        cdr.writeString(JSON.stringify(arg));
+      let tc: TypeCode;
+
+      if (arg === null || arg === undefined) {
+        tc = new TypeCode(TypeCode.Kind.tk_null);
+      } else if (typeof arg === "string") {
+        tc = new TypeCode(TypeCode.Kind.tk_string);
+      } else if (typeof arg === "number") {
+        if (Number.isInteger(arg)) {
+          // Use long for integers
+          tc = new TypeCode(TypeCode.Kind.tk_long);
+        } else {
+          // Use double for floating point
+          tc = new TypeCode(TypeCode.Kind.tk_double);
+        }
+      } else if (typeof arg === "boolean") {
+        tc = new TypeCode(TypeCode.Kind.tk_boolean);
+      } else if (typeof arg === "bigint") {
+        tc = new TypeCode(TypeCode.Kind.tk_longlong);
+      } else if (Array.isArray(arg)) {
+        // Encode as sequence of Any
+        tc = new TypeCode(TypeCode.Kind.tk_sequence);
+        tc.content_type = () => new TypeCode(TypeCode.Kind.tk_any);
+      } else if (typeof arg === "object") {
+        // Without TypeCode info, encode as Any (which falls back to JSON string)
+        tc = new TypeCode(TypeCode.Kind.tk_any);
       } else {
-        // Unknown type - encode as empty string
-        cdr.writeString("");
+        // Unknown type - use Any
+        tc = new TypeCode(TypeCode.Kind.tk_any);
       }
+
+      encodeWithTypeCode(cdr, arg, tc);
     }
-    
+
     const requestBody = cdr.getBuffer();
 
-    // Send request through transport
-    const reply = await this._transport.sendRequest(ior, operation, requestBody);
+    // Use invokeWithEncodedArgs to handle the actual invocation
+    const result = await this.invokeWithEncodedArgs(target, operation, requestBody);
 
-    // Check reply status
-    if (reply.replyStatus === 0) { // NO_EXCEPTION
-      // Deserialize result using CDR
-      const { CDRInputStream } = await import("./core/cdr/decoder.ts");
-      // Use the endianness from the GIOP reply message
-      const inCdr = new CDRInputStream(reply.body, reply.isLittleEndian());
-      
-      // For now, just read a long as the return code
-      // Real implementation would need to know the return type
-      try {
-        const result = inCdr.readLong();
-        return result;
-      } catch {
-        // If can't read as long, return 0
-        return 0;
-      }
-    } else if (reply.replyStatus === 2) { // SYSTEM_EXCEPTION
-      const sysEx = reply.getSystemException();
-      if (sysEx) {
-        throw new CORBA.SystemException(sysEx.exceptionId, sysEx.minor, sysEx.completionStatus);
-      }
-      throw new CORBA.INTERNAL("System exception with no details");
-    } else {
-      throw new CORBA.INTERNAL(`Unhandled reply status: ${reply.replyStatus}`);
-    }
+    // Return just the return value (ignore output parameters since we don't have TypeCodes for them)
+    return result.returnValue;
   }
 
-  async invokeWithEncodedArgs(target: CORBA.ObjectRef, operation: string, encodedArgs: Uint8Array): Promise<{ returnValue: unknown; outputBuffer: Uint8Array }> {
+  async invokeWithEncodedArgs(
+    target: CORBA.ObjectRef,
+    operation: string,
+    encodedArgs: Uint8Array,
+  ): Promise<{ returnValue: unknown; outputBuffer: Uint8Array }> {
     const ior = (target as { _ior: IOR })._ior;
     if (!ior) {
       throw new CORBA.BAD_PARAM("Object reference does not contain IOR");
@@ -361,7 +366,7 @@ export class ORBImpl implements ORB {
       const { CDRInputStream } = await import("./core/cdr/decoder.ts");
       // Use the endianness from the GIOP reply message
       const inCdr = new CDRInputStream(reply.body, reply.isLittleEndian());
-      
+
       // Read the return value (assuming long for now)
       let returnValue: unknown;
       try {
@@ -370,11 +375,11 @@ export class ORBImpl implements ORB {
         // If can't read as long, return 0
         returnValue = 0;
       }
-      
+
       // Return both the return value and the remaining buffer for output parameters
       return {
         returnValue,
-        outputBuffer: reply.body
+        outputBuffer: reply.body,
       };
     } else if (reply.replyStatus === 2) { // SYSTEM_EXCEPTION
       const sysEx = reply.getSystemException();

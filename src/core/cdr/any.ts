@@ -17,7 +17,7 @@ export type CORBAValue = unknown;
  * CORBA object reference type
  */
 interface CORBAObjectRef {
-  _ior: string;
+  _ior: unknown; // Can be IOR object or string
 }
 
 /**
@@ -68,6 +68,52 @@ export function decodeAny(inp: CDRInputStream): Any {
   const value = decodeValue(inp, type);
 
   return new Any(type, value);
+}
+
+/**
+ * Infer TypeCode from a JavaScript value
+ */
+function inferTypeCode(value: CORBAValue): TypeCode {
+  if (value === null || value === undefined) {
+    return new TypeCode(TCKind.tk_null);
+  }
+  
+  if (typeof value === "boolean") {
+    return new TypeCode(TCKind.tk_boolean);
+  }
+  
+  if (typeof value === "number") {
+    if (Number.isInteger(value)) {
+      return new TypeCode(TCKind.tk_long);
+    }
+    return new TypeCode(TCKind.tk_double);
+  }
+  
+  if (typeof value === "string") {
+    return new TypeCode(TCKind.tk_string);
+  }
+  
+  if (typeof value === "bigint") {
+    return new TypeCode(TCKind.tk_longlong);
+  }
+  
+  if (Array.isArray(value)) {
+    // For arrays, create a sequence TypeCode
+    const elementType = value.length > 0 ? inferTypeCode(value[0]) : new TypeCode(TCKind.tk_any);
+    return TypeCode.createSequence(elementType);
+  }
+  
+  if (typeof value === "object") {
+    // Check if it's an object reference
+    if ((value as CORBAObjectRef)._ior) {
+      return new TypeCode(TCKind.tk_objref);
+    }
+    // Generic objects can't be auto-encoded without proper TypeCode
+    throw new Error("Cannot infer TypeCode for generic object. Provide explicit TypeCode.");
+  }
+  
+  // Fallback
+  throw new Error(`Cannot infer TypeCode for value of type: ${typeof value}`);
 }
 
 /**
@@ -141,7 +187,19 @@ export function encodeValue(out: CDROutputStream, value: CORBAValue, type: TypeC
       break;
 
     case TCKind.tk_any:
-      encodeAny(out, value as Any);
+      // If value is not already an Any, wrap it
+      if (value instanceof Any) {
+        encodeAny(out, value);
+      } else {
+        // For tk_any without an Any object, try to infer type
+        try {
+          const detectedType = inferTypeCode(value);
+          encodeAny(out, new Any(detectedType, value));
+        } catch (_e) {
+          // If we can't infer, encode as a null Any
+          encodeAny(out, new Any(new TypeCode(TCKind.tk_null), null));
+        }
+      }
       break;
 
     case TCKind.tk_TypeCode:
@@ -149,7 +207,14 @@ export function encodeValue(out: CDROutputStream, value: CORBAValue, type: TypeC
       break;
 
     case TCKind.tk_objref:
-      encodeObjectReference(out, value);
+      // Note: This is now async but encodeValue is sync
+      // For now, use sync version with string IOR
+      if (value && typeof value === "object" && (value as CORBAObjectRef)._ior) {
+        const ior = (value as CORBAObjectRef)._ior;
+        out.writeString(typeof ior === "string" ? ior : JSON.stringify(ior));
+      } else {
+        out.writeString("");
+      }
       break;
 
     case TCKind.tk_struct:
@@ -244,8 +309,12 @@ export function decodeValue(inp: CDRInputStream, type: TypeCode): CORBAValue {
     case TCKind.tk_TypeCode:
       return decodeTypeCode(inp);
 
-    case TCKind.tk_objref:
-      return decodeObjectReference(inp);
+    case TCKind.tk_objref: {
+      // Note: This is now async but decodeValue is sync
+      // For now, use sync version returning string IOR
+      const iorStr = inp.readString();
+      return { _ior: iorStr };
+    }
 
     case TCKind.tk_struct:
     case TCKind.tk_except:
@@ -363,20 +432,47 @@ function decodeFixed(inp: CDRInputStream, digits: number, scale: number): string
   return isNegative ? "-" + result : result;
 }
 
-function encodeObjectReference(out: CDROutputStream, value: CORBAValue): void {
-  // Simplified object reference encoding
-  // In a real implementation, this would encode an IOR
+// deno-lint-ignore no-unused-vars
+async function encodeObjectReference(out: CDROutputStream, value: CORBAValue): Promise<void> {
+  // Encode object reference with proper IOR
   if (value && typeof value === "object" && (value as CORBAObjectRef)._ior) {
-    out.writeString((value as CORBAObjectRef)._ior);
+    const ior = (value as CORBAObjectRef)._ior;
+
+    if (typeof ior === "string") {
+      // IOR string representation
+      out.writeString(ior);
+    } else {
+      // IOR object - convert to string
+      const { IORUtil } = await import("../../giop/ior.ts");
+      // deno-lint-ignore no-explicit-any
+      const iorString = IORUtil.toString(ior as any);
+      out.writeString(iorString);
+    }
   } else {
+    // Null reference
     out.writeString("");
   }
 }
 
-function decodeObjectReference(inp: CDRInputStream): CORBAValue {
-  // Simplified object reference decoding
-  const ior = inp.readString();
-  return { _ior: ior };
+// deno-lint-ignore no-unused-vars
+async function decodeObjectReference(inp: CDRInputStream): Promise<CORBAValue> {
+  // Decode object reference with proper IOR
+  const iorString = inp.readString();
+
+  if (!iorString) {
+    // Null reference
+    return { _ior: null };
+  }
+
+  if (iorString.startsWith("IOR:") || iorString.startsWith("corbaloc:")) {
+    // Parse IOR string to object
+    const { IORUtil } = await import("../../giop/ior.ts");
+    const ior = IORUtil.fromString(iorString);
+    return { _ior: ior };
+  }
+
+  // Return as-is if not recognized format
+  return { _ior: iorString };
 }
 
 function encodeStruct(out: CDROutputStream, value: CORBAValue, type: TypeCode): void {
@@ -512,8 +608,31 @@ function detectTypeCode(value: CORBAValue): TypeCode {
   }
 
   if (Array.isArray(value)) {
-    // Default to sequence of any
-    return TypeCode.createSequence(new TypeCode(TCKind.tk_any));
+    // Try to detect element type from array contents
+    if (value.length === 0) {
+      // Empty array - default to sequence of any
+      return TypeCode.createSequence(new TypeCode(TCKind.tk_any));
+    }
+
+    // Check if all elements are of the same type
+    const firstElemType = detectTypeCode(value[0]);
+    let uniformType = true;
+
+    for (let i = 1; i < value.length; i++) {
+      const elemType = detectTypeCode(value[i]);
+      if (elemType.kind !== firstElemType.kind) {
+        uniformType = false;
+        break;
+      }
+    }
+
+    if (uniformType) {
+      // All elements are the same type, use that
+      return TypeCode.createSequence(firstElemType);
+    } else {
+      // Mixed types - use any
+      return TypeCode.createSequence(new TypeCode(TCKind.tk_any));
+    }
   }
 
   if (value instanceof Any) {
@@ -524,6 +643,15 @@ function detectTypeCode(value: CORBAValue): TypeCode {
     return new TypeCode(TCKind.tk_TypeCode);
   }
 
-  // Default to any for objects
-  return new TypeCode(TCKind.tk_any);
+  if (typeof value === "object") {
+    // Check if it's an object reference
+    if ((value as CORBAObjectRef)._ior) {
+      return new TypeCode(TCKind.tk_objref);
+    }
+    // Generic objects can't be auto-encoded without proper TypeCode
+    throw new Error("Cannot infer TypeCode for generic object. Provide explicit TypeCode.");
+  }
+  
+  // Fallback
+  throw new Error(`Cannot infer TypeCode for value of type: ${typeof value}`);
 }

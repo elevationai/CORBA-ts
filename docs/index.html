@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORBA.ts - TypeScript CORBA 3.4 Implementation for Deno</title>
+    <meta name="description" content="A comprehensive TypeScript implementation of CORBA 3.4 for Deno, providing Object Request Broker, GIOP/IIOP protocol support, and IDL mapping.">
+    <meta name="keywords" content="CORBA, TypeScript, Deno, ORB, GIOP, IIOP, IDL, distributed computing">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://elevationai.github.io/CORBA-ts/">
+    <meta property="og:title" content="CORBA.ts - TypeScript CORBA 3.4 Implementation for Deno">
+    <meta property="og:description" content="A comprehensive TypeScript implementation of CORBA 3.4 for Deno">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://elevationai.github.io/CORBA-ts/">
+    <meta property="twitter:title" content="CORBA.ts - TypeScript CORBA 3.4 Implementation for Deno">
+    <meta property="twitter:description" content="A comprehensive TypeScript implementation of CORBA 3.4 for Deno">
+    
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <a href="/" class="logo">
+                    <span class="logo-icon"></span>
+                    CORBA.ts
+                </a>
+                <ul class="nav-links">
+                    <li><a href="#features" class="active">Features</a></li>
+                    <li><a href="guides/">Guides</a></li>
+                    <li><a href="api/">API Reference</a></li>
+                    <li><a href="examples/">Examples</a></li>
+                    <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1 class="animate-fade-in">CORBA.ts</h1>
+                <p class="subtitle animate-fade-in">A TypeScript implementation of CORBA 3.4 for Deno</p>
+                <p class="description animate-fade-in">
+                    Build distributed, interoperable applications with a modern TypeScript-first approach. 
+                    CORBA.ts provides full CORBA 3.4 specification compliance with Object Request Broker (ORB), 
+                    GIOP/IIOP protocol support, and comprehensive IDL mapping.
+                </p>
+                <div class="cta-buttons animate-fade-in">
+                    <a href="guides/getting-started.html" class="btn">Get Started</a>
+                    <a href="api/" class="btn btn-secondary">API Documentation</a>
+                    <a href="https://jsr.io/@eai/corba" class="btn btn-secondary" target="_blank">JSR Package</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="container mt-3">
+            <h2 class="text-center mb-2">Core Features</h2>
+            <div class="grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>TypeScript-First</h3>
+                    <p>Built from the ground up with TypeScript, providing excellent developer experience with full type safety and modern IDE support.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Deno Native</h3>
+                    <p>Designed specifically for Deno runtime with modern JavaScript features, secure-by-default permissions, and built-in TypeScript support.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📐</div>
+                    <h3>CORBA 3.4 Compliant</h3>
+                    <p>Full implementation of the OMG CORBA 3.4 specification, ensuring interoperability with existing CORBA systems and applications.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Object Request Broker</h3>
+                    <p>Complete ORB implementation handling request routing, parameter marshalling/unmarshalling, and object reference management.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>IDL Mapping</h3>
+                    <p>Interface Definition Language parser and TypeScript code generator for seamless integration between IDL definitions and TypeScript code.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔧</div>
+                    <h3>Portable Object Adapter</h3>
+                    <p>POA implementation managing servant lifecycle, object references, and providing flexible object adaptation strategies.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <h3>GIOP/IIOP Protocol</h3>
+                    <p>Full GIOP (General Inter-ORB Protocol) and IIOP (Internet Inter-ORB Protocol) support for network communication between ORBs.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3>Naming Service</h3>
+                    <p>Directory service implementation for CORBA objects, enabling location transparency and service discovery in distributed systems.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚙️</div>
+                    <h3>Dynamic Invocation</h3>
+                    <p>DII (Dynamic Invocation Interface) support for runtime request construction and method invocation without compile-time knowledge.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="container mt-3">
+            <div class="grid-2">
+                <div class="panel">
+                    <h2>Quick Installation</h2>
+                    <p>Get started with CORBA.ts in seconds using JSR or Deno.land:</p>
+                    <div class="code-block" data-lang="typescript">
+// Import from JSR (recommended)
+import * as CORBA from "jsr:@eai/corba";
+
+// Or import from Deno.land
+import * as CORBA from "https://deno.land/x/corba_ts/mod.ts";
+</div>
+                    <p>No complex build setup required - just import and start building distributed applications!</p>
+                </div>
+
+                <div class="panel">
+                    <h2>Simple Example</h2>
+                    <p>Create a CORBA servant and start serving requests:</p>
+                    <div class="code-block" data-lang="typescript">
+import { init, ORB_instance, getRootPOA } from "jsr:@eai/corba";
+import { Servant } from "jsr:@eai/corba/poa";
+
+// Initialize CORBA runtime
+await init();
+const orb = ORB_instance();
+const rootPOA = getRootPOA();
+
+// Create and activate servant
+class HelloServant extends Servant {
+  sayHello(name: string): string {
+    return `Hello, ${name}!`;
+  }
+}
+
+const servant = new HelloServant();
+const oid = await rootPOA.activate_object(servant);
+await orb.run();
+</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="container mt-3">
+            <h2 class="text-center mb-2">Architecture Overview</h2>
+            <div class="grid-3">
+                <div class="panel">
+                    <h3>Core Components</h3>
+                    <ul>
+                        <li><strong>ORB (Object Request Broker)</strong> - Central communication hub</li>
+                        <li><strong>POA (Portable Object Adapter)</strong> - Object lifecycle management</li>
+                        <li><strong>TypeCode System</strong> - Type information and validation</li>
+                        <li><strong>Value Types</strong> - Complex data structures</li>
+                    </ul>
+                </div>
+
+                <div class="panel">
+                    <h3>Network Layer</h3>
+                    <ul>
+                        <li><strong>GIOP</strong> - General Inter-ORB Protocol</li>
+                        <li><strong>IIOP</strong> - Internet Inter-ORB Protocol</li>
+                        <li><strong>CDR</strong> - Common Data Representation</li>
+                        <li><strong>IOR</strong> - Interoperable Object References</li>
+                    </ul>
+                </div>
+
+                <div class="panel">
+                    <h3>Services</h3>
+                    <ul>
+                        <li><strong>Naming Service</strong> - Object directory</li>
+                        <li><strong>DII</strong> - Dynamic Invocation Interface</li>
+                        <li><strong>IDL Parser</strong> - Interface definitions</li>
+                        <li><strong>Policy Management</strong> - Behavior configuration</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="container mt-3">
+            <div class="panel">
+                <h2 class="text-center mb-2">Use Cases</h2>
+                <div class="grid-2">
+                    <div>
+                        <h3>Enterprise Integration</h3>
+                        <p>Connect modern TypeScript applications with legacy CORBA systems in enterprise environments. CORBA.ts provides seamless interoperability while maintaining type safety and modern development practices.</p>
+                        
+                        <h3>Distributed Systems</h3>
+                        <p>Build scalable distributed applications with location transparency. The ORB handles network communication, load balancing, and fault tolerance automatically.</p>
+                    </div>
+                    
+                    <div>
+                        <h3>Microservices</h3>
+                        <p>Create type-safe microservice architectures with well-defined interfaces using IDL. CORBA.ts provides robust communication patterns and service discovery mechanisms.</p>
+                        
+                        <h3>Real-time Systems</h3>
+                        <p>Develop real-time applications requiring reliable, low-latency communication between distributed components with precise control over Quality of Service (QoS) parameters.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="container mt-3">
+            <div class="panel text-center">
+                <h2>Ready to Get Started?</h2>
+                <p>Explore our comprehensive documentation and examples to start building distributed applications with CORBA.ts.</p>
+                <div class="cta-buttons mt-2">
+                    <a href="guides/getting-started.html" class="btn">Quick Start Guide</a>
+                    <a href="examples/" class="btn btn-secondary">View Examples</a>
+                    <a href="api/" class="btn btn-secondary">API Reference</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="guides/getting-started.html">Getting Started</a></li>
+                        <li><a href="guides/orb.html">ORB Guide</a></li>
+                        <li><a href="guides/poa.html">POA Guide</a></li>
+                        <li><a href="guides/naming-service.html">Naming Service</a></li>
+                        <li><a href="guides/idl-mapping.html">IDL Mapping</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>API Reference</h4>
+                    <ul>
+                        <li><a href="api/orb.html">ORB API</a></li>
+                        <li><a href="api/poa.html">POA API</a></li>
+                        <li><a href="api/types.html">Types & TypeCodes</a></li>
+                        <li><a href="api/giop.html">GIOP/IIOP</a></li>
+                        <li><a href="api/dii.html">Dynamic Invocation</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Examples</h4>
+                    <ul>
+                        <li><a href="examples/hello-world.html">Hello World</a></li>
+                        <li><a href="examples/client-server.html">Client/Server</a></li>
+                        <li><a href="examples/naming-service.html">Naming Service</a></li>
+                        <li><a href="examples/value-types.html">Value Types</a></li>
+                        <li><a href="examples/advanced.html">Advanced Usage</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub Repository</a></li>
+                        <li><a href="https://jsr.io/@eai/corba" target="_blank">JSR Package</a></li>
+                        <li><a href="https://github.com/elevationai/CORBA-ts/issues" target="_blank">Report Issues</a></li>
+                        <li><a href="https://github.com/elevationai/CORBA-ts/discussions" target="_blank">Discussions</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 CORBA.ts. Licensed under the MIT License. Built with ❤️ for the Deno community.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Simple scroll-based navigation highlighting
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
+            const sections = document.querySelectorAll('section[id]');
+            
+            function updateActiveNav() {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - 100;
+                    const sectionHeight = section.offsetHeight;
+                    if (window.scrollY >= sectionTop && window.scrollY < sectionTop + sectionHeight) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === '#' + current) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+            
+            window.addEventListener('scroll', updateActiveNav);
+            updateActiveNav();
+            
+            // Smooth scrolling for navigation links
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetSection = document.querySelector(targetId);
+                    if (targetSection) {
+                        targetSection.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

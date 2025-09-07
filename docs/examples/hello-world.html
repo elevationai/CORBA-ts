@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World Example - CORBA.ts Documentation</title>
+    <meta name="description" content="Learn CORBA.ts basics with a simple Hello World client-server example">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <a href="../" class="logo">
+                    <span class="logo-icon"></span>
+                    CORBA.ts
+                </a>
+                <ul class="nav-links">
+                    <li><a href="../">Home</a></li>
+                    <li><a href="../guides/">Guides</a></li>
+                    <li><a href="../api/">API Reference</a></li>
+                    <li><a href="./" class="active">Examples</a></li>
+                    <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mt-2">
+        <div class="grid-2">
+            <aside class="doc-nav">
+                <h3>Examples</h3>
+                <ul>
+                    <li><a href="hello-world.html" class="active">Hello World</a></li>
+                    <li><a href="client-server.html">Client/Server Pattern</a></li>
+                    <li><a href="naming-service.html">Naming Service</a></li>
+                    <li><a href="value-types.html">Value Types</a></li>
+                    <li><a href="dii.html">Dynamic Invocation</a></li>
+                    <li><a href="poa-policies.html">POA Policies</a></li>
+                    <li><a href="idl-integration.html">IDL Integration</a></li>
+                    <li><a href="advanced.html">Advanced Patterns</a></li>
+                </ul>
+                
+                <h4>On This Page</h4>
+                <ul>
+                    <li><a href="#overview">Overview</a></li>
+                    <li><a href="#server">Server Implementation</a></li>
+                    <li><a href="#client">Client Implementation</a></li>
+                    <li><a href="#running">Running the Example</a></li>
+                    <li><a href="#explanation">Code Explanation</a></li>
+                    <li><a href="#next-steps">Next Steps</a></li>
+                </ul>
+            </aside>
+
+            <article class="panel">
+                <h1>Hello World Example</h1>
+                <p>This is the simplest possible CORBA.ts application - a "Hello World" server that responds to client requests. It demonstrates the fundamental concepts of CORBA distributed computing.</p>
+
+                <h2 id="overview">🎯 What You'll Learn</h2>
+                <div class="grid mt-1">
+                    <div class="feature-card">
+                        <h4>🔧 ORB Initialization</h4>
+                        <p>How to initialize the CORBA runtime and get the ORB instance</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>🏗️ Servant Creation</h4>
+                        <p>Creating and activating CORBA servants that implement business logic</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>📡 Remote Communication</h4>
+                        <p>Making remote method calls across the network using object references</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>🔗 IOR Management</h4>
+                        <p>Converting object references to strings for client consumption</p>
+                    </div>
+                </div>
+
+                <h2 id="server">🖥️ Server Implementation</h2>
+                <p>The server creates a servant that implements a simple greeting service:</p>
+
+                <div class="code-block" data-lang="typescript">
+// hello-server.ts
+import { init, ORB_instance, getRootPOA } from "jsr:@eai/corba";
+import { Servant } from "jsr:@eai/corba/poa";
+
+/**
+ * HelloServant implements the greeting service.
+ * Every servant must extend the Servant base class.
+ */
+class HelloServant extends Servant {
+  /**
+   * Repository ID identifies the interface this servant implements.
+   * This follows the IDL repository ID format.
+   */
+  _repository_id(): string {
+    return "IDL:Hello:1.0";
+  }
+
+  /**
+   * Business method - creates personalized greeting
+   * @param name - Name of the person to greet
+   * @returns Personalized greeting message
+   */
+  sayHello(name: string): string {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] Server: sayHello called with name: "${name}"`);
+    return `Hello, ${name}! Welcome to CORBA.ts 👋`;
+  }
+
+  /**
+   * Utility method - returns current server time
+   * @returns Current server time as ISO string
+   */
+  getServerTime(): string {
+    const now = new Date();
+    console.log(`[${now.toISOString()}] Server: getServerTime called`);
+    return now.toISOString();
+  }
+}
+
+/**
+ * Main server function
+ */
+async function startHelloServer() {
+  try {
+    console.log("🚀 Starting Hello World CORBA.ts server...");
+
+    // Step 1: Initialize the CORBA runtime
+    await init();
+    console.log("✅ CORBA runtime initialized");
+
+    // Step 2: Get the ORB instance
+    const orb = ORB_instance();
+    console.log("✅ ORB instance obtained");
+
+    // Step 3: Get the Root POA and its manager
+    const rootPOA = getRootPOA();
+    const poaManager = rootPOA.the_POAManager();
+    console.log("✅ Root POA obtained");
+
+    // Step 4: Activate the POA Manager to start accepting requests
+    await poaManager.activate();
+    console.log("✅ POA Manager activated");
+
+    // Step 5: Create the servant instance
+    const servant = new HelloServant();
+    console.log("✅ HelloServant created");
+
+    // Step 6: Activate the servant in the POA
+    const objectId = await rootPOA.activate_object(servant);
+    console.log(`✅ Servant activated with Object ID: ${objectId}`);
+
+    // Step 7: Get the object reference for the activated servant
+    const helloRef = await rootPOA.id_to_reference(objectId);
+    console.log("✅ Object reference obtained");
+
+    // Step 8: Convert object reference to IOR string
+    const helloIOR = await orb.object_to_string(helloRef);
+
+    // Step 9: Display the IOR for client use
+    console.log("\n" + "=".repeat(60));
+    console.log("📋 SERVER READY!");
+    console.log("📋 Copy this IOR for your client:");
+    console.log("=".repeat(60));
+    console.log(helloIOR);
+    console.log("=".repeat(60));
+
+    // Step 10: Save IOR to file for easy client access
+    try {
+      await Deno.writeTextFile("hello.ior", helloIOR);
+      console.log("💾 IOR saved to 'hello.ior' file");
+    } catch (error) {
+      console.warn("⚠️  Could not save IOR to file:", error.message);
+    }
+
+    console.log("\n🏃 Server is running and ready to process requests...");
+    console.log("📞 Waiting for client connections...");
+    console.log("🛑 Press Ctrl+C to shutdown the server");
+
+    // Step 11: Start the ORB event loop (this will block)
+    await orb.run();
+
+  } catch (error) {
+    console.error("❌ Server startup failed:", error);
+    if (error.stack) {
+      console.error("Stack trace:", error.stack);
+    }
+    Deno.exit(1);
+  }
+}
+
+/**
+ * Handle graceful shutdown
+ */
+function setupShutdownHandler() {
+  Deno.addSignalListener("SIGINT", async () => {
+    console.log("\n🛑 Shutdown signal received...");
+    console.log("🧹 Cleaning up resources...");
+    
+    try {
+      const orb = ORB_instance();
+      await orb.shutdown(true); // Wait for active requests to complete
+      console.log("✅ ORB shutdown complete");
+    } catch (error) {
+      console.error("⚠️  Error during shutdown:", error.message);
+    }
+    
+    console.log("👋 Hello Server stopped. Goodbye!");
+    Deno.exit(0);
+  });
+}
+
+// Main entry point
+if (import.meta.main) {
+  setupShutdownHandler();
+  await startHelloServer();
+}
+</div>
+
+                <h2 id="client">💻 Client Implementation</h2>
+                <p>The client connects to the server and makes remote method calls:</p>
+
+                <div class="code-block" data-lang="typescript">
+// hello-client.ts
+import { init, ORB_instance } from "jsr:@eai/corba";
+
+/**
+ * TypeScript interface defining the Hello service contract.
+ * This provides type safety for remote method calls.
+ */
+interface HelloService {
+  sayHello(name: string): Promise&lt;string&gt;;
+  getServerTime(): Promise&lt;string&gt;;
+}
+
+/**
+ * Main client function
+ */
+async function runHelloClient() {
+  try {
+    console.log("🔌 Starting Hello World CORBA.ts client...");
+
+    // Step 1: Initialize the CORBA runtime
+    await init();
+    console.log("✅ CORBA runtime initialized");
+
+    // Step 2: Get the ORB instance
+    const orb = ORB_instance();
+    console.log("✅ ORB instance obtained");
+
+    // Step 3: Read the IOR from file (created by the server)
+    let iorString: string;
+    try {
+      iorString = await Deno.readTextFile("hello.ior");
+      console.log("✅ IOR loaded from 'hello.ior' file");
+    } catch (error) {
+      console.error("❌ Could not read 'hello.ior' file");
+      console.error("   💡 Make sure the server is running and has created the IOR file");
+      console.error("   Error details:", error.message);
+      Deno.exit(1);
+    }
+
+    // Step 4: Convert IOR string to object reference
+    const helloRef = await orb.string_to_object(iorString);
+    console.log("✅ Object reference obtained from IOR");
+
+    // Step 5: Cast to our HelloService interface for type safety
+    const helloService = helloRef as unknown as HelloService;
+
+    console.log("\n📞 Making remote calls to the server...");
+
+    // Step 6: Make remote method calls
+    try {
+      // Call 1: Simple greeting
+      const greeting = await helloService.sayHello("CORBA.ts Developer");
+      console.log("📥 Server response:", greeting);
+
+      // Call 2: Get server time
+      const serverTime = await helloService.getServerTime();
+      console.log("📥 Server time:", serverTime);
+
+      // Step 7: Demonstrate multiple calls
+      console.log("\n🔄 Making multiple calls to show persistent connection...");
+      
+      const names = ["Alice", "Bob", "Charlie"];
+      for (let i = 0; i &lt; names.length; i++) {
+        const name = names[i];
+        console.log(`\n📤 Call ${i + 1}: Greeting ${name}...`);
+        
+        const response = await helloService.sayHello(name);
+        console.log(`📥 Response ${i + 1}:`, response);
+        
+        // Small delay between calls
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      // Step 8: Final server time check
+      console.log("\n📤 Final call: Getting updated server time...");
+      const finalTime = await helloService.getServerTime();
+      console.log("📥 Final server time:", finalTime);
+
+      console.log("\n✅ All remote calls completed successfully!");
+      console.log("🎉 Hello World client finished!");
+
+    } catch (error) {
+      console.error("\n❌ Error during remote method call:", error.message);
+      
+      // Provide helpful error messages
+      if (error.message?.includes("Connection refused")) {
+        console.error("   💡 The server appears to be down. Please start the server first.");
+      } else if (error.message?.includes("timeout")) {
+        console.error("   💡 The server is not responding. Check network connectivity.");
+      } else {
+        console.error("   💡 This might be a CORBA protocol error or server issue.");
+      }
+      
+      throw error;
+    }
+
+  } catch (error) {
+    console.error("\n❌ Client failed:", error);
+    if (error.stack) {
+      console.error("Stack trace:", error.stack);
+    }
+    Deno.exit(1);
+  }
+}
+
+// Main entry point
+if (import.meta.main) {
+  await runHelloClient();
+}
+</div>
+
+                <h2 id="running">🏃 Running the Example</h2>
+
+                <h3>Step 1: Start the Server</h3>
+                <p>Open a terminal and run the server:</p>
+                <div class="code-block" data-lang="bash">
+deno run --allow-net --allow-read --allow-write hello-server.ts
+</div>
+
+                <p>You should see output like this:</p>
+                <div class="code-block" data-lang="text">
+🚀 Starting Hello World CORBA.ts server...
+✅ CORBA runtime initialized
+✅ ORB instance obtained
+✅ Root POA obtained
+✅ POA Manager activated
+✅ HelloServant created
+✅ Servant activated with Object ID: 1
+✅ Object reference obtained
+
+============================================================
+📋 SERVER READY!
+📋 Copy this IOR for your client:
+============================================================
+IOR:010000002b00000049444c3a48656c6c6f3a312e3000000001000000000000007000000001...
+============================================================
+💾 IOR saved to 'hello.ior' file
+
+🏃 Server is running and ready to process requests...
+📞 Waiting for client connections...
+🛑 Press Ctrl+C to shutdown the server
+</div>
+
+                <h3>Step 2: Run the Client</h3>
+                <p>In a new terminal (keep the server running), run the client:</p>
+                <div class="code-block" data-lang="bash">
+deno run --allow-net --allow-read hello-client.ts
+</div>
+
+                <p>You should see output like this:</p>
+                <div class="code-block" data-lang="text">
+🔌 Starting Hello World CORBA.ts client...
+✅ CORBA runtime initialized
+✅ ORB instance obtained
+✅ IOR loaded from 'hello.ior' file
+✅ Object reference obtained from IOR
+
+📞 Making remote calls to the server...
+📥 Server response: Hello, CORBA.ts Developer! Welcome to CORBA.ts 👋
+📥 Server time: 2024-01-15T14:30:45.123Z
+
+🔄 Making multiple calls to show persistent connection...
+
+📤 Call 1: Greeting Alice...
+📥 Response 1: Hello, Alice! Welcome to CORBA.ts 👋
+
+📤 Call 2: Greeting Bob...
+📥 Response 2: Hello, Bob! Welcome to CORBA.ts 👋
+
+📤 Call 3: Greeting Charlie...
+📥 Response 3: Hello, Charlie! Welcome to CORBA.ts 👋
+
+📤 Final call: Getting updated server time...
+📥 Final server time: 2024-01-15T14:30:47.891Z
+
+✅ All remote calls completed successfully!
+🎉 Hello World client finished!
+</div>
+
+                <h2 id="explanation">📚 Code Explanation</h2>
+
+                <h3>Server-Side Components</h3>
+                <div class="api-section">
+                    <h4>Servant Class</h4>
+                    <p>The <code>HelloServant</code> class extends <code>Servant</code> and implements the business logic:</p>
+                    <ul>
+                        <li><strong>_repository_id()</strong> - Identifies the interface (required for all servants)</li>
+                        <li><strong>sayHello()</strong> - Business method that generates personalized greetings</li>
+                        <li><strong>getServerTime()</strong> - Utility method returning current server time</li>
+                    </ul>
+                </div>
+
+                <div class="api-section">
+                    <h4>Object Lifecycle</h4>
+                    <div class="panel" style="background: rgba(72, 202, 228, 0.05); border-left: 4px solid var(--secondary-blue);">
+                        <ol>
+                            <li><strong>Create</strong> - Instantiate the servant class</li>
+                            <li><strong>Activate</strong> - Register with POA using <code>activate_object()</code></li>
+                            <li><strong>Reference</strong> - Get object reference with <code>id_to_reference()</code></li>
+                            <li><strong>Export</strong> - Convert to IOR string with <code>object_to_string()</code></li>
+                        </ol>
+                    </div>
+                </div>
+
+                <h3>Client-Side Components</h3>
+                <div class="api-section">
+                    <h4>Object Reference Resolution</h4>
+                    <p>The client follows this pattern to access remote objects:</p>
+                    <ul>
+                        <li><strong>Load IOR</strong> - Read the IOR string from file or configuration</li>
+                        <li><strong>Convert</strong> - Use <code>string_to_object()</code> to get object reference</li>
+                        <li><strong>Cast</strong> - Type-cast to the expected interface for type safety</li>
+                        <li><strong>Invoke</strong> - Make remote method calls using await</li>
+                    </ul>
+                </div>
+
+                <h3>Network Communication</h3>
+                <p>CORBA.ts handles all the network complexity automatically:</p>
+                <div class="grid mt-1">
+                    <div class="feature-card">
+                        <h4>🔄 Marshalling</h4>
+                        <p>Parameters and return values are automatically converted to/from network format (CDR)</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>🌐 GIOP/IIOP</h4>
+                        <p>Uses standard CORBA protocols for interoperability with other CORBA implementations</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>⚡ Async Operations</h4>
+                        <p>All remote calls return Promises, integrating seamlessly with modern JavaScript</p>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <h4>🔒 Type Safety</h4>
+                        <p>TypeScript interfaces provide compile-time type checking for remote methods</p>
+                    </div>
+                </div>
+
+                <h2 id="next-steps">🎯 Next Steps</h2>
+                <p>Now that you understand the basics, explore these advanced topics:</p>
+
+                <div class="grid mt-2">
+                    <div class="feature-card">
+                        <h3><a href="client-server.html">🏗️ Production Patterns</a></h3>
+                        <p>Learn robust error handling, reconnection logic, and service management patterns.</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <h3><a href="naming-service.html">📖 Service Discovery</a></h3>
+                        <p>Use the Naming Service to eliminate hard-coded IORs and enable dynamic service discovery.</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <h3><a href="../guides/orb.html">🧠 ORB Deep Dive</a></h3>
+                        <p>Understand the Object Request Broker in detail and advanced configuration options.</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <h3><a href="../guides/poa.html">⚙️ POA Management</a></h3>
+                        <p>Master object lifecycle with POA policies, threading models, and activation strategies.</p>
+                    </div>
+                </div>
+
+                <div class="panel mt-2 text-center">
+                    <h3>🚀 Congratulations!</h3>
+                    <p>You've successfully created and run your first CORBA.ts distributed application!</p>
+                    <div class="cta-buttons mt-1">
+                        <a href="client-server.html" class="btn">Next: Client/Server Patterns</a>
+                        <a href="../guides/" class="btn btn-secondary">Back to Guides</a>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 CORBA.ts. Licensed under the MIT License.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
