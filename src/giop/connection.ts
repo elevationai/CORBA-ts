@@ -3,7 +3,7 @@
  * Handles TCP connections for GIOP message transport
  */
 
-import { GIOPMessage, GIOPReply, GIOPRequest, GIOPCloseConnection, GIOPMessageError } from "./messages.ts";
+import { GIOPCloseConnection, GIOPMessage, GIOPMessageError, GIOPReply, GIOPRequest } from "./messages.ts";
 import { IOR } from "./types.ts";
 import { IORUtil } from "./ior.ts";
 
@@ -98,7 +98,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
     this._state = ConnectionState.CONNECTING;
 
     let timeoutTimer: number | undefined;
-    
+
     try {
       // Create connection with timeout
       const connectPromise = Deno.connect({
@@ -112,7 +112,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
       });
 
       this._conn = await Promise.race([connectPromise, timeoutPromise]);
-      
+
       // Clear the timeout timer after successful connection
       if (timeoutTimer !== undefined) {
         clearTimeout(timeoutTimer);
@@ -135,7 +135,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
       if (timeoutTimer !== undefined) {
         clearTimeout(timeoutTimer);
       }
-      
+
       this._state = ConnectionState.DISCONNECTED;
       this._conn = null;
       throw new Error(
@@ -176,7 +176,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
 
     // If we have pending messages, return the first one
     if (this._pendingMessages.length > 0) {
-        return Promise.resolve(this._pendingMessages.shift()!);
+      return Promise.resolve(this._pendingMessages.shift()!);
     }
 
     // Otherwise, wait for a new message
@@ -259,7 +259,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
       // Check byte order flag (bit 0 of flags byte)
       const flags = this._readBuffer[6];
       const isLittleEndian = (flags & 0x01) !== 0;
-      
+
       // Read message size from header (bytes 8-11)
       const view = new DataView(this._readBuffer.buffer, this._readBuffer.byteOffset + 8, 4);
       const messageSize = view.getUint32(0, isLittleEndian);
@@ -278,7 +278,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
         // Check message type to create appropriate message object
         const messageType = messageData[7];
         let message: GIOPMessage;
-        
+
         switch (messageType) {
           case 0: // Request
             message = new GIOPRequest({ major: messageData[4], minor: messageData[5] });
@@ -296,7 +296,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
             console.error(`Unsupported message type: ${messageType}`);
             continue;
         }
-        
+
         message.deserialize(messageData);
         // Deliver message to waiting reader or queue it
         if (this._readers.length > 0) {
@@ -357,7 +357,7 @@ export class ConnectionManager {
         this._connectingPromises.delete(key);
         throw error;
       });
-      
+
       this._connectingPromises.set(key, connectPromise);
       return connectPromise;
     }

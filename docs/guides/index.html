@@ -1,143 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guides - CORBA.ts Documentation</title>
-    <meta name="description" content="Comprehensive guides for CORBA.ts - Learn how to build distributed applications with TypeScript and Deno">
+    <meta
+      name="description"
+      content="Comprehensive guides for CORBA.ts - Learn how to build distributed applications with TypeScript and Deno"
+    >
     <link rel="stylesheet" href="../assets/css/main.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
-</head>
-<body>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>"
+    >
+  </head>
+  <body>
     <header class="header">
-        <div class="container">
-            <nav class="nav">
-                <a href="../" class="logo">
-                    <span class="logo-icon"></span>
-                    CORBA.ts
-                </a>
-                <ul class="nav-links">
-                    <li><a href="../" >Home</a></li>
-                    <li><a href="./" class="active">Guides</a></li>
-                    <li><a href="../api/">API Reference</a></li>
-                    <li><a href="../examples/">Examples</a></li>
-                    <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
-                </ul>
-            </nav>
-        </div>
+      <div class="container">
+        <nav class="nav">
+          <a href="../" class="logo">
+            <span class="logo-icon"></span>
+            CORBA.ts
+          </a>
+          <ul class="nav-links">
+            <li><a href="../">Home</a></li>
+            <li><a href="./" class="active">Guides</a></li>
+            <li><a href="../api/">API Reference</a></li>
+            <li><a href="../examples/">Examples</a></li>
+            <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
+          </ul>
+        </nav>
+      </div>
     </header>
 
     <main class="container mt-2">
-        <div class="grid-2">
-            <aside class="doc-nav">
-                <h3>Guides</h3>
-                <ul>
-                    <li><a href="getting-started.html">Getting Started</a></li>
-                    <li><a href="orb.html">Object Request Broker (ORB)</a></li>
-                    <li><a href="poa.html">Portable Object Adapter (POA)</a></li>
-                    <li><a href="naming-service.html">Naming Service</a></li>
-                    <li><a href="idl-mapping.html">IDL Mapping</a></li>
-                    <li><a href="giop-iiop.html">GIOP/IIOP Protocols</a></li>
-                    <li><a href="typecode.html">TypeCode System</a></li>
-                    <li><a href="value-types.html">Value Types</a></li>
-                    <li><a href="dii.html">Dynamic Invocation Interface</a></li>
-                    <li><a href="deployment.html">Deployment Guide</a></li>
-                </ul>
-            </aside>
+      <div class="grid-2">
+        <aside class="doc-nav">
+          <h3>Guides</h3>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="orb.html">Object Request Broker (ORB)</a></li>
+            <li><a href="poa.html">Portable Object Adapter (POA)</a></li>
+            <li><a href="naming-service.html">Naming Service</a></li>
+            <li><a href="idl-mapping.html">IDL Mapping</a></li>
+            <li><a href="giop-iiop.html">GIOP/IIOP Protocols</a></li>
+            <li><a href="typecode.html">TypeCode System</a></li>
+            <li><a href="value-types.html">Value Types</a></li>
+            <li><a href="dii.html">Dynamic Invocation Interface</a></li>
+            <li><a href="deployment.html">Deployment Guide</a></li>
+          </ul>
+        </aside>
 
-            <article class="panel">
-                <h1>CORBA.ts Guides</h1>
-                <p>Welcome to the CORBA.ts documentation! These guides will help you understand and implement distributed applications using CORBA.ts with TypeScript and Deno.</p>
+        <article class="panel">
+          <h1>CORBA.ts Guides</h1>
+          <p>
+            Welcome to the CORBA.ts documentation! These guides will help you understand and implement distributed
+            applications using CORBA.ts with TypeScript and Deno.
+          </p>
 
-                <h2>📚 Available Guides</h2>
+          <h2>📚 Available Guides</h2>
 
-                <div class="feature-card mt-2">
-                    <h3><a href="getting-started.html">Getting Started</a></h3>
-                    <p>Learn the basics of CORBA.ts, from installation to creating your first CORBA application. Perfect for newcomers to both CORBA and TypeScript distributed programming.</p>
-                </div>
+          <div class="feature-card mt-2">
+            <h3><a href="getting-started.html">Getting Started</a></h3>
+            <p>
+              Learn the basics of CORBA.ts, from installation to creating your first CORBA application. Perfect for
+              newcomers to both CORBA and TypeScript distributed programming.
+            </p>
+          </div>
 
-                <div class="feature-card mt-1">
-                    <h3><a href="orb.html">Object Request Broker (ORB)</a></h3>
-                    <p>Deep dive into the ORB - the heart of CORBA. Understand object references, request routing, and inter-ORB communication.</p>
-                </div>
+          <div class="feature-card mt-1">
+            <h3><a href="orb.html">Object Request Broker (ORB)</a></h3>
+            <p>
+              Deep dive into the ORB - the heart of CORBA. Understand object references, request routing, and inter-ORB
+              communication.
+            </p>
+          </div>
 
-                <div class="feature-card mt-1">
-                    <h3><a href="poa.html">Portable Object Adapter (POA)</a></h3>
-                    <p>Master object lifecycle management, servant activation, and POA policies for building robust server applications.</p>
-                </div>
+          <div class="feature-card mt-1">
+            <h3><a href="poa.html">Portable Object Adapter (POA)</a></h3>
+            <p>
+              Master object lifecycle management, servant activation, and POA policies for building robust server
+              applications.
+            </p>
+          </div>
 
-                <div class="feature-card mt-1">
-                    <h3><a href="naming-service.html">Naming Service</a></h3>
-                    <p>Implement service discovery and location transparency using CORBA's naming service for distributed object management.</p>
-                </div>
+          <div class="feature-card mt-1">
+            <h3><a href="naming-service.html">Naming Service</a></h3>
+            <p>
+              Implement service discovery and location transparency using CORBA's naming service for distributed object
+              management.
+            </p>
+          </div>
 
-                <div class="feature-card mt-1">
-                    <h3><a href="idl-mapping.html">IDL Mapping</a></h3>
-                    <p>Learn how to define interfaces using IDL and generate TypeScript code for type-safe distributed programming.</p>
-                </div>
+          <div class="feature-card mt-1">
+            <h3><a href="idl-mapping.html">IDL Mapping</a></h3>
+            <p>
+              Learn how to define interfaces using IDL and generate TypeScript code for type-safe distributed
+              programming.
+            </p>
+          </div>
 
-                <div class="feature-card mt-1">
-                    <h3><a href="giop-iiop.html">GIOP/IIOP Protocols</a></h3>
-                    <p>Understand the network protocols that enable CORBA communication, including message formats and connection management.</p>
-                </div>
+          <div class="feature-card mt-1">
+            <h3><a href="giop-iiop.html">GIOP/IIOP Protocols</a></h3>
+            <p>
+              Understand the network protocols that enable CORBA communication, including message formats and connection
+              management.
+            </p>
+          </div>
 
-                <h2>🎯 Learning Path</h2>
-                <p>We recommend following this learning path for the best experience:</p>
-                
-                <div class="panel mt-1" style="background: rgba(100, 255, 218, 0.05); border-left: 4px solid var(--primary-cyan);">
-                    <ol>
-                        <li><strong>Getting Started</strong> - Install and create your first application</li>
-                        <li><strong>ORB Guide</strong> - Understand the core CORBA concepts</li>
-                        <li><strong>POA Guide</strong> - Learn server-side object management</li>
-                        <li><strong>Naming Service</strong> - Implement service discovery</li>
-                        <li><strong>Advanced Topics</strong> - TypeCodes, Value Types, and DII</li>
-                    </ol>
-                </div>
+          <h2>🎯 Learning Path</h2>
+          <p>We recommend following this learning path for the best experience:</p>
 
-                <h2>💡 Prerequisites</h2>
-                <ul>
-                    <li><strong>Deno</strong> - Version 1.37 or higher</li>
-                    <li><strong>TypeScript</strong> - Basic to intermediate knowledge</li>
-                    <li><strong>Distributed Systems</strong> - Basic understanding helpful but not required</li>
-                    <li><strong>Network Programming</strong> - Basic TCP/IP knowledge recommended</li>
-                </ul>
+          <div
+            class="panel mt-1"
+            style="background: rgba(100, 255, 218, 0.05); border-left: 4px solid var(--primary-cyan)"
+          >
+            <ol>
+              <li><strong>Getting Started</strong> - Install and create your first application</li>
+              <li><strong>ORB Guide</strong> - Understand the core CORBA concepts</li>
+              <li><strong>POA Guide</strong> - Learn server-side object management</li>
+              <li><strong>Naming Service</strong> - Implement service discovery</li>
+              <li><strong>Advanced Topics</strong> - TypeCodes, Value Types, and DII</li>
+            </ol>
+          </div>
 
-                <h2>🔗 Quick Links</h2>
-                <div class="grid mt-1">
-                    <div class="feature-card">
-                        <h4>🚀 Quick Start</h4>
-                        <p>Jump right into building your first CORBA.ts application with our step-by-step tutorial.</p>
-                        <a href="getting-started.html" class="btn btn-small mt-1">Get Started</a>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <h4>📖 API Reference</h4>
-                        <p>Detailed API documentation for all CORBA.ts classes, interfaces, and functions.</p>
-                        <a href="../api/" class="btn btn-small btn-secondary mt-1">Browse API</a>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <h4>💻 Examples</h4>
-                        <p>Working code examples demonstrating common CORBA.ts patterns and use cases.</p>
-                        <a href="../examples/" class="btn btn-small btn-secondary mt-1">View Examples</a>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <h4>🐛 Issues & Support</h4>
-                        <p>Found a bug or need help? Check our GitHub repository for issues and discussions.</p>
-                        <a href="https://github.com/elevationai/CORBA-ts/issues" class="btn btn-small btn-secondary mt-1" target="_blank">Get Help</a>
-                    </div>
-                </div>
-            </article>
-        </div>
+          <h2>💡 Prerequisites</h2>
+          <ul>
+            <li><strong>Deno</strong> - Version 1.37 or higher</li>
+            <li><strong>TypeScript</strong> - Basic to intermediate knowledge</li>
+            <li><strong>Distributed Systems</strong> - Basic understanding helpful but not required</li>
+            <li><strong>Network Programming</strong> - Basic TCP/IP knowledge recommended</li>
+          </ul>
+
+          <h2>🔗 Quick Links</h2>
+          <div class="grid mt-1">
+            <div class="feature-card">
+              <h4>🚀 Quick Start</h4>
+              <p>Jump right into building your first CORBA.ts application with our step-by-step tutorial.</p>
+              <a href="getting-started.html" class="btn btn-small mt-1">Get Started</a>
+            </div>
+
+            <div class="feature-card">
+              <h4>📖 API Reference</h4>
+              <p>Detailed API documentation for all CORBA.ts classes, interfaces, and functions.</p>
+              <a href="../api/" class="btn btn-small btn-secondary mt-1">Browse API</a>
+            </div>
+
+            <div class="feature-card">
+              <h4>💻 Examples</h4>
+              <p>Working code examples demonstrating common CORBA.ts patterns and use cases.</p>
+              <a href="../examples/" class="btn btn-small btn-secondary mt-1">View Examples</a>
+            </div>
+
+            <div class="feature-card">
+              <h4>🐛 Issues & Support</h4>
+              <p>Found a bug or need help? Check our GitHub repository for issues and discussions.</p>
+              <a
+                href="https://github.com/elevationai/CORBA-ts/issues"
+                class="btn btn-small btn-secondary mt-1"
+                target="_blank"
+              >Get Help</a>
+            </div>
+          </div>
+        </article>
+      </div>
     </main>
 
     <footer class="footer">
-        <div class="container">
-            <div class="footer-bottom">
-                <p>&copy; 2024 CORBA.ts. Licensed under the MIT License.</p>
-            </div>
+      <div class="container">
+        <div class="footer-bottom">
+          <p>&copy; 2024 CORBA.ts. Licensed under the MIT License.</p>
         </div>
+      </div>
     </footer>
-</body>
+  </body>
 </html>

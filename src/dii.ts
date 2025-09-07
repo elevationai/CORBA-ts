@@ -251,10 +251,10 @@ export class RequestImpl implements Request {
       // Import CDR encoder and TypeCode encoder
       const { CDROutputStream } = await import("./core/cdr/encoder.ts");
       const { encodeWithTypeCode } = await import("./core/cdr/typecode-encoder.ts");
-      
+
       // Create CDR output stream for request body
       const cdr = new CDROutputStream(1024, false); // Big-endian by default
-      
+
       // Encode each IN and INOUT parameter using its TypeCode
       for (const param of this._params) {
         if (param.mode === ParameterMode.PARAM_IN || param.mode === ParameterMode.PARAM_INOUT) {
@@ -262,11 +262,11 @@ export class RequestImpl implements Request {
             encodeWithTypeCode(cdr, param.value, param.type);
           } else {
             // Fallback for parameters without TypeCode
-            if (typeof param.value === 'string') {
+            if (typeof param.value === "string") {
               cdr.writeString(param.value);
-            } else if (typeof param.value === 'number') {
+            } else if (typeof param.value === "number") {
               cdr.writeLong(Math.floor(param.value));
-            } else if (typeof param.value === 'boolean') {
+            } else if (typeof param.value === "boolean") {
               cdr.writeBoolean(param.value);
             } else {
               cdr.writeString(JSON.stringify(param.value));
@@ -274,39 +274,39 @@ export class RequestImpl implements Request {
           }
         }
       }
-      
+
       // Get the encoded buffer
       const requestBody = cdr.getBuffer();
-      
+
       // Get the ORB instance and invoke with encoded buffer
       const { ORB_instance } = await import("./orb.ts");
       const orb = ORB_instance();
-      
+
       // Invoke through the ORB with pre-encoded buffer
       const result = await orb.invokeWithEncodedArgs(
-        this._target as CORBA.ObjectRef, 
-        this._operation, 
-        requestBody
+        this._target as CORBA.ObjectRef,
+        this._operation,
+        requestBody,
       );
-      
+
       // Set the return value
       this._return_value = result.returnValue;
-      
+
       // Decode output parameters from the reply buffer
       const { CDRInputStream } = await import("./core/cdr/decoder.ts");
       const { decodeWithTypeCode } = await import("./core/cdr/typecode-decoder.ts");
-      
+
       // Create CDR input stream from the output buffer
       // Note: We need to skip past the return value that was already read
       const outCdr = new CDRInputStream(result.outputBuffer, false); // Assuming big-endian
-      
+
       // Skip the return value (assuming it's a long for now)
       try {
         outCdr.readLong(); // Skip return value
       } catch {
         // If can't read as long, reset position
       }
-      
+
       // Decode output parameters in order
       for (const param of this._params) {
         if (param.mode === ParameterMode.PARAM_OUT || param.mode === ParameterMode.PARAM_INOUT) {
@@ -315,17 +315,17 @@ export class RequestImpl implements Request {
               // Decode the parameter value based on its TypeCode
               param.value = decodeWithTypeCode(outCdr, param.type);
             } catch (error) {
-              console.warn(`Failed to decode output parameter: ${error}`);
-              // Fallback to dummy value if decoding fails
-              param.value = this.create_dummy_value(param.type);
+              // Log the error and throw - don't use dummy values
+              console.error(`Failed to decode output parameter: ${error}`);
+              throw new CORBA.MARSHAL(`Failed to decode output parameter: ${error}`);
             }
           } else {
-            // No type info, use dummy value
-            param.value = this.create_dummy_value(param.type);
+            // No type info - this is a programming error
+            throw new CORBA.BAD_PARAM("Output parameter has no TypeCode");
           }
         }
       }
-      
+
       this._response_received = true;
     } catch (e) {
       this._exception = e;
@@ -340,17 +340,9 @@ export class RequestImpl implements Request {
     this._return_value = null;
     this._exception = null;
 
-    // In a real implementation, this would use GIOP to invoke the operation asynchronously
-    // For now, we'll just simulate a call after a short delay
-    setTimeout(() => {
-      try {
-        this.simulate_invocation();
-        this._response_received = true;
-      } catch (e) {
-        this._exception = e;
-        this._response_received = true;
-      }
-    }, 100);
+    // TODO: Implement proper async GIOP invocation
+    // This would use GIOP to invoke the operation asynchronously
+    throw new CORBA.NO_IMPLEMENT("Deferred invocation not yet implemented");
   }
 
   send_oneway(): void {
@@ -375,69 +367,6 @@ export class RequestImpl implements Request {
 
     if (this._exception) {
       throw this._exception;
-    }
-  }
-
-  /**
-   * Helper method to simulate an invocation
-   * In a real implementation, this would be replaced with GIOP communication
-   */
-  private simulate_invocation(): void {
-    // Set output and inout parameters to some dummy values
-    for (const param of this._params) {
-      if (param.mode === ParameterMode.PARAM_OUT || param.mode === ParameterMode.PARAM_INOUT) {
-        // Set a dummy value based on the type
-        param.value = this.create_dummy_value(param.type);
-      }
-    }
-
-    // Set a dummy return value if a return type was specified
-    if (this._return_type) {
-      this._return_value = this.create_dummy_value(this._return_type);
-    }
-  }
-
-  /**
-   * Helper method to create a dummy value of the appropriate type
-   */
-  private create_dummy_value(tc: TypeCode): unknown {
-    switch (tc.kind()) {
-      case TypeCode.Kind.tk_void:
-        return null;
-      case TypeCode.Kind.tk_short:
-      case TypeCode.Kind.tk_long:
-      case TypeCode.Kind.tk_ushort:
-      case TypeCode.Kind.tk_ulong:
-      case TypeCode.Kind.tk_float:
-      case TypeCode.Kind.tk_double:
-        return 0;
-      case TypeCode.Kind.tk_boolean:
-        return false;
-      case TypeCode.Kind.tk_char:
-      case TypeCode.Kind.tk_wchar:
-        return "";
-      case TypeCode.Kind.tk_string:
-      case TypeCode.Kind.tk_wstring:
-        return "";
-      case TypeCode.Kind.tk_octet:
-        return 0;
-      case TypeCode.Kind.tk_any:
-        return null;
-      case TypeCode.Kind.tk_TypeCode:
-        return tc;
-      case TypeCode.Kind.tk_objref:
-        return null;
-      case TypeCode.Kind.tk_struct:
-        return {};
-      case TypeCode.Kind.tk_union:
-        return {};
-      case TypeCode.Kind.tk_enum:
-        return 0;
-      case TypeCode.Kind.tk_sequence:
-      case TypeCode.Kind.tk_array:
-        return [];
-      default:
-        return null;
     }
   }
 }

@@ -148,9 +148,39 @@ export class BoxedValueBase<T> extends ValueBase {
   }
 
   _copy_value(): ValueBase {
-    // This is a simplified implementation
-    // A complete implementation would need to handle deep copying
-    return new BoxedValueBase<T>(this._id, this._value);
+    // Perform deep copy of the value
+    const copiedValue = this._deepCopy(this._value);
+    return new BoxedValueBase<T>(this._id, copiedValue);
+  }
+
+  /**
+   * Deep copy implementation for boxed values
+   */
+  private _deepCopy(value: T): T {
+    // Handle primitives and null/undefined
+    if (value === null || value === undefined || typeof value !== "object") {
+      return value;
+    }
+
+    // Handle Date objects
+    if (value instanceof Date) {
+      return new Date(value.getTime()) as unknown as T;
+    }
+
+    // Handle Arrays
+    if (Array.isArray(value)) {
+      return value.map((item) => this._deepCopy(item)) as unknown as T;
+    }
+
+    // Handle regular objects
+    const copy = {} as Record<string, unknown>;
+    for (const key in value) {
+      if (Object.prototype.hasOwnProperty.call(value, key)) {
+        copy[key] = this._deepCopy((value as Record<string, unknown>)[key] as T);
+      }
+    }
+
+    return copy as T;
   }
 }
 

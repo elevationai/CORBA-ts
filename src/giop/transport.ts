@@ -3,9 +3,9 @@
  * High-level interface for sending and receiving GIOP messages
  */
 
-import { GIOPMessage, GIOPReply, GIOPRequest, GIOPCloseConnection, GIOPMessageError } from "./messages.ts";
+import { GIOPCloseConnection, GIOPMessage, GIOPMessageError, GIOPReply, GIOPRequest } from "./messages.ts";
 import { ConnectionEndpoint, ConnectionManager, IIOPConnection } from "./connection.ts";
-import { GIOPVersion, GIOPMessageType, IOR, ReplyStatusType, ServiceContext } from "./types.ts";
+import { GIOPMessageType, GIOPVersion, IOR, ReplyStatusType, ServiceContext } from "./types.ts";
 import { IORUtil } from "./ior.ts";
 
 /**
@@ -129,7 +129,7 @@ export class GIOPTransport {
    */
   async close(): Promise<void> {
     this._closed = true;
-    
+
     // Cancel all pending requests
     for (const [_requestId, context] of this._pendingRequests) {
       clearTimeout(context.timer);
@@ -415,7 +415,7 @@ export class GIOPServer {
 
       // Check message type (byte 7)
       const messageType = messageData[7];
-      
+
       // Only handle Request messages
       if (messageType !== GIOPMessageType.Request) {
         console.warn(`Unexpected message type on server: ${messageType}`);

@@ -405,9 +405,25 @@ export class NamingContextImpl extends ObjectReference implements NamingContext 
     if (n.length === 1) {
       return this._bindings.has(this.getKey(n));
     }
-    // For compound names, would need to check recursively
-    // This is a simplified implementation
-    return false;
+
+    // For compound names, check recursively through contexts
+    const firstKey = this.getKey([n[0]]);
+    const binding = this._bindings.get(firstKey);
+
+    if (!binding || binding.type !== BindingType.ncontext) {
+      return false;
+    }
+
+    // Check if the sub-context contains the rest of the name
+    const subContext = binding.obj as NamingContextImpl;
+    return subContext.exists(n.slice(1));
+  }
+
+  /**
+   * Check if a name is contained in this context (alias for exists)
+   */
+  contains(n: Name): boolean {
+    return this.exists(n);
   }
 
   /**

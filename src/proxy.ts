@@ -6,6 +6,9 @@
 import { CORBA } from "./types.ts";
 import { ORB } from "./orb.ts";
 import { IOR } from "./giop/types.ts";
+import { CDROutputStream } from "./core/cdr/encoder.ts";
+import { encodeWithTypeCode } from "./core/cdr/typecode-encoder.ts";
+import { inferTypeCode } from "./typecode.ts";
 
 /**
  * Proxy configuration options
@@ -188,24 +191,35 @@ export class CORBAProxy {
       throw new CORBA.BAD_PARAM("Object reference does not contain IOR");
     }
 
-    // Get transport from ORB (this is a simplified approach)
-    const transport = (this._orb as unknown as {
-      _transport: {
-        sendOnewayRequest: (
-          ior: IOR,
-          operation: string,
-          requestBody: Uint8Array,
-        ) => Promise<void>;
-      };
-    })._transport;
-    if (!transport) {
-      throw new CORBA.INTERNAL("ORB transport not available");
+    // Properly encode arguments using TypeCode-aware CDR encoding
+    const cdr = new CDROutputStream();
+
+    for (const arg of args) {
+      const tc = inferTypeCode(arg);
+      encodeWithTypeCode(cdr, arg, tc);
     }
 
-    // Serialize arguments (simplified)
-    const requestBody = new TextEncoder().encode(JSON.stringify(args));
+    const encodedArgs = cdr.getBuffer();
 
-    await transport.sendOnewayRequest(ior, operation, requestBody);
+    // Get transport from ORB - use proper interface
+    // deno-lint-ignore no-explicit-any
+    const orbInternal = this._orb as any;
+
+    if (orbInternal._transport && typeof orbInternal._transport.sendOnewayRequest === "function") {
+      // Use dedicated oneway method if available
+      await orbInternal._transport.sendOnewayRequest(ior, operation, encodedArgs);
+    } else {
+      // Fallback: use regular invoke but don't wait for response
+      // This works because oneway operations don't expect a reply
+      try {
+        await this._orb.invokeWithEncodedArgs(this._objRef, operation, encodedArgs);
+      } catch (error) {
+        // For oneway, we can ignore certain errors like connection closed after send
+        if (!(error instanceof CORBA.COMM_FAILURE)) {
+          throw error;
+        }
+      }
+    }
   }
 }
 

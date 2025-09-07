@@ -3,6 +3,10 @@
  * Based on CORBA 3.4 specification
  */
 
+import type { ServiceContext } from "./giop/types.ts";
+import type { CDRInputStream } from "./core/cdr/decoder.ts";
+import type { CDROutputStream } from "./core/cdr/encoder.ts";
+
 // Export all GIOP types and classes
 export * from "./giop/types.ts";
 export * from "./giop/messages.ts";
@@ -72,12 +76,51 @@ export abstract class GIOPMessage {
   /**
    * Serialize the message to a buffer
    */
-  abstract serialize(): Uint8Array;
+  abstract serialize(): Promise<Uint8Array>;
 
   /**
    * Deserialize a message from a buffer
    */
-  abstract deserialize(buffer: Uint8Array, offset: number): number;
+  abstract deserialize(buffer: Uint8Array, offset: number): Promise<number>;
+
+  /**
+   * Read GIOP header from buffer
+   */
+  protected readHeader(buffer: Uint8Array): void {
+    if (buffer.length < 12) {
+      throw new Error("Buffer too small for GIOP header");
+    }
+
+    // Read magic number
+    const magic = new TextDecoder().decode(buffer.slice(0, 4));
+    if (magic !== "GIOP") {
+      throw new Error(`Invalid GIOP magic: ${magic}`);
+    }
+    this.header.magic = magic;
+
+    // Read version
+    this.header.version = {
+      major: buffer[4],
+      minor: buffer[5],
+    };
+
+    // Read flags
+    this.header.flags = buffer[6];
+
+    // Read message type
+    this.header.message_type = buffer[7];
+
+    // Read message size (endian-dependent)
+    const view = new DataView(buffer.buffer, buffer.byteOffset + 8, 4);
+    this.header.message_size = view.getUint32(0, this.isLittleEndian());
+  }
+
+  /**
+   * Check if message uses little-endian byte order
+   */
+  protected isLittleEndian(): boolean {
+    return (this.header.flags & 0x01) !== 0;
+  }
 }
 
 /**
@@ -89,7 +132,7 @@ export class GIOPRequestMessage extends GIOPMessage {
   reserved: Uint8Array; // 3 bytes
   object_key: Uint8Array;
   operation: string;
-  service_context: unknown[]; // Simplified - would be properly typed in a complete implementation
+  service_context: ServiceContext[];
 
   constructor() {
     super(GIOPMessageType.Request);
@@ -101,31 +144,192 @@ export class GIOPRequestMessage extends GIOPMessage {
     this.service_context = [];
   }
 
-  serialize(): Uint8Array {
-    // This is a placeholder implementation
-    // A real implementation would properly serialize the message
+  async serialize(): Promise<Uint8Array> {
+    const { CDROutputStream } = await import("./core/cdr/encoder.ts");
+    const cdr = new CDROutputStream(256, false); // Big-endian by default
 
-    // Calculate message size
-    const operation_length = this.operation.length;
-    const object_key_length = this.object_key.length;
+    // Write GIOP header placeholder (will be filled later)
+    // deno-lint-ignore no-unused-vars
+    const headerStart = cdr.getPosition();
+    cdr.writeOctetArray(new TextEncoder().encode(this.header.magic));
+    cdr.writeOctet(this.header.version.major);
+    cdr.writeOctet(this.header.version.minor);
+    cdr.writeOctet(this.header.flags);
+    cdr.writeOctet(this.header.message_type);
 
-    // Size would include header (12 bytes) + request fields
-    this.header.message_size = 12 + 4 + 1 + 3 + 4 + object_key_length + 4 + operation_length;
+    // Placeholder for message size (will be updated)
+    const messageSizePos = cdr.getPosition();
+    cdr.writeULong(0);
 
-    // Create buffer
-    const buffer = new Uint8Array(this.header.message_size);
+    const bodyStart = cdr.getPosition();
 
-    // Serialize header and message
-    // This is just a placeholder - real implementation would be more complex
+    // Serialize body based on GIOP version
+    if (this.header.version.minor <= 1) {
+      this.serializeRequest_1_0(cdr);
+    } else {
+      this.serializeRequest_1_2(cdr);
+    }
+
+    // Update message size
+    const bodySize = cdr.getPosition() - bodyStart;
+    const buffer = cdr.getBuffer();
+    const view = new DataView(buffer.buffer, buffer.byteOffset + messageSizePos, 4);
+    view.setUint32(0, bodySize, false); // Big-endian
 
     return buffer;
   }
 
-  deserialize(_buffer: Uint8Array, offset: number): number {
-    // This is a placeholder implementation
-    // A real implementation would properly deserialize the message
-    // and return the new offset
-    return offset;
+  private serializeRequest_1_0(cdr: CDROutputStream): void {
+    // Service context
+    this.writeServiceContext(cdr, this.service_context);
+
+    // Request ID
+    cdr.writeULong(this.request_id);
+
+    // Response expected
+    cdr.writeBoolean(this.response_expected);
+
+    // Reserved
+    cdr.writeOctetArray(this.reserved);
+
+    // Object key
+    cdr.writeULong(this.object_key.length);
+    cdr.writeOctetArray(this.object_key);
+
+    // Operation
+    cdr.writeString(this.operation);
+
+    // Requesting principal (deprecated)
+    cdr.writeULong(0);
+  }
+
+  private serializeRequest_1_2(cdr: CDROutputStream): void {
+    // Request ID
+    cdr.writeULong(this.request_id);
+
+    // Response flags
+    const responseFlags = this.response_expected ? 0x03 : 0x00;
+    cdr.writeOctet(responseFlags);
+
+    // Reserved
+    cdr.writeOctetArray(this.reserved);
+
+    // Target address (KeyAddr)
+    cdr.writeShort(0); // KeyAddr
+    cdr.writeULong(this.object_key.length);
+    cdr.writeOctetArray(this.object_key);
+
+    // Operation
+    cdr.writeString(this.operation);
+
+    // Service context
+    this.writeServiceContext(cdr, this.service_context);
+
+    // Align for body
+    cdr.align(8);
+  }
+
+  private writeServiceContext(cdr: CDROutputStream, contexts: ServiceContext[]): void {
+    cdr.writeULong(contexts.length);
+    for (const ctx of contexts) {
+      cdr.writeULong(ctx.contextId);
+      cdr.writeULong(ctx.contextData.length);
+      cdr.writeOctetArray(ctx.contextData);
+    }
+  }
+
+  async deserialize(buffer: Uint8Array, offset: number = 0): Promise<number> {
+    const { CDRInputStream } = await import("./core/cdr/decoder.ts");
+
+    // Read GIOP header
+    this.readHeader(buffer.slice(offset));
+
+    // Create CDR stream from body
+    const bodyOffset = offset + 12;
+    const cdr = new CDRInputStream(
+      buffer.slice(bodyOffset),
+      this.isLittleEndian(),
+    );
+
+    // Deserialize based on GIOP version
+    if (this.header.version.minor <= 1) {
+      this.deserializeRequest_1_0(cdr);
+    } else {
+      this.deserializeRequest_1_2(cdr);
+    }
+
+    return offset + 12 + this.header.message_size;
+  }
+
+  private deserializeRequest_1_0(cdr: CDRInputStream): void {
+    // Service context
+    this.service_context = this.readServiceContext(cdr);
+
+    // Request ID
+    this.request_id = cdr.readULong();
+
+    // Response expected
+    this.response_expected = cdr.readBoolean();
+
+    // Reserved
+    this.reserved = cdr.readOctetArray(3);
+
+    // Object key
+    const keyLength = cdr.readULong();
+    this.object_key = cdr.readOctetArray(keyLength);
+
+    // Operation
+    this.operation = cdr.readString();
+
+    // Requesting principal (skip)
+    const principalLength = cdr.readULong();
+    if (principalLength > 0) {
+      cdr.readOctetArray(principalLength);
+    }
+  }
+
+  private deserializeRequest_1_2(cdr: CDRInputStream): void {
+    // Request ID
+    this.request_id = cdr.readULong();
+
+    // Response flags
+    const responseFlags = cdr.readOctet();
+    this.response_expected = (responseFlags & 0x03) !== 0;
+
+    // Reserved
+    this.reserved = cdr.readOctetArray(3);
+
+    // Target address
+    const addressingDisposition = cdr.readShort();
+    if (addressingDisposition === 0) { // KeyAddr
+      const keyLength = cdr.readULong();
+      this.object_key = cdr.readOctetArray(keyLength);
+    } else {
+      throw new Error(`Unsupported addressing disposition: ${addressingDisposition}`);
+    }
+
+    // Operation
+    this.operation = cdr.readString();
+
+    // Service context
+    this.service_context = this.readServiceContext(cdr);
+
+    // Skip alignment
+    cdr.align(8);
+  }
+
+  private readServiceContext(cdr: CDRInputStream): ServiceContext[] {
+    const count = cdr.readULong();
+    const contexts: ServiceContext[] = [];
+
+    for (let i = 0; i < count; i++) {
+      const contextId = cdr.readULong();
+      const dataLength = cdr.readULong();
+      const contextData = cdr.readOctetArray(dataLength);
+      contexts.push({ contextId, contextData });
+    }
+
+    return contexts;
   }
 }
 
@@ -135,7 +339,7 @@ export class GIOPRequestMessage extends GIOPMessage {
 export class GIOPReplyMessage extends GIOPMessage {
   request_id: number;
   reply_status: GIOPReplyStatusType;
-  service_context: unknown[]; // Simplified - would be properly typed in a complete implementation
+  service_context: ServiceContext[];
 
   constructor() {
     super(GIOPMessageType.Reply);
@@ -144,26 +348,133 @@ export class GIOPReplyMessage extends GIOPMessage {
     this.service_context = [];
   }
 
-  serialize(): Uint8Array {
-    // This is a placeholder implementation
-    // A real implementation would properly serialize the message
+  async serialize(): Promise<Uint8Array> {
+    const { CDROutputStream } = await import("./core/cdr/encoder.ts");
+    const cdr = new CDROutputStream(256, false); // Big-endian by default
 
-    // Calculate message size
+    // Write GIOP header placeholder (will be filled later)
+    cdr.writeOctetArray(new TextEncoder().encode(this.header.magic));
+    cdr.writeOctet(this.header.version.major);
+    cdr.writeOctet(this.header.version.minor);
+    cdr.writeOctet(this.header.flags);
+    cdr.writeOctet(this.header.message_type);
 
-    // Create buffer
-    const buffer = new Uint8Array(12); // Just header for now
+    // Placeholder for message size (will be updated)
+    const messageSizePos = cdr.getPosition();
+    cdr.writeULong(0);
 
-    // Serialize header and message
-    // This is just a placeholder - real implementation would be more complex
+    const bodyStart = cdr.getPosition();
+
+    // Serialize body based on GIOP version
+    if (this.header.version.minor <= 1) {
+      this.serializeReply_1_0(cdr);
+    } else {
+      this.serializeReply_1_2(cdr);
+    }
+
+    // Update message size
+    const bodySize = cdr.getPosition() - bodyStart;
+    const buffer = cdr.getBuffer();
+    const view = new DataView(buffer.buffer, buffer.byteOffset + messageSizePos, 4);
+    view.setUint32(0, bodySize, false); // Big-endian
 
     return buffer;
   }
 
-  deserialize(_buffer: Uint8Array, offset: number): number {
-    // This is a placeholder implementation
-    // A real implementation would properly deserialize the message
-    // and return the new offset
-    return offset;
+  private serializeReply_1_0(cdr: CDROutputStream): void {
+    // Service context
+    this.writeServiceContext(cdr, this.service_context);
+
+    // Request ID
+    cdr.writeULong(this.request_id);
+
+    // Reply status
+    cdr.writeULong(this.reply_status);
+  }
+
+  private serializeReply_1_2(cdr: CDROutputStream): void {
+    // Request ID
+    cdr.writeULong(this.request_id);
+
+    // Reply status
+    cdr.writeULong(this.reply_status);
+
+    // Service context
+    this.writeServiceContext(cdr, this.service_context);
+
+    // Align for body
+    cdr.align(8);
+  }
+
+  private writeServiceContext(cdr: CDROutputStream, contexts: ServiceContext[]): void {
+    cdr.writeULong(contexts.length);
+    for (const ctx of contexts) {
+      cdr.writeULong(ctx.contextId);
+      cdr.writeULong(ctx.contextData.length);
+      cdr.writeOctetArray(ctx.contextData);
+    }
+  }
+
+  async deserialize(buffer: Uint8Array, offset: number = 0): Promise<number> {
+    const { CDRInputStream } = await import("./core/cdr/decoder.ts");
+
+    // Read GIOP header
+    this.readHeader(buffer.slice(offset));
+
+    // Create CDR stream from body
+    const bodyOffset = offset + 12;
+    const cdr = new CDRInputStream(
+      buffer.slice(bodyOffset),
+      this.isLittleEndian(),
+    );
+
+    // Deserialize based on GIOP version
+    if (this.header.version.minor <= 1) {
+      this.deserializeReply_1_0(cdr);
+    } else {
+      this.deserializeReply_1_2(cdr);
+    }
+
+    return offset + 12 + this.header.message_size;
+  }
+
+  private deserializeReply_1_0(cdr: CDRInputStream): void {
+    // Service context
+    this.service_context = this.readServiceContext(cdr);
+
+    // Request ID
+    this.request_id = cdr.readULong();
+
+    // Reply status
+    this.reply_status = cdr.readULong();
+  }
+
+  private deserializeReply_1_2(cdr: CDRInputStream): void {
+    // Request ID
+    this.request_id = cdr.readULong();
+
+    // Reply status
+    this.reply_status = cdr.readULong();
+
+    // Service context
+    this.service_context = this.readServiceContext(cdr);
+
+    // Skip alignment
+    cdr.align(8);
+  }
+
+  private readServiceContext(cdr: CDRInputStream): ServiceContext[] {
+    const count = cdr.readULong();
+    const contexts: ServiceContext[] = [];
+
+    for (let i = 0; i < count; i++) {
+      const contextId = cdr.readULong();
+      const dataLength = cdr.readULong();
+      const contextData = cdr.readOctetArray(dataLength);
+      contexts.push({ contextId, contextData });
+    }
+
+    return contexts;
   }
 }
 
@@ -229,42 +540,93 @@ export function createGIOPMessage(buffer: Uint8Array): GIOPMessage | null {
 /**
  * Parse an IOR (Interoperable Object Reference) string
  */
-export function parseIOR(iorString: string): IIOPProfile | null {
-  if (!iorString.startsWith("IOR:")) {
+export async function parseIOR(iorString: string): Promise<IIOPProfile | null> {
+  try {
+    const { IORUtil } = await import("./giop/ior.ts");
+    const ior = IORUtil.fromString(iorString);
+
+    // Extract IIOP profile from the IOR
+    for (const profile of ior.profiles) {
+      if (profile.profileId === 0) { // TAG_INTERNET_IOP
+        const { CDRInputStream } = await import("./core/cdr/decoder.ts");
+        const cdr = new CDRInputStream(profile.profileData, false); // Assume big-endian
+
+        // Read IIOP profile body
+        const iiop_version = {
+          major: cdr.readOctet(),
+          minor: cdr.readOctet(),
+        };
+        const host = cdr.readString();
+        const port = cdr.readUShort();
+        const keyLength = cdr.readULong();
+        const object_key = cdr.readOctetArray(keyLength);
+
+        // Read components (if any remaining data)
+        const components: IIOPProfileComponent[] = [];
+        try {
+          while (cdr.remaining() > 0) {
+            const tag = cdr.readULong();
+            const dataLength = cdr.readULong();
+            const data = cdr.readOctetArray(dataLength);
+            components.push({ tag, data });
+          }
+        } catch {
+          // No more components
+        }
+
+        return {
+          version: iiop_version,
+          host,
+          port,
+          object_key,
+          components,
+        };
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`Failed to parse IOR: ${error}`);
     return null;
   }
-
-  // Remove "IOR:" prefix
-  const hexString = iorString.substring(4);
-
-  // Convert hex to bytes
-  const bytes = new Uint8Array(hexString.length / 2);
-  for (let i = 0; i < hexString.length; i += 2) {
-    bytes[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
-  }
-
-  // Parse the IOR data
-  // This is a placeholder - a real implementation would properly parse the IOR
-
-  // Return a dummy profile for now
-  return {
-    version: {
-      major: 1,
-      minor: 0,
-    },
-    host: "localhost",
-    port: 2809,
-    object_key: new Uint8Array(0),
-    components: [],
-  };
 }
 
 /**
  * Create an IOR string
  */
-export function createIOR(_profile: IIOPProfile): string {
-  // This is a placeholder - a real implementation would properly serialize the IOR
+export async function createIOR(profile: IIOPProfile): Promise<string> {
+  try {
+    const { IORUtil } = await import("./giop/ior.ts");
+    const { CDROutputStream } = await import("./core/cdr/encoder.ts");
 
-  // Return a dummy IOR for now
-  return "IOR:000000000000000100000000000000000001000000000000003a00010000000000016c6f63616c686f7374000af90000000014010000000000000001000000010000000100000020000101000000010001000100010001000100010001000100010001000101";
+    // Create IIOP profile data
+    const profileCdr = new CDROutputStream(256, false); // Big-endian
+    profileCdr.writeOctet(profile.version.major);
+    profileCdr.writeOctet(profile.version.minor);
+    profileCdr.writeString(profile.host);
+    profileCdr.writeUShort(profile.port);
+    profileCdr.writeULong(profile.object_key.length);
+    profileCdr.writeOctetArray(profile.object_key);
+
+    // Write components
+    for (const component of profile.components) {
+      profileCdr.writeULong(component.tag);
+      profileCdr.writeULong(component.data.length);
+      profileCdr.writeOctetArray(component.data);
+    }
+
+    // Create IOR with tagged profile
+    const ior = {
+      typeId: "", // Default empty type ID
+      profiles: [{
+        profileId: 0, // TAG_INTERNET_IOP
+        profileData: profileCdr.getBuffer(),
+      }],
+    };
+
+    return IORUtil.toString(ior);
+  } catch (error) {
+    console.error(`Failed to create IOR: ${error}`);
+    return "IOR:"; // Return minimal IOR on error
+  }
 }

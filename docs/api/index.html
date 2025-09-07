@@ -1,232 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Reference - CORBA.ts Documentation</title>
-    <meta name="description" content="Complete API reference for CORBA.ts - Classes, interfaces, types, and functions documentation">
+    <meta
+      name="description"
+      content="Complete API reference for CORBA.ts - Classes, interfaces, types, and functions documentation"
+    >
     <link rel="stylesheet" href="../assets/css/main.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
-</head>
-<body>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>"
+    >
+  </head>
+  <body>
     <header class="header">
-        <div class="container">
-            <nav class="nav">
-                <a href="../" class="logo">
-                    <span class="logo-icon"></span>
-                    CORBA.ts
-                </a>
-                <ul class="nav-links">
-                    <li><a href="../">Home</a></li>
-                    <li><a href="../guides/">Guides</a></li>
-                    <li><a href="./" class="active">API Reference</a></li>
-                    <li><a href="../examples/">Examples</a></li>
-                    <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
-                </ul>
-            </nav>
-        </div>
+      <div class="container">
+        <nav class="nav">
+          <a href="../" class="logo">
+            <span class="logo-icon"></span>
+            CORBA.ts
+          </a>
+          <ul class="nav-links">
+            <li><a href="../">Home</a></li>
+            <li><a href="../guides/">Guides</a></li>
+            <li><a href="./" class="active">API Reference</a></li>
+            <li><a href="../examples/">Examples</a></li>
+            <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
+          </ul>
+        </nav>
+      </div>
     </header>
 
     <main class="container mt-2">
-        <div class="grid-2">
-            <aside class="doc-nav">
-                <h3>API Reference</h3>
-                <ul>
-                    <li><a href="orb.html">ORB</a></li>
-                    <li><a href="poa.html">POA</a></li>
-                    <li><a href="types.html">Types & TypeCodes</a></li>
-                    <li><a href="giop.html">GIOP/IIOP</a></li>
-                    <li><a href="dii.html">Dynamic Invocation</a></li>
-                    <li><a href="naming.html">Naming Service</a></li>
-                    <li><a href="exceptions.html">Exceptions</a></li>
-                    <li><a href="valuetypes.html">Value Types</a></li>
-                    <li><a href="policy.html">Policies</a></li>
-                </ul>
-            </aside>
+      <div class="grid-2">
+        <aside class="doc-nav">
+          <h3>API Reference</h3>
+          <ul>
+            <li><a href="orb.html">ORB</a></li>
+            <li><a href="poa.html">POA</a></li>
+            <li><a href="types.html">Types & TypeCodes</a></li>
+            <li><a href="giop.html">GIOP/IIOP</a></li>
+            <li><a href="dii.html">Dynamic Invocation</a></li>
+            <li><a href="naming.html">Naming Service</a></li>
+            <li><a href="exceptions.html">Exceptions</a></li>
+            <li><a href="valuetypes.html">Value Types</a></li>
+            <li><a href="policy.html">Policies</a></li>
+          </ul>
+        </aside>
 
-            <article class="panel">
-                <h1>CORBA.ts API Reference</h1>
-                <p>Complete API documentation for all CORBA.ts classes, interfaces, types, and functions. The API is organized by functional areas to help you find what you need quickly.</p>
+        <article class="panel">
+          <h1>CORBA.ts API Reference</h1>
+          <p>
+            Complete API documentation for all CORBA.ts classes, interfaces, types, and functions. The API is organized
+            by functional areas to help you find what you need quickly.
+          </p>
 
-                <h2>📚 API Organization</h2>
+          <h2>📚 API Organization</h2>
 
-                <div class="grid mt-2">
-                    <div class="feature-card">
-                        <h3><a href="orb.html">🌐 ORB (Object Request Broker)</a></h3>
-                        <p>Core ORB functionality including initialization, object reference management, and service resolution.</p>
-                        <ul>
-                            <li><code>init()</code> - Initialize CORBA runtime</li>
-                            <li><code>ORB_instance()</code> - Get ORB singleton</li>
-                            <li><code>object_to_string()</code> - Convert to IOR</li>
-                            <li><code>string_to_object()</code> - Parse IOR</li>
-                        </ul>
-                    </div>
+          <div class="grid mt-2">
+            <div class="feature-card">
+              <h3><a href="orb.html">🌐 ORB (Object Request Broker)</a></h3>
+              <p>
+                Core ORB functionality including initialization, object reference management, and service resolution.
+              </p>
+              <ul>
+                <li><code>init()</code> - Initialize CORBA runtime</li>
+                <li><code>ORB_instance()</code> - Get ORB singleton</li>
+                <li><code>object_to_string()</code> - Convert to IOR</li>
+                <li><code>string_to_object()</code> - Parse IOR</li>
+              </ul>
+            </div>
 
-                    <div class="feature-card">
-                        <h3><a href="poa.html">🏗️ POA (Portable Object Adapter)</a></h3>
-                        <p>Object lifecycle management, servant activation, and POA policies.</p>
-                        <ul>
-                            <li><code>getRootPOA()</code> - Access root POA</li>
-                            <li><code>Servant</code> - Base servant class</li>
-                            <li><code>activate_object()</code> - Servant activation</li>
-                            <li><code>POAManager</code> - Activation control</li>
-                        </ul>
-                    </div>
+            <div class="feature-card">
+              <h3><a href="poa.html">🏗️ POA (Portable Object Adapter)</a></h3>
+              <p>Object lifecycle management, servant activation, and POA policies.</p>
+              <ul>
+                <li><code>getRootPOA()</code> - Access root POA</li>
+                <li><code>Servant</code> - Base servant class</li>
+                <li><code>activate_object()</code> - Servant activation</li>
+                <li><code>POAManager</code> - Activation control</li>
+              </ul>
+            </div>
 
-                    <div class="feature-card">
-                        <h3><a href="types.html">📋 Types & TypeCodes</a></h3>
-                        <p>CORBA type system, TypeCode definitions, and Any type support.</p>
-                        <ul>
-                            <li><code>TypeCode</code> - Type descriptions</li>
-                            <li><code>Any</code> - Universal container</li>
-                            <li><code>TCKind</code> - Type kinds enumeration</li>
-                            <li>Primitive type mappings</li>
-                        </ul>
-                    </div>
+            <div class="feature-card">
+              <h3><a href="types.html">📋 Types & TypeCodes</a></h3>
+              <p>CORBA type system, TypeCode definitions, and Any type support.</p>
+              <ul>
+                <li><code>TypeCode</code> - Type descriptions</li>
+                <li><code>Any</code> - Universal container</li>
+                <li><code>TCKind</code> - Type kinds enumeration</li>
+                <li>Primitive type mappings</li>
+              </ul>
+            </div>
 
-                    <div class="feature-card">
-                        <h3><a href="giop.html">📡 GIOP/IIOP</a></h3>
-                        <p>Network protocols, message formats, and connection management.</p>
-                        <ul>
-                            <li><code>GIOPMessage</code> - GIOP message structure</li>
-                            <li><code>IOR</code> - Object reference format</li>
-                            <li><code>CDRInputStream/OutputStream</code> - Data marshalling</li>
-                            <li>Protocol version handling</li>
-                        </ul>
-                    </div>
+            <div class="feature-card">
+              <h3><a href="giop.html">📡 GIOP/IIOP</a></h3>
+              <p>Network protocols, message formats, and connection management.</p>
+              <ul>
+                <li><code>GIOPMessage</code> - GIOP message structure</li>
+                <li><code>IOR</code> - Object reference format</li>
+                <li><code>CDRInputStream/OutputStream</code> - Data marshalling</li>
+                <li>Protocol version handling</li>
+              </ul>
+            </div>
 
-                    <div class="feature-card">
-                        <h3><a href="dii.html">⚙️ Dynamic Invocation Interface</a></h3>
-                        <p>Runtime method invocation and request construction.</p>
-                        <ul>
-                            <li><code>create_request()</code> - Request builder</li>
-                            <li><code>Request</code> - Dynamic request</li>
-                            <li><code>add_in_arg()</code> - Parameter handling</li>
-                            <li><code>invoke()</code> - Execute request</li>
-                        </ul>
-                    </div>
+            <div class="feature-card">
+              <h3><a href="dii.html">⚙️ Dynamic Invocation Interface</a></h3>
+              <p>Runtime method invocation and request construction.</p>
+              <ul>
+                <li><code>create_request()</code> - Request builder</li>
+                <li><code>Request</code> - Dynamic request</li>
+                <li><code>add_in_arg()</code> - Parameter handling</li>
+                <li><code>invoke()</code> - Execute request</li>
+              </ul>
+            </div>
 
-                    <div class="feature-card">
-                        <h3><a href="naming.html">📖 Naming Service</a></h3>
-                        <p>Service discovery and object location transparency.</p>
-                        <ul>
-                            <li><code>NamingContext</code> - Directory interface</li>
-                            <li><code>NamingContextExt</code> - Extended naming</li>
-                            <li><code>bind()</code> - Register objects</li>
-                            <li><code>resolve()</code> - Find objects</li>
-                        </ul>
-                    </div>
+            <div class="feature-card">
+              <h3><a href="naming.html">📖 Naming Service</a></h3>
+              <p>Service discovery and object location transparency.</p>
+              <ul>
+                <li><code>NamingContext</code> - Directory interface</li>
+                <li><code>NamingContextExt</code> - Extended naming</li>
+                <li><code>bind()</code> - Register objects</li>
+                <li><code>resolve()</code> - Find objects</li>
+              </ul>
+            </div>
 
-                    <div class="feature-card">
-                        <h3><a href="exceptions.html">⚠️ Exceptions</a></h3>
-                        <p>CORBA exception hierarchy and error handling.</p>
-                        <ul>
-                            <li><code>CORBA.SystemException</code> - System errors</li>
-                            <li><code>CORBA.UserException</code> - Application errors</li>
-                            <li><code>BAD_PARAM</code>, <code>COMM_FAILURE</code>, etc.</li>
-                            <li>Exception details and completion status</li>
-                        </ul>
-                    </div>
+            <div class="feature-card">
+              <h3><a href="exceptions.html">⚠️ Exceptions</a></h3>
+              <p>CORBA exception hierarchy and error handling.</p>
+              <ul>
+                <li><code>CORBA.SystemException</code> - System errors</li>
+                <li><code>CORBA.UserException</code> - Application errors</li>
+                <li><code>BAD_PARAM</code>, <code>COMM_FAILURE</code>, etc.</li>
+                <li>Exception details and completion status</li>
+              </ul>
+            </div>
 
-                    <div class="feature-card">
-                        <h3><a href="valuetypes.html">💎 Value Types</a></h3>
-                        <p>Complex data structures and value semantics.</p>
-                        <ul>
-                            <li><code>ValueBase</code> - Base value type</li>
-                            <li><code>ValueFactory</code> - Value creation</li>
-                            <li><code>register_value_factory()</code> - Factory registration</li>
-                            <li>Custom value implementations</li>
-                        </ul>
-                    </div>
+            <div class="feature-card">
+              <h3><a href="valuetypes.html">💎 Value Types</a></h3>
+              <p>Complex data structures and value semantics.</p>
+              <ul>
+                <li><code>ValueBase</code> - Base value type</li>
+                <li><code>ValueFactory</code> - Value creation</li>
+                <li><code>register_value_factory()</code> - Factory registration</li>
+                <li>Custom value implementations</li>
+              </ul>
+            </div>
 
-                    <div class="feature-card">
-                        <h3><a href="policy.html">🔧 Policies</a></h3>
-                        <p>Quality of Service and behavioral configuration.</p>
-                        <ul>
-                            <li><code>Policy</code> - Base policy interface</li>
-                            <li><code>PolicyType</code> - Policy type constants</li>
-                            <li>POA policies (threading, lifespan, etc.)</li>
-                            <li>Custom policy implementations</li>
-                        </ul>
-                    </div>
-                </div>
+            <div class="feature-card">
+              <h3><a href="policy.html">🔧 Policies</a></h3>
+              <p>Quality of Service and behavioral configuration.</p>
+              <ul>
+                <li><code>Policy</code> - Base policy interface</li>
+                <li><code>PolicyType</code> - Policy type constants</li>
+                <li>POA policies (threading, lifespan, etc.)</li>
+                <li>Custom policy implementations</li>
+              </ul>
+            </div>
+          </div>
 
-                <h2>🚀 Quick Reference</h2>
+          <h2>🚀 Quick Reference</h2>
 
-                <h3>Common Imports</h3>
-                <div class="code-block" data-lang="typescript">
-// Core functionality
-import { 
-  init, 
-  ORB_instance, 
-  getRootPOA 
-} from "jsr:@eai/corba";
+          <h3>Common Imports</h3>
+          <div class="code-block" data-lang="typescript">
+            // Core functionality import { init, ORB_instance, getRootPOA } from "jsr:@eai/corba"; // POA support import
+            { Servant } from "jsr:@eai/corba/poa"; // Types and TypeCodes import { TypeCode, Any, TCKind } from
+            "jsr:@eai/corba/types"; // Naming Service import { NamingContext, NamingContextExt } from
+            "jsr:@eai/corba/naming"; // Dynamic Invocation import { create_request } from "jsr:@eai/corba/dii"; //
+            Exceptions import { SystemException, UserException } from "jsr:@eai/corba/exceptions";
+          </div>
 
-// POA support
-import { Servant } from "jsr:@eai/corba/poa";
+          <h3>Essential Patterns</h3>
+          <div class="code-block" data-lang="typescript">
+            // Initialize CORBA await init(); const orb = ORB_instance(); // Create servant class MyServant extends
+            Servant { _repository_id(): string { return "IDL:MyInterface:1.0"; } myMethod(): string { return "Hello
+            World"; } } // Activate servant const rootPOA = getRootPOA(); const servant = new MyServant(); const oid =
+            await rootPOA.activate_object(servant); const objRef = await rootPOA.id_to_reference(oid); // Convert to IOR
+            const ior = await orb.object_to_string(objRef); // Use object reference const obj = await
+            orb.string_to_object(ior); const result = await (obj as any).myMethod();
+          </div>
 
-// Types and TypeCodes
-import { 
-  TypeCode, 
-  Any, 
-  TCKind 
-} from "jsr:@eai/corba/types";
+          <h2>📖 TypeScript Definitions</h2>
+          <p>CORBA.ts is built with TypeScript-first design, providing excellent type safety and IDE support.</p>
 
-// Naming Service
-import { 
-  NamingContext, 
-  NamingContextExt 
-} from "jsr:@eai/corba/naming";
-
-// Dynamic Invocation
-import { create_request } from "jsr:@eai/corba/dii";
-
-// Exceptions
-import { 
-  SystemException, 
-  UserException 
-} from "jsr:@eai/corba/exceptions";
-</div>
-
-                <h3>Essential Patterns</h3>
-                <div class="code-block" data-lang="typescript">
-// Initialize CORBA
-await init();
-const orb = ORB_instance();
-
-// Create servant
-class MyServant extends Servant {
-  _repository_id(): string {
-    return "IDL:MyInterface:1.0";
-  }
-  
-  myMethod(): string {
-    return "Hello World";
-  }
-}
-
-// Activate servant
-const rootPOA = getRootPOA();
-const servant = new MyServant();
-const oid = await rootPOA.activate_object(servant);
-const objRef = await rootPOA.id_to_reference(oid);
-
-// Convert to IOR
-const ior = await orb.object_to_string(objRef);
-
-// Use object reference
-const obj = await orb.string_to_object(ior);
-const result = await (obj as any).myMethod();
-</div>
-
-                <h2>📖 TypeScript Definitions</h2>
-                <p>CORBA.ts is built with TypeScript-first design, providing excellent type safety and IDE support.</p>
-
-                <h3>Core Types</h3>
-                <div class="api-section">
-                    <h4>Object Reference</h4>
-                    <div class="api-signature">
-<pre><code>interface Object {
+          <h3>Core Types</h3>
+          <div class="api-section">
+            <h4>Object Reference</h4>
+            <div class="api-signature">
+              <pre>
+<code>interface Object {
   _is_a(logical_type_id: string): Promise&lt;boolean&gt;;
   _non_existent(): Promise&lt;boolean&gt;;
   _is_equivalent(other_object: Object): boolean;
@@ -235,13 +200,14 @@ const result = await (obj as any).myMethod();
   _release(): void;
 }
 </code></pre>
-                    </div>
-                </div>
+            </div>
+          </div>
 
-                <div class="api-section">
-                    <h4>ORB Interface</h4>
-                    <div class="api-signature">
-<pre><code>interface ORB {
+          <div class="api-section">
+            <h4>ORB Interface</h4>
+            <div class="api-signature">
+              <pre>
+<code>interface ORB {
   string_to_object(str: string): Promise&lt;Object&gt;;
   object_to_string(obj: Object): Promise&lt;string&gt;;
   resolve_initial_references(object_name: string): Promise&lt;Object&gt;;
@@ -250,69 +216,74 @@ const result = await (obj as any).myMethod();
   shutdown(wait_for_completion: boolean): Promise&lt;void&gt;;
 }
 </code></pre>
-                    </div>
-                </div>
+            </div>
+          </div>
 
-                <h2>🔍 Finding What You Need</h2>
-                <div class="grid mt-2">
-                    <div class="feature-card">
-                        <h4>By Category</h4>
-                        <p>Browse APIs organized by functional area using the navigation menu.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <h4>Search</h4>
-                        <p>Use your browser's search (Ctrl+F) to find specific methods or types.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <h4>Examples</h4>
-                        <p>Each API page includes usage examples and common patterns.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <h4>Source Code</h4>
-                        <p>Reference the TypeScript source code on GitHub for detailed implementation.</p>
-                    </div>
-                </div>
+          <h2>🔍 Finding What You Need</h2>
+          <div class="grid mt-2">
+            <div class="feature-card">
+              <h4>By Category</h4>
+              <p>Browse APIs organized by functional area using the navigation menu.</p>
+            </div>
 
-                <h2>📝 API Conventions</h2>
-                <div class="panel mt-2" style="background: rgba(100, 255, 218, 0.05); border-left: 4px solid var(--primary-cyan);">
-                    <h4>Naming Conventions</h4>
-                    <ul>
-                        <li><strong>Functions</strong>: <code>camelCase</code> (e.g., <code>string_to_object</code>)</li>
-                        <li><strong>Classes</strong>: <code>PascalCase</code> (e.g., <code>TypeCode</code>)</li>
-                        <li><strong>Constants</strong>: <code>UPPER_CASE</code> (e.g., <code>TCKind.tk_string</code>)</li>
-                        <li><strong>Private methods</strong>: Prefixed with <code>_</code> (e.g., <code>_repository_id</code>)</li>
-                    </ul>
-                    
-                    <h4>Async Patterns</h4>
-                    <ul>
-                        <li>All network operations return <code>Promise&lt;T&gt;</code></li>
-                        <li>Use <code>await</code> for all ORB operations</li>
-                        <li>Handle exceptions with try-catch blocks</li>
-                    </ul>
-                </div>
+            <div class="feature-card">
+              <h4>Search</h4>
+              <p>Use your browser's search (Ctrl+F) to find specific methods or types.</p>
+            </div>
 
-                <div class="panel mt-2 text-center">
-                    <h3>🚀 Start Exploring</h3>
-                    <p>Choose a category to dive into the detailed API documentation</p>
-                    <div class="cta-buttons mt-1">
-                        <a href="orb.html" class="btn">ORB API</a>
-                        <a href="poa.html" class="btn btn-secondary">POA API</a>
-                        <a href="types.html" class="btn btn-secondary">Types</a>
-                    </div>
-                </div>
-            </article>
-        </div>
+            <div class="feature-card">
+              <h4>Examples</h4>
+              <p>Each API page includes usage examples and common patterns.</p>
+            </div>
+
+            <div class="feature-card">
+              <h4>Source Code</h4>
+              <p>Reference the TypeScript source code on GitHub for detailed implementation.</p>
+            </div>
+          </div>
+
+          <h2>📝 API Conventions</h2>
+          <div
+            class="panel mt-2"
+            style="background: rgba(100, 255, 218, 0.05); border-left: 4px solid var(--primary-cyan)"
+          >
+            <h4>Naming Conventions</h4>
+            <ul>
+              <li><strong>Functions</strong>: <code>camelCase</code> (e.g., <code>string_to_object</code>)</li>
+              <li><strong>Classes</strong>: <code>PascalCase</code> (e.g., <code>TypeCode</code>)</li>
+              <li><strong>Constants</strong>: <code>UPPER_CASE</code> (e.g., <code>TCKind.tk_string</code>)</li>
+              <li>
+                <strong>Private methods</strong>: Prefixed with <code>_</code> (e.g., <code>_repository_id</code>)
+              </li>
+            </ul>
+
+            <h4>Async Patterns</h4>
+            <ul>
+              <li>All network operations return <code>Promise&lt;T&gt;</code></li>
+              <li>Use <code>await</code> for all ORB operations</li>
+              <li>Handle exceptions with try-catch blocks</li>
+            </ul>
+          </div>
+
+          <div class="panel mt-2 text-center">
+            <h3>🚀 Start Exploring</h3>
+            <p>Choose a category to dive into the detailed API documentation</p>
+            <div class="cta-buttons mt-1">
+              <a href="orb.html" class="btn">ORB API</a>
+              <a href="poa.html" class="btn btn-secondary">POA API</a>
+              <a href="types.html" class="btn btn-secondary">Types</a>
+            </div>
+          </div>
+        </article>
+      </div>
     </main>
 
     <footer class="footer">
-        <div class="container">
-            <div class="footer-bottom">
-                <p>&copy; 2024 CORBA.ts. Licensed under the MIT License.</p>
-            </div>
+      <div class="container">
+        <div class="footer-bottom">
+          <p>&copy; 2024 CORBA.ts. Licensed under the MIT License.</p>
         </div>
+      </div>
     </footer>
-</body>
+  </body>
 </html>

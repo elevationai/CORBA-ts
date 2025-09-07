@@ -103,9 +103,39 @@ export class Policy extends ObjectReference implements PolicyInterface {
       return false;
     }
 
-    // This is a simplified comparison
-    // A complete implementation would need to compare the policy values properly
-    return JSON.stringify(this._policy_value) === JSON.stringify(other._policy_value);
+    // Proper deep comparison of policy values
+    return this._deepEqual(this._policy_value, other._policy_value);
+  }
+
+  /**
+   * Deep equality comparison for policy values
+   */
+  private _deepEqual(a: unknown, b: unknown): boolean {
+    if (a === b) return true;
+
+    if (a === null || b === null) return false;
+    if (a === undefined || b === undefined) return false;
+
+    if (typeof a !== typeof b) return false;
+
+    if (typeof a === "object" && typeof b === "object") {
+      const aObj = a as Record<string, unknown>;
+      const bObj = b as Record<string, unknown>;
+
+      const aKeys = Object.keys(aObj);
+      const bKeys = Object.keys(bObj);
+
+      if (aKeys.length !== bKeys.length) return false;
+
+      for (const key of aKeys) {
+        if (!bKeys.includes(key)) return false;
+        if (!this._deepEqual(aObj[key], bObj[key])) return false;
+      }
+
+      return true;
+    }
+
+    return false;
   }
 }
 

@@ -4,15 +4,7 @@
  */
 
 import { CDRInputStream, CDROutputStream } from "../core/cdr/index.ts";
-import {
-  ComponentId,
-  GIOPVersion,
-  IIOPProfileBody,
-  IOR,
-  ProfileId,
-  TaggedComponent,
-  TaggedProfile,
-} from "./types.ts";
+import { ComponentId, GIOPVersion, IIOPProfileBody, IOR, ProfileId, TaggedComponent, TaggedProfile } from "./types.ts";
 
 /**
  * IOR utilities and operations
@@ -84,9 +76,7 @@ export class IORUtil {
     const port = portStr ? parseInt(portStr) : 2809; // Default IIOP port
 
     // Parse object key
-    const object_key = keyStr
-      ? new TextEncoder().encode(decodeURIComponent(keyStr))
-      : new Uint8Array(0);
+    const object_key = keyStr ? new TextEncoder().encode(decodeURIComponent(keyStr)) : new Uint8Array(0);
 
     // Create IIOP profile
     const profile = this.createIIOPProfile({

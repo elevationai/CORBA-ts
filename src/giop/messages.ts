@@ -290,7 +290,7 @@ export class GIOPRequest extends GIOPMessage {
       buffer,
       this.isLittleEndian(),
     );
-    
+
     // Start reading after the header
     cdr.setPosition(12);
 
@@ -490,7 +490,7 @@ export class GIOPReply extends GIOPMessage {
       buffer,
       this.isLittleEndian(),
     );
-    
+
     // Start reading after the header
     cdr.setPosition(12);
 
@@ -600,8 +600,8 @@ export class GIOPCancelRequest extends GIOPMessage {
       buffer,
       this.isLittleEndian(),
     );
-    
-    // Start reading after the header  
+
+    // Start reading after the header
     cdr.setPosition(12);
 
     this.requestId = cdr.readULong();

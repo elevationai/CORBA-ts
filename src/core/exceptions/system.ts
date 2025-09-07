@@ -32,9 +32,7 @@ export abstract class SystemException extends Error {
   }
 
   override toString(): string {
-    return `${this.name}: ${this.message} (minor: ${this.minor}, completed: ${
-      CompletionStatus[this.completed]
-    })`;
+    return `${this.name}: ${this.message} (minor: ${this.minor}, completed: ${CompletionStatus[this.completed]})`;
   }
 }
 

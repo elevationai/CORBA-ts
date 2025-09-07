@@ -6,6 +6,42 @@
 import { CORBA } from "./types.ts";
 
 /**
+ * Infer TypeCode from a JavaScript value
+ */
+export function inferTypeCode(value: unknown): TypeCode {
+  if (value === null || value === undefined) {
+    return new TypeCode(TypeCode.Kind.tk_null);
+  }
+
+  switch (typeof value) {
+    case "boolean":
+      return new TypeCode(TypeCode.Kind.tk_boolean);
+    case "number":
+      if (Number.isInteger(value)) {
+        if (value >= -2147483648 && value <= 2147483647) {
+          return new TypeCode(TypeCode.Kind.tk_long);
+        } else {
+          return new TypeCode(TypeCode.Kind.tk_longlong);
+        }
+      } else {
+        return new TypeCode(TypeCode.Kind.tk_double);
+      }
+    case "string":
+      return new TypeCode(TypeCode.Kind.tk_string);
+    case "bigint":
+      return new TypeCode(TypeCode.Kind.tk_longlong);
+    case "object":
+      if (Array.isArray(value)) {
+        return new TypeCode(TypeCode.Kind.tk_sequence);
+      } else {
+        return new TypeCode(TypeCode.Kind.tk_any);
+      }
+    default:
+      return new TypeCode(TypeCode.Kind.tk_any);
+  }
+}
+
+/**
  * TypeCode class and namespace
  */
 export class TypeCode {

@@ -4,7 +4,7 @@ This directory contains the complete documentation website for CORBA.ts, built w
 
 ## 🌐 Live Website
 
-The documentation is automatically deployed to GitHub Pages at: 
+The documentation is automatically deployed to GitHub Pages at:
 **https://elevationai.github.io/CORBA-ts/** (update URL when repository is published)
 
 ## 📁 Structure
@@ -90,12 +90,14 @@ Then visit: http://localhost:8080
 ## 🎯 Content Guidelines
 
 ### Writing Style
+
 - **Concise**: Clear, direct explanations
 - **Practical**: Include working code examples
 - **Progressive**: Build from simple to complex concepts
 - **TypeScript-First**: Show modern TypeScript patterns
 
 ### Code Examples
+
 - Always include complete, runnable examples
 - Use proper error handling
 - Include setup and teardown
@@ -103,6 +105,7 @@ Then visit: http://localhost:8080
 - Test all code samples
 
 ### Navigation
+
 - Keep navigation depth reasonable (max 3 levels)
 - Use consistent naming conventions
 - Provide "breadcrumb" navigation where helpful
@@ -111,20 +114,22 @@ Then visit: http://localhost:8080
 ## 🔧 Customization
 
 ### Theme Colors
+
 The CUSS2 theme uses CSS custom properties for easy customization:
 
 ```css
 :root {
-  --primary-cyan: #64ffda;      /* Main accent color */
-  --secondary-blue: #48cae4;    /* Secondary accent */
-  --dark-navy: #0f0f1e;         /* Primary background */
-  --dark-purple: #1a1a2e;       /* Secondary background */
-  --text-primary: #e0e0e0;      /* Main text */
-  --text-secondary: #a0a0a0;    /* Secondary text */
+  --primary-cyan: #64ffda; /* Main accent color */
+  --secondary-blue: #48cae4; /* Secondary accent */
+  --dark-navy: #0f0f1e; /* Primary background */
+  --dark-purple: #1a1a2e; /* Secondary background */
+  --text-primary: #e0e0e0; /* Main text */
+  --text-secondary: #a0a0a0; /* Secondary text */
 }
 ```
 
 ### Layout Components
+
 - `.container` - Main content wrapper
 - `.grid`, `.grid-2`, `.grid-3` - Responsive grid layouts
 - `.panel` - Content containers with theme styling

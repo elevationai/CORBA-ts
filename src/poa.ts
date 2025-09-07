@@ -6,6 +6,8 @@
 import { CORBA } from "./types.ts";
 import { Object, ObjectReference } from "./object.ts";
 import { Policy } from "./policy.ts";
+import { IORUtil } from "./giop/ior.ts";
+import type { IOR } from "./giop/types.ts";
 
 /**
  * AdapterActivator interface
@@ -367,6 +369,9 @@ class POAImpl extends ObjectReference implements POA {
   private _children: Map<string, POA> = new Map();
   private _servant_manager: ServantManager | null = null;
   private _default_servant: Servant | null = null;
+  private _host: string = "localhost";
+  private _port: number = 9000;
+  private _object_references: Map<string, CORBA.ObjectRef> = new Map();
 
   constructor(name: string, parent: POA | null = null, manager: POAManager | null = null) {
     super("IDL:omg.org/PortableServer/POA:1.0");
@@ -513,11 +518,44 @@ class POAImpl extends ObjectReference implements POA {
     return Promise.resolve();
   }
 
-  create_reference_with_id(_oid: Uint8Array, intf: string): Object {
-    // In a real implementation, this would create a proper object reference
-    // with the given interface repository ID
-    const obj = new ObjectReference(intf);
-    return obj;
+  create_reference_with_id(oid: Uint8Array, intf: string): Object {
+    // Create a proper CORBA object reference with IOR
+    const ior = IORUtil.createSimpleIOR(
+      intf,
+      this._host,
+      this._port,
+      oid,
+    );
+
+    // Create the CORBA object reference
+    const objRef: CORBA.ObjectRef = {
+      _ior: ior,
+      _is_a: (repositoryId: string): Promise<boolean> => {
+        return Promise.resolve(ior.typeId === repositoryId);
+      },
+      _hash: (maximum: number): number => {
+        let hash = 0;
+        const iorStr = IORUtil.toString(ior);
+        for (let i = 0; i < iorStr.length; i++) {
+          hash = ((hash << 5) - hash + iorStr.charCodeAt(i)) & 0xffffffff;
+        }
+        return Math.abs(hash) % maximum;
+      },
+      _is_equivalent: (other: CORBA.ObjectRef): boolean => {
+        return IORUtil.toString(ior) === IORUtil.toString((other as { _ior: IOR })._ior);
+      },
+      _non_existent: (): Promise<boolean> => {
+        // Check if the servant exists for this object ID
+        const idStr = bytesToHex(oid);
+        return Promise.resolve(!this._servants.has(idStr));
+      },
+    };
+
+    // Store the reference for later retrieval
+    const idStr = bytesToHex(oid);
+    this._object_references.set(idStr, objRef);
+
+    return objRef as unknown as Object;
   }
 
   create_reference(intf: string): Object {
@@ -548,10 +586,49 @@ class POAImpl extends ObjectReference implements POA {
     return this.id_to_servant(oid);
   }
 
-  reference_to_id(_reference: Object): Promise<Uint8Array> {
-    // In a real implementation, this would extract the object ID from the reference
-    // For simplicity, we're just creating a new ID
-    return Promise.resolve(generateObjectId());
+  async reference_to_id(reference: Object): Promise<Uint8Array> {
+    // Extract the object ID from the reference's IOR
+    const objRef = reference as unknown as CORBA.ObjectRef;
+
+    if (!objRef._ior) {
+      return Promise.reject(new CORBA.BAD_PARAM("Invalid object reference: missing IOR"));
+    }
+
+    const ior = objRef._ior as IOR;
+
+    // Find the IIOP profile
+    const iiopProfile = ior.profiles.find((p: { profileId: number }) => p.profileId === 0); // TAG_INTERNET_IOP
+
+    if (!iiopProfile) {
+      return Promise.reject(new CORBA.BAD_PARAM("No IIOP profile found in IOR"));
+    }
+
+    // Parse the IIOP profile to extract object key
+    try {
+      const { CDRInputStream } = await import("./core/cdr/decoder.ts");
+      const cdr = new CDRInputStream(iiopProfile.profileData);
+
+      // Skip version (2 octets)
+      cdr.readOctet(); // major
+      cdr.readOctet(); // minor
+
+      // Skip host
+      cdr.readString();
+
+      // Skip port
+      cdr.readUShort();
+
+      // Read object key
+      const keyLength = cdr.readULong();
+      const objectKey = new Uint8Array(keyLength);
+      for (let i = 0; i < keyLength; i++) {
+        objectKey[i] = cdr.readOctet();
+      }
+
+      return Promise.resolve(objectKey);
+    } catch (error) {
+      return Promise.reject(new CORBA.MARSHAL("Failed to extract object ID from IOR: " + (error as Error).message));
+    }
   }
 
   id_to_servant(oid: Uint8Array): Promise<Servant> {
@@ -614,6 +691,11 @@ export function getRootPOA(): POA {
   }
   return _root_poa;
 }
+
+/**
+ * Export RootPOA as an alias for POAImpl
+ */
+export { POAImpl as RootPOA };
 
 /**
  * Initialize the root POA

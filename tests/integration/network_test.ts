@@ -83,12 +83,12 @@ Deno.test("Network: Multiple concurrent requests", async () => {
     });
 
     await server.start();
-    
+
     // Get actual server address
     const actualAddr = server.getAddress();
     assertExists(actualAddr, "Server should have an address");
     const testEndpoint = { host: "127.0.0.1", port: actualAddr.port };
-    
+
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Create test IOR
@@ -146,12 +146,12 @@ Deno.test("Network: Oneway requests", async () => {
     });
 
     await server.start();
-    
+
     // Get actual server address
     const actualAddr = server.getAddress();
     assertExists(actualAddr, "Server should have an address");
     const testEndpoint = { host: "127.0.0.1", port: actualAddr.port };
-    
+
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Create test IOR
@@ -248,12 +248,12 @@ Deno.test("Network: Connection pooling and reuse", async () => {
     });
 
     await server.start();
-    
+
     // Get actual server address
     const actualAddr = server.getAddress();
     assertExists(actualAddr, "Server should have an address");
     const testEndpoint = { host: "127.0.0.1", port: actualAddr.port };
-    
+
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Create test IOR

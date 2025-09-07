@@ -1,306 +1,297 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Examples - CORBA.ts Documentation</title>
-    <meta name="description" content="Practical examples and code samples for CORBA.ts - Learn through working implementations">
+    <meta
+      name="description"
+      content="Practical examples and code samples for CORBA.ts - Learn through working implementations"
+    >
     <link rel="stylesheet" href="../assets/css/main.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
-</head>
-<body>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>"
+    >
+  </head>
+  <body>
     <header class="header">
-        <div class="container">
-            <nav class="nav">
-                <a href="../" class="logo">
-                    <span class="logo-icon"></span>
-                    CORBA.ts
-                </a>
-                <ul class="nav-links">
-                    <li><a href="../">Home</a></li>
-                    <li><a href="../guides/">Guides</a></li>
-                    <li><a href="../api/">API Reference</a></li>
-                    <li><a href="./" class="active">Examples</a></li>
-                    <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
-                </ul>
-            </nav>
-        </div>
+      <div class="container">
+        <nav class="nav">
+          <a href="../" class="logo">
+            <span class="logo-icon"></span>
+            CORBA.ts
+          </a>
+          <ul class="nav-links">
+            <li><a href="../">Home</a></li>
+            <li><a href="../guides/">Guides</a></li>
+            <li><a href="../api/">API Reference</a></li>
+            <li><a href="./" class="active">Examples</a></li>
+            <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
+          </ul>
+        </nav>
+      </div>
     </header>
 
     <main class="container mt-2">
-        <div class="grid-2">
-            <aside class="doc-nav">
-                <h3>Examples</h3>
-                <ul>
-                    <li><a href="hello-world.html">Hello World</a></li>
-                    <li><a href="client-server.html">Client/Server Pattern</a></li>
-                    <li><a href="naming-service.html">Naming Service</a></li>
-                    <li><a href="value-types.html">Value Types</a></li>
-                    <li><a href="dii.html">Dynamic Invocation</a></li>
-                    <li><a href="poa-policies.html">POA Policies</a></li>
-                    <li><a href="idl-integration.html">IDL Integration</a></li>
-                    <li><a href="advanced.html">Advanced Patterns</a></li>
-                </ul>
-            </aside>
+      <div class="grid-2">
+        <aside class="doc-nav">
+          <h3>Examples</h3>
+          <ul>
+            <li><a href="hello-world.html">Hello World</a></li>
+            <li><a href="client-server.html">Client/Server Pattern</a></li>
+            <li><a href="naming-service.html">Naming Service</a></li>
+            <li><a href="value-types.html">Value Types</a></li>
+            <li><a href="dii.html">Dynamic Invocation</a></li>
+            <li><a href="poa-policies.html">POA Policies</a></li>
+            <li><a href="idl-integration.html">IDL Integration</a></li>
+            <li><a href="advanced.html">Advanced Patterns</a></li>
+          </ul>
+        </aside>
 
-            <article class="panel">
-                <h1>CORBA.ts Examples</h1>
-                <p>Learn CORBA.ts through practical, working examples. Each example includes complete, runnable code with detailed explanations and common patterns used in distributed applications.</p>
+        <article class="panel">
+          <h1>CORBA.ts Examples</h1>
+          <p>
+            Learn CORBA.ts through practical, working examples. Each example includes complete, runnable code with
+            detailed explanations and common patterns used in distributed applications.
+          </p>
 
-                <h2>📚 Example Categories</h2>
+          <h2>📚 Example Categories</h2>
 
-                <div class="grid mt-2">
-                    <div class="feature-card">
-                        <h3><a href="hello-world.html">👋 Hello World</a></h3>
-                        <p>Your first CORBA.ts application. Learn basic concepts with a simple client-server example.</p>
-                        <div class="code-block" data-lang="typescript" style="font-size: 12px; margin-top: 10px;">
-// Simple server example
-class HelloServant extends Servant {
-  sayHello(name: string): string {
-    return `Hello, ${name}!`;
-  }
-}
-</div>
-                        <p style="margin-top: 10px;"><strong>Topics:</strong> ORB initialization, servant creation, basic remote calls</p>
-                    </div>
+          <div class="grid mt-2">
+            <div class="feature-card">
+              <h3><a href="hello-world.html">👋 Hello World</a></h3>
+              <p>Your first CORBA.ts application. Learn basic concepts with a simple client-server example.</p>
+              <div class="code-block" data-lang="typescript" style="font-size: 12px; margin-top: 10px">
+                // Simple server example class HelloServant extends Servant { sayHello(name: string): string { return
+                `Hello, ${name}!`; } }
+              </div>
+              <p style="margin-top: 10px">
+                <strong>Topics:</strong> ORB initialization, servant creation, basic remote calls
+              </p>
+            </div>
 
-                    <div class="feature-card">
-                        <h3><a href="client-server.html">🖥️ Client/Server Pattern</a></h3>
-                        <p>Robust client-server architecture with error handling, reconnection, and lifecycle management.</p>
-                        <div class="code-block" data-lang="typescript" style="font-size: 12px; margin-top: 10px;">
-// Production-ready patterns
-class ServiceManager {
-  async start() { /* ... */ }
-  async stop() { /* ... */ }
-  async restart() { /* ... */ }
-}
-</div>
-                        <p style="margin-top: 10px;"><strong>Topics:</strong> Service management, error handling, graceful shutdown</p>
-                    </div>
+            <div class="feature-card">
+              <h3><a href="client-server.html">🖥️ Client/Server Pattern</a></h3>
+              <p>Robust client-server architecture with error handling, reconnection, and lifecycle management.</p>
+              <div class="code-block" data-lang="typescript" style="font-size: 12px; margin-top: 10px">
+                // Production-ready patterns class ServiceManager { async start() { /* ... */ } async stop() { /* ... */
+                } async restart() { /* ... */ } }
+              </div>
+              <p style="margin-top: 10px">
+                <strong>Topics:</strong> Service management, error handling, graceful shutdown
+              </p>
+            </div>
 
-                    <div class="feature-card">
-                        <h3><a href="naming-service.html">📖 Naming Service</a></h3>
-                        <p>Service discovery and location transparency using CORBA's Naming Service.</p>
-                        <div class="code-block" data-lang="typescript" style="font-size: 12px; margin-top: 10px;">
-// Service registration
-const namingContext = /* ... */;
-await namingContext.bind(
-  [{id: "Calculator", kind: "Service"}],
-  calculatorRef
-);
-</div>
-                        <p style="margin-top: 10px;"><strong>Topics:</strong> Service registration, discovery, naming contexts</p>
-                    </div>
+            <div class="feature-card">
+              <h3><a href="naming-service.html">📖 Naming Service</a></h3>
+              <p>Service discovery and location transparency using CORBA's Naming Service.</p>
+              <div class="code-block" data-lang="typescript" style="font-size: 12px; margin-top: 10px">
+                // Service registration const namingContext = /* ... */; await namingContext.bind( [{id: "Calculator",
+                kind: "Service"}], calculatorRef );
+              </div>
+              <p style="margin-top: 10px"><strong>Topics:</strong> Service registration, discovery, naming contexts</p>
+            </div>
 
-                    <div class="feature-card">
-                        <h3><a href="value-types.html">💎 Value Types</a></h3>
-                        <p>Complex data structures, inheritance, and value semantics in distributed systems.</p>
-                        <div class="code-block" data-lang="typescript" style="font-size: 12px; margin-top: 10px;">
-// Custom value type
-class PersonValue extends ValueBase {
-  constructor(
-    public name: string,
-    public age: number
-  ) { super(); }
-}
-</div>
-                        <p style="margin-top: 10px;"><strong>Topics:</strong> Value factories, marshalling, object graphs</p>
-                    </div>
+            <div class="feature-card">
+              <h3><a href="value-types.html">💎 Value Types</a></h3>
+              <p>Complex data structures, inheritance, and value semantics in distributed systems.</p>
+              <div class="code-block" data-lang="typescript" style="font-size: 12px; margin-top: 10px">
+                // Custom value type class PersonValue extends ValueBase { constructor( public name: string, public age:
+                number ) { super(); } }
+              </div>
+              <p style="margin-top: 10px"><strong>Topics:</strong> Value factories, marshalling, object graphs</p>
+            </div>
 
-                    <div class="feature-card">
-                        <h3><a href="dii.html">⚙️ Dynamic Invocation</a></h3>
-                        <p>Runtime method invocation without compile-time knowledge of interfaces.</p>
-                        <div class="code-block" data-lang="typescript" style="font-size: 12px; margin-top: 10px;">
-// Dynamic method call
-const request = create_request(
-  objRef, "calculate"
-);
-request.add_in_arg(42, TCKind.tk_long);
-await request.invoke();
-</div>
-                        <p style="margin-top: 10px;"><strong>Topics:</strong> Request construction, parameter handling, result processing</p>
-                    </div>
+            <div class="feature-card">
+              <h3><a href="dii.html">⚙️ Dynamic Invocation</a></h3>
+              <p>Runtime method invocation without compile-time knowledge of interfaces.</p>
+              <div class="code-block" data-lang="typescript" style="font-size: 12px; margin-top: 10px">
+                // Dynamic method call const request = create_request( objRef, "calculate" ); request.add_in_arg(42,
+                TCKind.tk_long); await request.invoke();
+              </div>
+              <p style="margin-top: 10px">
+                <strong>Topics:</strong> Request construction, parameter handling, result processing
+              </p>
+            </div>
 
-                    <div class="feature-card">
-                        <h3><a href="poa-policies.html">🔧 POA Policies</a></h3>
-                        <p>Advanced object lifecycle management with custom POA policies and threading models.</p>
-                        <div class="code-block" data-lang="typescript" style="font-size: 12px; margin-top: 10px;">
-// Custom POA with policies
-const poa = await rootPOA.create_POA(
-  "MyPOA", manager, [
-    threadingPolicy,
-    lifespanPolicy
-  ]
-);
-</div>
-                        <p style="margin-top: 10px;"><strong>Topics:</strong> Threading policies, lifespan management, activation strategies</p>
-                    </div>
+            <div class="feature-card">
+              <h3><a href="poa-policies.html">🔧 POA Policies</a></h3>
+              <p>Advanced object lifecycle management with custom POA policies and threading models.</p>
+              <div class="code-block" data-lang="typescript" style="font-size: 12px; margin-top: 10px">
+                // Custom POA with policies const poa = await rootPOA.create_POA( "MyPOA", manager, [ threadingPolicy,
+                lifespanPolicy ] );
+              </div>
+              <p style="margin-top: 10px">
+                <strong>Topics:</strong> Threading policies, lifespan management, activation strategies
+              </p>
+            </div>
 
-                    <div class="feature-card">
-                        <h3><a href="idl-integration.html">📐 IDL Integration</a></h3>
-                        <p>Define interfaces with IDL and generate TypeScript code for type-safe development.</p>
-                        <div class="code-block" data-lang="idl" style="font-size: 12px; margin-top: 10px;">
-// IDL definition
-module Calculator {
-  interface Math {
-    long add(in long a, in long b);
-    double divide(in double x, in double y)
-      raises(DivisionByZero);
-  };
-};
-</div>
-                        <p style="margin-top: 10px;"><strong>Topics:</strong> IDL parsing, code generation, exception handling</p>
-                    </div>
+            <div class="feature-card">
+              <h3><a href="idl-integration.html">📐 IDL Integration</a></h3>
+              <p>Define interfaces with IDL and generate TypeScript code for type-safe development.</p>
+              <div class="code-block" data-lang="idl" style="font-size: 12px; margin-top: 10px">
+                // IDL definition module Calculator { interface Math { long add(in long a, in long b); double divide(in
+                double x, in double y) raises(DivisionByZero); }; };
+              </div>
+              <p style="margin-top: 10px"><strong>Topics:</strong> IDL parsing, code generation, exception handling</p>
+            </div>
 
-                    <div class="feature-card">
-                        <h3><a href="advanced.html">🚀 Advanced Patterns</a></h3>
-                        <p>Production-ready patterns including load balancing, failover, and monitoring.</p>
-                        <div class="code-block" data-lang="typescript" style="font-size: 12px; margin-top: 10px;">
-// Service pool with failover
-class ServicePool {
-  private services: ObjectRef[] = [];
-  async getHealthyService() { /* ... */ }
-  async failover() { /* ... */ }
-}
-</div>
-                        <p style="margin-top: 10px;"><strong>Topics:</strong> Load balancing, health checks, monitoring, clustering</p>
-                    </div>
-                </div>
+            <div class="feature-card">
+              <h3><a href="advanced.html">🚀 Advanced Patterns</a></h3>
+              <p>Production-ready patterns including load balancing, failover, and monitoring.</p>
+              <div class="code-block" data-lang="typescript" style="font-size: 12px; margin-top: 10px">
+                // Service pool with failover class ServicePool { private services: ObjectRef[] = []; async
+                getHealthyService() { /* ... */ } async failover() { /* ... */ } }
+              </div>
+              <p style="margin-top: 10px">
+                <strong>Topics:</strong> Load balancing, health checks, monitoring, clustering
+              </p>
+            </div>
+          </div>
 
-                <h2>🎯 Learning Path</h2>
-                <p>We recommend following this progression through the examples:</p>
+          <h2>🎯 Learning Path</h2>
+          <p>We recommend following this progression through the examples:</p>
 
-                <div class="panel mt-2" style="background: rgba(100, 255, 218, 0.05); border-left: 4px solid var(--primary-cyan);">
-                    <h4>Beginner Path</h4>
-                    <ol>
-                        <li><a href="hello-world.html">Hello World</a> - Master the basics</li>
-                        <li><a href="client-server.html">Client/Server Pattern</a> - Learn robust patterns</li>
-                        <li><a href="naming-service.html">Naming Service</a> - Implement service discovery</li>
-                    </ol>
-                    
-                    <h4>Intermediate Path</h4>
-                    <ol>
-                        <li><a href="value-types.html">Value Types</a> - Complex data structures</li>
-                        <li><a href="poa-policies.html">POA Policies</a> - Advanced object management</li>
-                        <li><a href="idl-integration.html">IDL Integration</a> - Type-safe interfaces</li>
-                    </ol>
-                    
-                    <h4>Advanced Path</h4>
-                    <ol>
-                        <li><a href="dii.html">Dynamic Invocation</a> - Runtime flexibility</li>
-                        <li><a href="advanced.html">Advanced Patterns</a> - Production deployment</li>
-                    </ol>
-                </div>
+          <div
+            class="panel mt-2"
+            style="background: rgba(100, 255, 218, 0.05); border-left: 4px solid var(--primary-cyan)"
+          >
+            <h4>Beginner Path</h4>
+            <ol>
+              <li><a href="hello-world.html">Hello World</a> - Master the basics</li>
+              <li><a href="client-server.html">Client/Server Pattern</a> - Learn robust patterns</li>
+              <li><a href="naming-service.html">Naming Service</a> - Implement service discovery</li>
+            </ol>
 
-                <h2>📋 Prerequisites</h2>
-                <div class="grid mt-2">
-                    <div class="feature-card">
-                        <h4>🛠️ Development Environment</h4>
-                        <ul>
-                            <li><strong>Deno 1.37+</strong> - Runtime environment</li>
-                            <li><strong>TypeScript knowledge</strong> - Intermediate level</li>
-                            <li><strong>Code editor</strong> - VS Code recommended</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <h4>📚 Background Knowledge</h4>
-                        <ul>
-                            <li><strong>Async/await</strong> - JavaScript promises</li>
-                            <li><strong>Network concepts</strong> - TCP/IP basics</li>
-                            <li><strong>Distributed systems</strong> - Helpful but not required</li>
-                        </ul>
-                    </div>
-                </div>
+            <h4>Intermediate Path</h4>
+            <ol>
+              <li><a href="value-types.html">Value Types</a> - Complex data structures</li>
+              <li><a href="poa-policies.html">POA Policies</a> - Advanced object management</li>
+              <li><a href="idl-integration.html">IDL Integration</a> - Type-safe interfaces</li>
+            </ol>
 
-                <h2>🔧 Running the Examples</h2>
-                <p>All examples are designed to be self-contained and runnable. Here's how to get started:</p>
+            <h4>Advanced Path</h4>
+            <ol>
+              <li><a href="dii.html">Dynamic Invocation</a> - Runtime flexibility</li>
+              <li><a href="advanced.html">Advanced Patterns</a> - Production deployment</li>
+            </ol>
+          </div>
 
-                <h3>1. Clone the Repository</h3>
-                <div class="code-block" data-lang="bash">
-git clone https://github.com/elevationai/CORBA-ts.git
-cd CORBA-ts/examples
-</div>
+          <h2>📋 Prerequisites</h2>
+          <div class="grid mt-2">
+            <div class="feature-card">
+              <h4>🛠️ Development Environment</h4>
+              <ul>
+                <li><strong>Deno 1.37+</strong> - Runtime environment</li>
+                <li><strong>TypeScript knowledge</strong> - Intermediate level</li>
+                <li><strong>Code editor</strong> - VS Code recommended</li>
+              </ul>
+            </div>
 
-                <h3>2. Run an Example</h3>
-                <div class="code-block" data-lang="bash">
-# Start the server in one terminal
-deno run --allow-net --allow-read --allow-write hello-world-server.ts
+            <div class="feature-card">
+              <h4>📚 Background Knowledge</h4>
+              <ul>
+                <li><strong>Async/await</strong> - JavaScript promises</li>
+                <li><strong>Network concepts</strong> - TCP/IP basics</li>
+                <li><strong>Distributed systems</strong> - Helpful but not required</li>
+              </ul>
+            </div>
+          </div>
 
-# Run the client in another terminal  
-deno run --allow-net --allow-read hello-world-client.ts
-</div>
+          <h2>🔧 Running the Examples</h2>
+          <p>All examples are designed to be self-contained and runnable. Here's how to get started:</p>
 
-                <h3>3. Explore and Modify</h3>
-                <p>Each example includes:</p>
-                <ul>
-                    <li>📄 <strong>Source code</strong> - Fully commented implementations</li>
-                    <li>📖 <strong>README</strong> - Detailed explanations and setup instructions</li>
-                    <li>🧪 <strong>Tests</strong> - Verification and example usage</li>
-                    <li>🔧 <strong>Configuration</strong> - Customizable parameters</li>
-                </ul>
+          <h3>1. Clone the Repository</h3>
+          <div class="code-block" data-lang="bash">
+            git clone https://github.com/elevationai/CORBA-ts.git cd CORBA-ts/examples
+          </div>
 
-                <h2>💡 Example Patterns</h2>
-                <div class="grid mt-2">
-                    <div class="feature-card">
-                        <h4>🔄 Request/Response</h4>
-                        <p>Synchronous method invocations with return values and exception handling.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <h4>🔥 Fire and Forget</h4>
-                        <p>Asynchronous notifications and one-way method calls.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <h4>📡 Publisher/Subscriber</h4>
-                        <p>Event-driven communication patterns using CORBA Event Service.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <h4>🔁 Callback Pattern</h4>
-                        <p>Bidirectional communication with client callbacks and notifications.</p>
-                    </div>
-                </div>
+          <h3>2. Run an Example</h3>
+          <div class="code-block" data-lang="bash">
+            # Start the server in one terminal deno run --allow-net --allow-read --allow-write hello-world-server.ts #
+            Run the client in another terminal deno run --allow-net --allow-read hello-world-client.ts
+          </div>
 
-                <h2>🐛 Troubleshooting</h2>
-                <div class="panel mt-2" style="background: rgba(255, 193, 7, 0.05); border-left: 4px solid #ffc107;">
-                    <h4>Common Issues</h4>
-                    <ul>
-                        <li><strong>Permission denied</strong> - Make sure to include required <code>--allow-net</code> flags</li>
-                        <li><strong>Connection refused</strong> - Ensure the server is running before starting the client</li>
-                        <li><strong>Type errors</strong> - Check that you're using the correct interface types</li>
-                        <li><strong>Module not found</strong> - Verify your import paths and JSR package names</li>
-                    </ul>
-                    
-                    <h4>Getting Help</h4>
-                    <ul>
-                        <li>📖 Check the <a href="../guides/">guides</a> for conceptual explanations</li>
-                        <li>📋 Review the <a href="../api/">API reference</a> for detailed documentation</li>
-                        <li>🐛 Report issues on <a href="https://github.com/elevationai/CORBA-ts/issues" target="_blank">GitHub</a></li>
-                        <li>💬 Join discussions in the <a href="https://github.com/elevationai/CORBA-ts/discussions" target="_blank">community forum</a></li>
-                    </ul>
-                </div>
+          <h3>3. Explore and Modify</h3>
+          <p>Each example includes:</p>
+          <ul>
+            <li>📄 <strong>Source code</strong> - Fully commented implementations</li>
+            <li>📖 <strong>README</strong> - Detailed explanations and setup instructions</li>
+            <li>🧪 <strong>Tests</strong> - Verification and example usage</li>
+            <li>🔧 <strong>Configuration</strong> - Customizable parameters</li>
+          </ul>
 
-                <div class="panel mt-3 text-center">
-                    <h3>🚀 Ready to Start?</h3>
-                    <p>Choose your first example and start building with CORBA.ts!</p>
-                    <div class="cta-buttons mt-1">
-                        <a href="hello-world.html" class="btn">Hello World</a>
-                        <a href="client-server.html" class="btn btn-secondary">Client/Server</a>
-                        <a href="https://github.com/elevationai/CORBA-ts/tree/main/examples" class="btn btn-secondary" target="_blank">View on GitHub</a>
-                    </div>
-                </div>
-            </article>
-        </div>
+          <h2>💡 Example Patterns</h2>
+          <div class="grid mt-2">
+            <div class="feature-card">
+              <h4>🔄 Request/Response</h4>
+              <p>Synchronous method invocations with return values and exception handling.</p>
+            </div>
+
+            <div class="feature-card">
+              <h4>🔥 Fire and Forget</h4>
+              <p>Asynchronous notifications and one-way method calls.</p>
+            </div>
+
+            <div class="feature-card">
+              <h4>📡 Publisher/Subscriber</h4>
+              <p>Event-driven communication patterns using CORBA Event Service.</p>
+            </div>
+
+            <div class="feature-card">
+              <h4>🔁 Callback Pattern</h4>
+              <p>Bidirectional communication with client callbacks and notifications.</p>
+            </div>
+          </div>
+
+          <h2>🐛 Troubleshooting</h2>
+          <div class="panel mt-2" style="background: rgba(255, 193, 7, 0.05); border-left: 4px solid #ffc107">
+            <h4>Common Issues</h4>
+            <ul>
+              <li><strong>Permission denied</strong> - Make sure to include required <code>--allow-net</code> flags</li>
+              <li><strong>Connection refused</strong> - Ensure the server is running before starting the client</li>
+              <li><strong>Type errors</strong> - Check that you're using the correct interface types</li>
+              <li><strong>Module not found</strong> - Verify your import paths and JSR package names</li>
+            </ul>
+
+            <h4>Getting Help</h4>
+            <ul>
+              <li>📖 Check the <a href="../guides/">guides</a> for conceptual explanations</li>
+              <li>📋 Review the <a href="../api/">API reference</a> for detailed documentation</li>
+              <li>
+                🐛 Report issues on <a href="https://github.com/elevationai/CORBA-ts/issues" target="_blank">GitHub</a>
+              </li>
+              <li>
+                💬 Join discussions in the <a href="https://github.com/elevationai/CORBA-ts/discussions" target="_blank"
+                >community forum</a>
+              </li>
+            </ul>
+          </div>
+
+          <div class="panel mt-3 text-center">
+            <h3>🚀 Ready to Start?</h3>
+            <p>Choose your first example and start building with CORBA.ts!</p>
+            <div class="cta-buttons mt-1">
+              <a href="hello-world.html" class="btn">Hello World</a>
+              <a href="client-server.html" class="btn btn-secondary">Client/Server</a>
+              <a
+                href="https://github.com/elevationai/CORBA-ts/tree/main/examples"
+                class="btn btn-secondary"
+                target="_blank"
+              >View on GitHub</a>
+            </div>
+          </div>
+        </article>
+      </div>
     </main>
 
     <footer class="footer">
-        <div class="container">
-            <div class="footer-bottom">
-                <p>&copy; 2024 CORBA.ts. Licensed under the MIT License.</p>
-            </div>
+      <div class="container">
+        <div class="footer-bottom">
+          <p>&copy; 2024 CORBA.ts. Licensed under the MIT License.</p>
         </div>
+      </div>
     </footer>
-</body>
+  </body>
 </html>

@@ -315,9 +315,7 @@ Deno.test({
 
       const bindTime = Date.now() - startTime;
       console.log(
-        `   Bound ${numBindings} objects in ${bindTime}ms (${
-          (bindTime / numBindings).toFixed(2)
-        }ms per binding)`,
+        `   Bound ${numBindings} objects in ${bindTime}ms (${(bindTime / numBindings).toFixed(2)}ms per binding)`,
       );
 
       // Test 2: Bulk resolution

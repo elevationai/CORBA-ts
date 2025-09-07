@@ -37,59 +37,171 @@ body {
   padding: 0 20px;
 }
 
-/* ===== NAVIGATION ===== */
-.header {
-  background: rgba(26, 26, 46, 0.8);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(100, 255, 218, 0.2);
-  position: sticky;
+/* ===== LAYOUT STRUCTURE ===== */
+.main-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ===== SIDEBAR NAVIGATION ===== */
+.sidebar {
+  width: 320px;
+  background: rgba(26, 26, 46, 0.95);
+  border-right: 1px solid rgba(100, 255, 218, 0.2);
+  position: fixed;
   top: 0;
+  left: 0;
+  height: 100vh;
+  overflow-y: auto;
   z-index: 100;
 }
 
-.nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 0;
+.sidebar-header {
+  padding: 2rem 1.5rem;
+  border-bottom: 1px solid rgba(100, 255, 218, 0.1);
 }
 
 .logo {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: var(--primary-cyan);
   text-decoration: none;
-  display: flex;
-  align-items: center;
+  display: block;
+  margin-bottom: 0.5rem;
 }
 
-.logo-icon {
-  width: 24px;
-  height: 24px;
-  margin-right: 8px;
-  background: var(--primary-cyan);
-  border-radius: 4px;
-  display: inline-block;
+.logo-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.sidebar-nav {
+  padding: 1.5rem 0;
+}
+
+.nav-section {
+  margin-bottom: 2rem;
+}
+
+.nav-section-title {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0 1.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .nav-links {
-  display: flex;
   list-style: none;
   margin: 0;
   padding: 0;
-  gap: 2rem;
+}
+
+.nav-links li {
+  margin: 0;
 }
 
 .nav-links a {
+  display: block;
+  padding: 0.5rem 1.5rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.nav-links a:hover {
+  background: rgba(100, 255, 218, 0.05);
+  color: var(--primary-cyan);
+  border-left-color: rgba(100, 255, 218, 0.3);
+}
+
+.nav-links a.active {
+  background: rgba(100, 255, 218, 0.1);
+  color: var(--primary-cyan);
+  border-left-color: var(--primary-cyan);
+}
+
+.nav-links .nav-subsection {
+  padding-left: 1rem;
+}
+
+.nav-links .nav-subsection a {
+  font-size: 0.9rem;
+  padding: 0.375rem 1.5rem 0.375rem 2.5rem;
+}
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+  margin-left: 320px;
+  flex: 1;
+  min-height: 100vh;
+}
+
+.top-header {
+  background: rgba(26, 26, 46, 0.6);
+  border-bottom: 1px solid rgba(100, 255, 218, 0.1);
+  padding: 1rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(10px);
+}
+
+.header-links {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2rem;
+}
+
+.header-links a {
   color: var(--text-secondary);
   text-decoration: none;
   transition: color 0.3s ease;
-  font-weight: 500;
 }
 
-.nav-links a:hover,
-.nav-links a.active {
+.header-links a:hover {
   color: var(--primary-cyan);
+}
+
+/* ===== MOBILE MENU ===== */
+.mobile-menu-toggle {
+  display: none;
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 200;
+  background: var(--primary-cyan);
+  color: var(--dark-navy);
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+@media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .mobile-menu-toggle {
+    display: block;
+  }
+
+  .container {
+    padding: 0 1rem;
+  }
 }
 
 /* ===== HERO SECTION ===== */
@@ -188,12 +300,12 @@ body {
   .grid-3 {
     grid-template-columns: 1fr;
   }
-  
+
   .nav {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .hero h1 {
     font-size: 2rem;
   }
@@ -408,15 +520,31 @@ pre code {
   text-align: center;
 }
 
-.mb-0 { margin-bottom: 0; }
-.mb-1 { margin-bottom: 1rem; }
-.mb-2 { margin-bottom: 2rem; }
-.mb-3 { margin-bottom: 3rem; }
+.mb-0 {
+  margin-bottom: 0;
+}
+.mb-1 {
+  margin-bottom: 1rem;
+}
+.mb-2 {
+  margin-bottom: 2rem;
+}
+.mb-3 {
+  margin-bottom: 3rem;
+}
 
-.mt-0 { margin-top: 0; }
-.mt-1 { margin-top: 1rem; }
-.mt-2 { margin-top: 2rem; }
-.mt-3 { margin-top: 3rem; }
+.mt-0 {
+  margin-top: 0;
+}
+.mt-1 {
+  margin-top: 1rem;
+}
+.mt-2 {
+  margin-top: 2rem;
+}
+.mt-3 {
+  margin-top: 3rem;
+}
 
 .highlight {
   background: rgba(100, 255, 218, 0.1);

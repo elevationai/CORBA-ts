@@ -1,512 +1,371 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Object Request Broker (ORB) - CORBA.ts Documentation</title>
-    <meta name="description" content="Learn about the Object Request Broker (ORB) in CORBA.ts - the central component that enables distributed object communication">
+    <meta
+      name="description"
+      content="Learn about the Object Request Broker (ORB) in CORBA.ts - the central component that enables distributed object communication"
+    >
     <link rel="stylesheet" href="../assets/css/main.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
-</head>
-<body>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>"
+    >
+  </head>
+  <body>
     <header class="header">
-        <div class="container">
-            <nav class="nav">
-                <a href="../" class="logo">
-                    <span class="logo-icon"></span>
-                    CORBA.ts
-                </a>
-                <ul class="nav-links">
-                    <li><a href="../">Home</a></li>
-                    <li><a href="./" class="active">Guides</a></li>
-                    <li><a href="../api/">API Reference</a></li>
-                    <li><a href="../examples/">Examples</a></li>
-                    <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
-                </ul>
-            </nav>
-        </div>
+      <div class="container">
+        <nav class="nav">
+          <a href="../" class="logo">
+            <span class="logo-icon"></span>
+            CORBA.ts
+          </a>
+          <ul class="nav-links">
+            <li><a href="../">Home</a></li>
+            <li><a href="./" class="active">Guides</a></li>
+            <li><a href="../api/">API Reference</a></li>
+            <li><a href="../examples/">Examples</a></li>
+            <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
+          </ul>
+        </nav>
+      </div>
     </header>
 
     <main class="container mt-2">
-        <div class="grid-2">
-            <aside class="doc-nav">
-                <h3>Guides</h3>
-                <ul>
-                    <li><a href="getting-started.html">Getting Started</a></li>
-                    <li><a href="orb.html" class="active">Object Request Broker (ORB)</a></li>
-                    <li><a href="poa.html">Portable Object Adapter (POA)</a></li>
-                    <li><a href="naming-service.html">Naming Service</a></li>
-                    <li><a href="idl-mapping.html">IDL Mapping</a></li>
-                    <li><a href="giop-iiop.html">GIOP/IIOP Protocols</a></li>
-                    <li><a href="typecode.html">TypeCode System</a></li>
-                    <li><a href="value-types.html">Value Types</a></li>
-                    <li><a href="dii.html">Dynamic Invocation Interface</a></li>
-                    <li><a href="deployment.html">Deployment Guide</a></li>
-                </ul>
-                
-                <h4>On This Page</h4>
-                <ul>
-                    <li><a href="#overview">What is the ORB?</a></li>
-                    <li><a href="#initialization">ORB Initialization</a></li>
-                    <li><a href="#object-references">Object References</a></li>
-                    <li><a href="#ior-management">IOR Management</a></li>
-                    <li><a href="#services">Initial Services</a></li>
-                    <li><a href="#lifecycle">ORB Lifecycle</a></li>
-                    <li><a href="#configuration">Configuration</a></li>
-                    <li><a href="#best-practices">Best Practices</a></li>
-                </ul>
-            </aside>
+      <div class="grid-2">
+        <aside class="doc-nav">
+          <h3>Guides</h3>
+          <ul>
+            <li><a href="getting-started.html">Getting Started</a></li>
+            <li><a href="orb.html" class="active">Object Request Broker (ORB)</a></li>
+            <li><a href="poa.html">Portable Object Adapter (POA)</a></li>
+            <li><a href="naming-service.html">Naming Service</a></li>
+            <li><a href="idl-mapping.html">IDL Mapping</a></li>
+            <li><a href="giop-iiop.html">GIOP/IIOP Protocols</a></li>
+            <li><a href="typecode.html">TypeCode System</a></li>
+            <li><a href="value-types.html">Value Types</a></li>
+            <li><a href="dii.html">Dynamic Invocation Interface</a></li>
+            <li><a href="deployment.html">Deployment Guide</a></li>
+          </ul>
 
-            <article class="panel">
-                <h1>Object Request Broker (ORB)</h1>
-                <p>The Object Request Broker (ORB) is the central component of CORBA that enables transparent communication between distributed objects. It handles all the complexity of network communication, marshalling, and request routing.</p>
+          <h4>On This Page</h4>
+          <ul>
+            <li><a href="#overview">What is the ORB?</a></li>
+            <li><a href="#initialization">ORB Initialization</a></li>
+            <li><a href="#object-references">Object References</a></li>
+            <li><a href="#ior-management">IOR Management</a></li>
+            <li><a href="#services">Initial Services</a></li>
+            <li><a href="#lifecycle">ORB Lifecycle</a></li>
+            <li><a href="#configuration">Configuration</a></li>
+            <li><a href="#best-practices">Best Practices</a></li>
+          </ul>
+        </aside>
 
-                <h2 id="overview">🧠 What is the ORB?</h2>
-                <p>The ORB acts as middleware between clients and servers, providing:</p>
-                
-                <div class="grid mt-1">
-                    <div class="feature-card">
-                        <div class="feature-icon">🔄</div>
-                        <h4>Request Routing</h4>
-                        <p>Routes method invocations from clients to the appropriate server objects</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-icon">📦</div>
-                        <h4>Parameter Marshalling</h4>
-                        <p>Converts parameters to/from network format (CDR - Common Data Representation)</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-icon">🌐</div>
-                        <h4>Network Communication</h4>
-                        <p>Manages TCP connections and GIOP/IIOP protocol implementation</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <div class="feature-icon">🔗</div>
-                        <h4>Object Reference Management</h4>
-                        <p>Creates, manages, and resolves object references (IORs)</p>
-                    </div>
-                </div>
+        <article class="panel">
+          <h1>Object Request Broker (ORB)</h1>
+          <p>
+            The Object Request Broker (ORB) is the central component of CORBA that enables transparent communication
+            between distributed objects. It handles all the complexity of network communication, marshalling, and
+            request routing.
+          </p>
 
-                <h2 id="initialization">🚀 ORB Initialization</h2>
-                <p>Every CORBA.ts application must initialize the ORB before using any CORBA functionality.</p>
+          <h2 id="overview">🧠 What is the ORB?</h2>
+          <p>The ORB acts as middleware between clients and servers, providing:</p>
 
-                <h3>Basic Initialization</h3>
-                <div class="code-block" data-lang="typescript">
-import { init, ORB_instance } from "jsr:@eai/corba";
+          <div class="grid mt-1">
+            <div class="feature-card">
+              <div class="feature-icon">🔄</div>
+              <h4>Request Routing</h4>
+              <p>Routes method invocations from clients to the appropriate server objects</p>
+            </div>
 
-// Initialize the CORBA runtime
-await init();
+            <div class="feature-card">
+              <div class="feature-icon">📦</div>
+              <h4>Parameter Marshalling</h4>
+              <p>Converts parameters to/from network format (CDR - Common Data Representation)</p>
+            </div>
 
-// Get the singleton ORB instance
-const orb = ORB_instance();
+            <div class="feature-card">
+              <div class="feature-icon">🌐</div>
+              <h4>Network Communication</h4>
+              <p>Manages TCP connections and GIOP/IIOP protocol implementation</p>
+            </div>
 
-console.log("ORB initialized and ready for use");
-</div>
+            <div class="feature-card">
+              <div class="feature-icon">🔗</div>
+              <h4>Object Reference Management</h4>
+              <p>Creates, manages, and resolves object references (IORs)</p>
+            </div>
+          </div>
 
-                <h3>Initialization with Configuration</h3>
-                <div class="code-block" data-lang="typescript">
-import { init, ORB_instance } from "jsr:@eai/corba";
+          <h2 id="initialization">🚀 ORB Initialization</h2>
+          <p>Every CORBA.ts application must initialize the ORB before using any CORBA functionality.</p>
 
-// Initialize with custom configuration
-await init({
-  // Custom configuration options (if supported)
-  debug: true,
-  port: 8080
-});
+          <h3>Basic Initialization</h3>
+          <div class="code-block" data-lang="typescript">
+            import { init, ORB_instance } from "jsr:@eai/corba"; // Initialize the CORBA runtime await init(); // Get
+            the singleton ORB instance const orb = ORB_instance(); console.log("ORB initialized and ready for use");
+          </div>
 
-const orb = ORB_instance();
-</div>
+          <h3>Initialization with Configuration</h3>
+          <div class="code-block" data-lang="typescript">
+            import { init, ORB_instance } from "jsr:@eai/corba"; // Initialize with custom configuration await init({ //
+            Custom configuration options (if supported) debug: true, port: 8080 }); const orb = ORB_instance();
+          </div>
 
-                <div class="panel mt-1" style="background: rgba(255, 193, 7, 0.05); border-left: 4px solid #ffc107;">
-                    <h4>⚠️ Important Notes</h4>
-                    <ul>
-                        <li><strong>Single Instance</strong>: The ORB is a singleton - there's only one per application</li>
-                        <li><strong>Async Initialization</strong>: Always use <code>await init()</code> before accessing the ORB</li>
-                        <li><strong>Thread Safety</strong>: The ORB is designed to be thread-safe for concurrent operations</li>
-                    </ul>
-                </div>
+          <div class="panel mt-1" style="background: rgba(255, 193, 7, 0.05); border-left: 4px solid #ffc107">
+            <h4>⚠️ Important Notes</h4>
+            <ul>
+              <li><strong>Single Instance</strong>: The ORB is a singleton - there's only one per application</li>
+              <li>
+                <strong>Async Initialization</strong>: Always use <code>await init()</code> before accessing the ORB
+              </li>
+              <li><strong>Thread Safety</strong>: The ORB is designed to be thread-safe for concurrent operations</li>
+            </ul>
+          </div>
 
-                <h2 id="object-references">📍 Object References</h2>
-                <p>Object references are CORBA's way of identifying and locating distributed objects. The ORB provides methods to create, convert, and manage these references.</p>
+          <h2 id="object-references">📍 Object References</h2>
+          <p>
+            Object references are CORBA's way of identifying and locating distributed objects. The ORB provides methods
+            to create, convert, and manage these references.
+          </p>
 
-                <h3>Creating Object References</h3>
-                <div class="code-block" data-lang="typescript">
-import { init, ORB_instance, getRootPOA } from "jsr:@eai/corba";
-import { Servant } from "jsr:@eai/corba/poa";
+          <h3>Creating Object References</h3>
+          <div class="code-block" data-lang="typescript">
+            import { init, ORB_instance, getRootPOA } from "jsr:@eai/corba"; import { Servant } from
+            "jsr:@eai/corba/poa"; await init(); const orb = ORB_instance(); const rootPOA = getRootPOA(); // Create a
+            servant class MyServant extends Servant { _repository_id(): string { return "IDL:MyInterface:1.0"; }
+            myMethod(): string { return "Hello from servant!"; } } const servant = new MyServant(); // Activate servant
+            and get object reference const oid = await rootPOA.activate_object(servant); const objRef = await
+            rootPOA.id_to_reference(oid); console.log("Object reference created:", objRef);
+          </div>
 
-await init();
-const orb = ORB_instance();
-const rootPOA = getRootPOA();
+          <h3>Converting References to Strings (IORs)</h3>
+          <div class="code-block" data-lang="typescript">
+            // Convert object reference to IOR string const iorString = await orb.object_to_string(objRef);
+            console.log("IOR:", iorString); // Save IOR to file for clients await Deno.writeTextFile("service.ior",
+            iorString); // Convert IOR string back to object reference const restoredRef = await
+            orb.string_to_object(iorString); console.log("Reference restored from IOR");
+          </div>
 
-// Create a servant
-class MyServant extends Servant {
-  _repository_id(): string {
-    return "IDL:MyInterface:1.0";
-  }
-  
-  myMethod(): string {
-    return "Hello from servant!";
-  }
-}
+          <h2 id="ior-management">🏷️ IOR Management</h2>
+          <p>
+            Interoperable Object References (IORs) are standardized strings that contain all information needed to
+            locate and communicate with a CORBA object.
+          </p>
 
-const servant = new MyServant();
+          <h3>IOR Structure</h3>
+          <div
+            class="panel mt-1"
+            style="background: rgba(72, 202, 228, 0.05); border-left: 4px solid var(--secondary-blue)"
+          >
+            <p>An IOR contains:</p>
+            <ul>
+              <li><strong>Type ID</strong>: The interface repository ID</li>
+              <li><strong>Protocol Profiles</strong>: Network endpoints (IIOP profiles)</li>
+              <li><strong>Object Key</strong>: Identifies the specific object</li>
+              <li><strong>Host/Port Information</strong>: Where to connect</li>
+            </ul>
+          </div>
 
-// Activate servant and get object reference
-const oid = await rootPOA.activate_object(servant);
-const objRef = await rootPOA.id_to_reference(oid);
+          <h3>Working with IORs</h3>
+          <div class="code-block" data-lang="typescript">
+            // Read IOR from file async function loadObjectFromFile(filename: string) { try { const iorString = await
+            Deno.readTextFile(filename); const objRef = await orb.string_to_object(iorString); return objRef; } catch
+            (error) { console.error(`Failed to load object from ${filename}:`, error); throw error; } } // Use the
+            loaded object const serviceRef = await loadObjectFromFile("service.ior"); const service = serviceRef as
+            unknown as MyServiceInterface; // Make remote calls const result = await service.someMethod("parameter");
+          </div>
 
-console.log("Object reference created:", objRef);
-</div>
+          <h2 id="services">🔧 Initial Services</h2>
+          <p>The ORB provides access to well-known CORBA services through the initial services mechanism.</p>
 
-                <h3>Converting References to Strings (IORs)</h3>
-                <div class="code-block" data-lang="typescript">
-// Convert object reference to IOR string
-const iorString = await orb.object_to_string(objRef);
-console.log("IOR:", iorString);
+          <h3>Resolving Initial References</h3>
+          <div class="code-block" data-lang="typescript">
+            // Get the Naming Service try { const namingRef = await orb.resolve_initial_references("NameService");
+            console.log("Naming Service resolved:", namingRef); } catch (error) { console.error("Naming Service not
+            available:", error); } // List available initial services const serviceList = await
+            orb.list_initial_services(); console.log("Available services:", serviceList);
+          </div>
 
-// Save IOR to file for clients
-await Deno.writeTextFile("service.ior", iorString);
+          <h3>Common Initial Services</h3>
+          <div class="table-wrapper mt-1">
+            <table>
+              <thead>
+                <tr>
+                  <th>Service Name</th>
+                  <th>Description</th>
+                  <th>Availability</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>RootPOA</code></td>
+                  <td>Root Portable Object Adapter</td>
+                  <td>Always available</td>
+                </tr>
+                <tr>
+                  <td><code>POACurrent</code></td>
+                  <td>Current POA context</td>
+                  <td>When using POA</td>
+                </tr>
+                <tr>
+                  <td><code>NameService</code></td>
+                  <td>CORBA Naming Service</td>
+                  <td>When configured</td>
+                </tr>
+                <tr>
+                  <td><code>TradingService</code></td>
+                  <td>CORBA Trading Service</td>
+                  <td>When configured</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-// Convert IOR string back to object reference
-const restoredRef = await orb.string_to_object(iorString);
-console.log("Reference restored from IOR");
-</div>
+          <h2 id="lifecycle">🔄 ORB Lifecycle</h2>
+          <p>Understanding the ORB lifecycle is crucial for building robust CORBA applications.</p>
 
-                <h2 id="ior-management">🏷️ IOR Management</h2>
-                <p>Interoperable Object References (IORs) are standardized strings that contain all information needed to locate and communicate with a CORBA object.</p>
+          <h3>ORB States</h3>
+          <div class="grid mt-1">
+            <div class="feature-card">
+              <h4>🔄 Uninitialized</h4>
+              <p>Before <code>init()</code> is called. No CORBA operations are possible.</p>
+            </div>
 
-                <h3>IOR Structure</h3>
-                <div class="panel mt-1" style="background: rgba(72, 202, 228, 0.05); border-left: 4px solid var(--secondary-blue);">
-                    <p>An IOR contains:</p>
-                    <ul>
-                        <li><strong>Type ID</strong>: The interface repository ID</li>
-                        <li><strong>Protocol Profiles</strong>: Network endpoints (IIOP profiles)</li>
-                        <li><strong>Object Key</strong>: Identifies the specific object</li>
-                        <li><strong>Host/Port Information</strong>: Where to connect</li>
-                    </ul>
-                </div>
+            <div class="feature-card">
+              <h4>✅ Running</h4>
+              <p>After initialization. Ready to process requests and make remote calls.</p>
+            </div>
 
-                <h3>Working with IORs</h3>
-                <div class="code-block" data-lang="typescript">
-// Read IOR from file
-async function loadObjectFromFile(filename: string) {
-  try {
-    const iorString = await Deno.readTextFile(filename);
-    const objRef = await orb.string_to_object(iorString);
-    return objRef;
-  } catch (error) {
-    console.error(`Failed to load object from ${filename}:`, error);
-    throw error;
-  }
-}
+            <div class="feature-card">
+              <h4>🏃 Processing</h4>
+              <p>Actively handling incoming requests when <code>orb.run()</code> is called.</p>
+            </div>
 
-// Use the loaded object
-const serviceRef = await loadObjectFromFile("service.ior");
-const service = serviceRef as unknown as MyServiceInterface;
+            <div class="feature-card">
+              <h4>🛑 Shutdown</h4>
+              <p>After <code>orb.shutdown()</code>. Cleaning up resources.</p>
+            </div>
+          </div>
 
-// Make remote calls
-const result = await service.someMethod("parameter");
-</div>
+          <h3>Server ORB Lifecycle</h3>
+          <div class="code-block" data-lang="typescript">
+            import { init, ORB_instance, getRootPOA } from "jsr:@eai/corba"; async function runServer() { // 1.
+            Initialize the ORB await init(); const orb = ORB_instance(); // 2. Set up POA and servants const rootPOA =
+            getRootPOA(); const poaManager = rootPOA.the_POAManager(); await poaManager.activate(); // ... create and
+            activate servants ... // 3. Start processing requests console.log("Server ready, processing requests...");
+            // This will block and process incoming requests await orb.run(); // 4. Cleanup (reached after shutdown)
+            console.log("Server shutting down..."); } // Handle graceful shutdown Deno.addSignalListener("SIGINT", async
+            () => { console.log("Shutdown requested..."); const orb = ORB_instance(); await orb.shutdown(true); // Wait
+            for active requests to complete Deno.exit(0); }); await runServer();
+          </div>
 
-                <h2 id="services">🔧 Initial Services</h2>
-                <p>The ORB provides access to well-known CORBA services through the initial services mechanism.</p>
+          <h3>Client ORB Usage</h3>
+          <div class="code-block" data-lang="typescript">
+            async function runClient() { // Initialize ORB await init(); const orb = ORB_instance(); // Get object
+            reference const objRef = await orb.string_to_object(iorString); const service = objRef as unknown as
+            ServiceInterface; try { // Make remote calls const result1 = await service.method1("param"); const result2 =
+            await service.method2(42); console.log("Results:", result1, result2); } finally { // ORB cleanup is
+            automatic for clients // You can optionally call shutdown if needed } }
+          </div>
 
-                <h3>Resolving Initial References</h3>
-                <div class="code-block" data-lang="typescript">
-// Get the Naming Service
-try {
-  const namingRef = await orb.resolve_initial_references("NameService");
-  console.log("Naming Service resolved:", namingRef);
-} catch (error) {
-  console.error("Naming Service not available:", error);
-}
+          <h2 id="configuration">⚙️ Configuration</h2>
+          <p>CORBA.ts provides various configuration options to customize ORB behavior.</p>
 
-// List available initial services
-const serviceList = await orb.list_initial_services();
-console.log("Available services:", serviceList);
-</div>
+          <h3>Network Configuration</h3>
+          <div class="code-block" data-lang="typescript">
+            // Example configuration options await init({ // Network settings listenAddress: "0.0.0.0", // Listen on all
+            interfaces listenPort: 8080, // Specific port // Protocol settings giopVersion: "1.2", // GIOP version //
+            Debugging debug: true, // Enable debug logging traceLevel: 2 // Trace verbosity });
+          </div>
 
-                <h3>Common Initial Services</h3>
-                <div class="table-wrapper mt-1">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Service Name</th>
-                                <th>Description</th>
-                                <th>Availability</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>RootPOA</code></td>
-                                <td>Root Portable Object Adapter</td>
-                                <td>Always available</td>
-                            </tr>
-                            <tr>
-                                <td><code>POACurrent</code></td>
-                                <td>Current POA context</td>
-                                <td>When using POA</td>
-                            </tr>
-                            <tr>
-                                <td><code>NameService</code></td>
-                                <td>CORBA Naming Service</td>
-                                <td>When configured</td>
-                            </tr>
-                            <tr>
-                                <td><code>TradingService</code></td>
-                                <td>CORBA Trading Service</td>
-                                <td>When configured</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+          <h3>Environment-Based Configuration</h3>
+          <div class="code-block" data-lang="typescript">
+            // Read configuration from environment const config = { listenPort: parseInt(Deno.env.get("CORBA_PORT") ||
+            "2809"), debug: Deno.env.get("CORBA_DEBUG") === "true", listenAddress: Deno.env.get("CORBA_ADDRESS") ||
+            "localhost" }; await init(config);
+          </div>
 
-                <h2 id="lifecycle">🔄 ORB Lifecycle</h2>
-                <p>Understanding the ORB lifecycle is crucial for building robust CORBA applications.</p>
+          <h2 id="best-practices">💡 Best Practices</h2>
 
-                <h3>ORB States</h3>
-                <div class="grid mt-1">
-                    <div class="feature-card">
-                        <h4>🔄 Uninitialized</h4>
-                        <p>Before <code>init()</code> is called. No CORBA operations are possible.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <h4>✅ Running</h4>
-                        <p>After initialization. Ready to process requests and make remote calls.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <h4>🏃 Processing</h4>
-                        <p>Actively handling incoming requests when <code>orb.run()</code> is called.</p>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <h4>🛑 Shutdown</h4>
-                        <p>After <code>orb.shutdown()</code>. Cleaning up resources.</p>
-                    </div>
-                </div>
+          <div class="grid mt-1">
+            <div class="feature-card">
+              <h4>🔄 Initialization</h4>
+              <ul style="font-size: 0.9em">
+                <li>Always call <code>init()</code> before using CORBA</li>
+                <li>Use try-catch blocks around initialization</li>
+                <li>Initialize once per application</li>
+              </ul>
+            </div>
 
-                <h3>Server ORB Lifecycle</h3>
-                <div class="code-block" data-lang="typescript">
-import { init, ORB_instance, getRootPOA } from "jsr:@eai/corba";
+            <div class="feature-card">
+              <h4>🏷️ Object References</h4>
+              <ul style="font-size: 0.9em">
+                <li>Store IORs persistently for clients</li>
+                <li>Validate references before use</li>
+                <li>Handle reference failures gracefully</li>
+              </ul>
+            </div>
 
-async function runServer() {
-  // 1. Initialize the ORB
-  await init();
-  const orb = ORB_instance();
-  
-  // 2. Set up POA and servants
-  const rootPOA = getRootPOA();
-  const poaManager = rootPOA.the_POAManager();
-  await poaManager.activate();
-  
-  // ... create and activate servants ...
-  
-  // 3. Start processing requests
-  console.log("Server ready, processing requests...");
-  
-  // This will block and process incoming requests
-  await orb.run();
-  
-  // 4. Cleanup (reached after shutdown)
-  console.log("Server shutting down...");
-}
+            <div class="feature-card">
+              <h4>🔒 Error Handling</h4>
+              <ul style="font-size: 0.9em">
+                <li>Wrap ORB operations in try-catch</li>
+                <li>Handle network failures</li>
+                <li>Implement proper timeouts</li>
+              </ul>
+            </div>
 
-// Handle graceful shutdown
-Deno.addSignalListener("SIGINT", async () => {
-  console.log("Shutdown requested...");
-  const orb = ORB_instance();
-  await orb.shutdown(true); // Wait for active requests to complete
-  Deno.exit(0);
-});
+            <div class="feature-card">
+              <h4>🧹 Resource Management</h4>
+              <ul style="font-size: 0.9em">
+                <li>Implement graceful shutdown</li>
+                <li>Clean up resources properly</li>
+                <li>Monitor memory usage</li>
+              </ul>
+            </div>
+          </div>
 
-await runServer();
-</div>
+          <h3>Complete ORB Example</h3>
+          <div class="code-block" data-lang="typescript">
+            import { init, ORB_instance, getRootPOA } from "jsr:@eai/corba"; import { Servant } from
+            "jsr:@eai/corba/poa"; class ExampleServant extends Servant { _repository_id(): string { return
+            "IDL:Example:1.0"; } processData(data: string): string { console.log(`Processing: ${data}`); return
+            `Processed: ${data}`; } } async function main() { try { // Initialize ORB console.log("Initializing
+            ORB..."); await init({ debug: true, listenPort: 8080 }); const orb = ORB_instance(); console.log("ORB
+            initialized successfully"); // Set up POA const rootPOA = getRootPOA(); const poaManager =
+            rootPOA.the_POAManager(); await poaManager.activate(); // Create and activate servant const servant = new
+            ExampleServant(); const oid = await rootPOA.activate_object(servant); const objRef = await
+            rootPOA.id_to_reference(oid); // Generate and save IOR const ior = await orb.object_to_string(objRef); await
+            Deno.writeTextFile("example.ior", ior); console.log("IOR saved to example.ior"); // Handle shutdown
+            Deno.addSignalListener("SIGINT", async () => { console.log("Shutting down..."); await orb.shutdown(true);
+            Deno.exit(0); }); // Start processing requests console.log("Server ready - Press Ctrl+C to shutdown"); await
+            orb.run(); } catch (error) { console.error("ORB error:", error); Deno.exit(1); } } if (import.meta.main) {
+            await main(); }
+          </div>
 
-                <h3>Client ORB Usage</h3>
-                <div class="code-block" data-lang="typescript">
-async function runClient() {
-  // Initialize ORB
-  await init();
-  const orb = ORB_instance();
-  
-  // Get object reference
-  const objRef = await orb.string_to_object(iorString);
-  const service = objRef as unknown as ServiceInterface;
-  
-  try {
-    // Make remote calls
-    const result1 = await service.method1("param");
-    const result2 = await service.method2(42);
-    
-    console.log("Results:", result1, result2);
-  } finally {
-    // ORB cleanup is automatic for clients
-    // You can optionally call shutdown if needed
-  }
-}
-</div>
-
-                <h2 id="configuration">⚙️ Configuration</h2>
-                <p>CORBA.ts provides various configuration options to customize ORB behavior.</p>
-
-                <h3>Network Configuration</h3>
-                <div class="code-block" data-lang="typescript">
-// Example configuration options
-await init({
-  // Network settings
-  listenAddress: "0.0.0.0",  // Listen on all interfaces
-  listenPort: 8080,          // Specific port
-  
-  // Protocol settings  
-  giopVersion: "1.2",        // GIOP version
-  
-  // Debugging
-  debug: true,               // Enable debug logging
-  traceLevel: 2              // Trace verbosity
-});
-</div>
-
-                <h3>Environment-Based Configuration</h3>
-                <div class="code-block" data-lang="typescript">
-// Read configuration from environment
-const config = {
-  listenPort: parseInt(Deno.env.get("CORBA_PORT") || "2809"),
-  debug: Deno.env.get("CORBA_DEBUG") === "true",
-  listenAddress: Deno.env.get("CORBA_ADDRESS") || "localhost"
-};
-
-await init(config);
-</div>
-
-                <h2 id="best-practices">💡 Best Practices</h2>
-
-                <div class="grid mt-1">
-                    <div class="feature-card">
-                        <h4>🔄 Initialization</h4>
-                        <ul style="font-size: 0.9em;">
-                            <li>Always call <code>init()</code> before using CORBA</li>
-                            <li>Use try-catch blocks around initialization</li>
-                            <li>Initialize once per application</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <h4>🏷️ Object References</h4>
-                        <ul style="font-size: 0.9em;">
-                            <li>Store IORs persistently for clients</li>
-                            <li>Validate references before use</li>
-                            <li>Handle reference failures gracefully</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <h4>🔒 Error Handling</h4>
-                        <ul style="font-size: 0.9em;">
-                            <li>Wrap ORB operations in try-catch</li>
-                            <li>Handle network failures</li>
-                            <li>Implement proper timeouts</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="feature-card">
-                        <h4>🧹 Resource Management</h4>
-                        <ul style="font-size: 0.9em;">
-                            <li>Implement graceful shutdown</li>
-                            <li>Clean up resources properly</li>
-                            <li>Monitor memory usage</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <h3>Complete ORB Example</h3>
-                <div class="code-block" data-lang="typescript">
-import { init, ORB_instance, getRootPOA } from "jsr:@eai/corba";
-import { Servant } from "jsr:@eai/corba/poa";
-
-class ExampleServant extends Servant {
-  _repository_id(): string {
-    return "IDL:Example:1.0";
-  }
-  
-  processData(data: string): string {
-    console.log(`Processing: ${data}`);
-    return `Processed: ${data}`;
-  }
-}
-
-async function main() {
-  try {
-    // Initialize ORB
-    console.log("Initializing ORB...");
-    await init({
-      debug: true,
-      listenPort: 8080
-    });
-    
-    const orb = ORB_instance();
-    console.log("ORB initialized successfully");
-    
-    // Set up POA
-    const rootPOA = getRootPOA();
-    const poaManager = rootPOA.the_POAManager();
-    await poaManager.activate();
-    
-    // Create and activate servant
-    const servant = new ExampleServant();
-    const oid = await rootPOA.activate_object(servant);
-    const objRef = await rootPOA.id_to_reference(oid);
-    
-    // Generate and save IOR
-    const ior = await orb.object_to_string(objRef);
-    await Deno.writeTextFile("example.ior", ior);
-    console.log("IOR saved to example.ior");
-    
-    // Handle shutdown
-    Deno.addSignalListener("SIGINT", async () => {
-      console.log("Shutting down...");
-      await orb.shutdown(true);
-      Deno.exit(0);
-    });
-    
-    // Start processing requests
-    console.log("Server ready - Press Ctrl+C to shutdown");
-    await orb.run();
-    
-  } catch (error) {
-    console.error("ORB error:", error);
-    Deno.exit(1);
-  }
-}
-
-if (import.meta.main) {
-  await main();
-}
-</div>
-
-                <div class="panel mt-3">
-                    <h3>🎯 Next Steps</h3>
-                    <p>Now that you understand the ORB, explore these related topics:</p>
-                    <div class="cta-buttons mt-1">
-                        <a href="poa.html" class="btn">POA Guide</a>
-                        <a href="naming-service.html" class="btn btn-secondary">Naming Service</a>
-                        <a href="../api/orb.html" class="btn btn-secondary">ORB API Reference</a>
-                    </div>
-                </div>
-            </article>
-        </div>
+          <div class="panel mt-3">
+            <h3>🎯 Next Steps</h3>
+            <p>Now that you understand the ORB, explore these related topics:</p>
+            <div class="cta-buttons mt-1">
+              <a href="poa.html" class="btn">POA Guide</a>
+              <a href="naming-service.html" class="btn btn-secondary">Naming Service</a>
+              <a href="../api/orb.html" class="btn btn-secondary">ORB API Reference</a>
+            </div>
+          </div>
+        </article>
+      </div>
     </main>
 
     <footer class="footer">
-        <div class="container">
-            <div class="footer-bottom">
-                <p>&copy; 2024 CORBA.ts. Licensed under the MIT License.</p>
-            </div>
+      <div class="container">
+        <div class="footer-bottom">
+          <p>&copy; 2024 CORBA.ts. Licensed under the MIT License.</p>
         </div>
+      </div>
     </footer>
-</body>
+  </body>
 </html>

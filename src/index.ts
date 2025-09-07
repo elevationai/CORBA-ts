@@ -38,17 +38,9 @@ export * from "./dii.ts";
 
 // Export Naming Service
 export * from "./naming.ts";
-export { 
-  NamingClient, 
-  NamingUtils, 
-  NameBuilder 
-} from "./naming_client.ts";
+export { NameBuilder, NamingClient, NamingUtils } from "./naming_client.ts";
 export type { NamingClientConfig } from "./naming_client.ts";
-export { 
-  NamingServer, 
-  NamingServerCLI, 
-  DEFAULT_CONFIG as DEFAULT_NAMING_SERVER_CONFIG 
-} from "./naming_server.ts";
+export { DEFAULT_CONFIG as DEFAULT_NAMING_SERVER_CONFIG, NamingServer, NamingServerCLI } from "./naming_server.ts";
 export type { NamingServerConfig } from "./naming_server.ts";
 
 // Export Proxy functionality

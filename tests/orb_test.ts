@@ -7,7 +7,7 @@ Deno.test("ORB initialization", async () => {
 
   assertEquals(orb.id(), "default");
   assertEquals(orb.is_running(), true);
-  
+
   // Clean up: stop the ORB to prevent resource leaks
   await orb.shutdown(true);
 });
@@ -35,7 +35,7 @@ Deno.test("ORB initial references", async () => {
   // Resolve initial reference
   const resolved = await orb.resolve_initial_references("TestReference");
   assertEquals(resolved, dummy);
-  
+
   // Clean up
   await orb.shutdown(true);
 });
@@ -54,7 +54,7 @@ Deno.test("Full CORBA initialization", async () => {
   // Resolve NameService
   const nameService = await orb.resolve_initial_references("NameService");
   assertExists(nameService);
-  
+
   // Clean up
   await orb.shutdown(true);
 });

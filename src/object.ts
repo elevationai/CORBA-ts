@@ -306,12 +306,12 @@ export interface NarrowableType<T extends Object> {
  */
 export function narrow<T extends Object>(
   obj: Object | null | undefined,
-  targetType: NarrowableType<T>
+  targetType: NarrowableType<T>,
 ): T | null {
   if (!obj || obj.is_nil()) {
     return null;
   }
-  
+
   return targetType._narrow(obj);
 }
 
@@ -321,17 +321,17 @@ export function narrow<T extends Object>(
  */
 export async function narrow_async<T extends Object>(
   obj: Object | null | undefined,
-  targetType: NarrowableType<T>
+  targetType: NarrowableType<T>,
 ): Promise<T | null> {
   if (!obj || obj.is_nil()) {
     return null;
   }
-  
+
   // Check if object supports the target interface
   const supportsInterface = await obj.is_a(targetType._repository_id);
   if (!supportsInterface) {
     return null;
   }
-  
+
   return targetType._narrow(obj);
 }

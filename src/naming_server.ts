@@ -8,6 +8,10 @@ import { ORBImpl } from "./orb.ts";
 import { GIOPTransport } from "./giop/transport.ts";
 import { GIOPReply, GIOPRequest } from "./giop/messages.ts";
 import { ReplyStatusType } from "./giop/types.ts";
+// deno-lint-ignore no-unused-vars
+import { CDRInputStream } from "./core/cdr/decoder.ts";
+// deno-lint-ignore no-unused-vars
+import { CDROutputStream } from "./core/cdr/encoder.ts";
 import { ConnectionEndpoint } from "./giop/connection.ts";
 import { IORUtil } from "./giop/ior.ts";
 import { NameUtil, NamingContextExt, NamingContextExtImpl } from "./naming.ts";
