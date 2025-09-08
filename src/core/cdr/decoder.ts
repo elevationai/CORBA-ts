@@ -213,7 +213,7 @@ export class CDRInputStream {
    * Read a string (null-terminated)
    */
   readString(): string {
-    const lengthPos = this.position; // Save position before reading ULong
+    // Save position before reading ULong (for debugging if needed)
     const length = this.readULong();
     if (length === 0) {
       return "";
@@ -240,7 +240,7 @@ export class CDRInputStream {
    * GIOP 1.2+ uses UTF-8 encoding with length prefix
    */
   readWString(): string {
-    const lengthPos = this.position; // Save position before reading ULong
+    // Save position before reading ULong (for debugging if needed)
     const length = this.readULong();
     if (length === 0) {
       return "";
@@ -271,7 +271,7 @@ export class CDRInputStream {
    * Read an octet sequence (with length prefix)
    */
   readOctetSequence(): Uint8Array {
-    const lengthPos = this.position; // Save position before reading ULong
+    // Save position before reading ULong (for debugging if needed)
     const length = this.readULong();
     
     // Sanity check for corrupted length values

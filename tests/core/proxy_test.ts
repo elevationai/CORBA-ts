@@ -103,7 +103,7 @@ Deno.test("Proxy: Uses TypeCode-aware serialization", async () => {
   const originalInvoke = orb.invokeWithEncodedArgs;
   orb.invokeWithEncodedArgs = function (_target, _operation, encodedArgs) {
     capturedArgs = encodedArgs;
-    return Promise.resolve({ returnValue: null, outputBuffer: new Uint8Array(0) });
+    return Promise.resolve({ returnValue: null, outputBuffer: new Uint8Array(0), isLittleEndian: false });
   };
 
   const mockRef: CORBA.ObjectRef = {

@@ -298,7 +298,8 @@ export class RequestImpl implements Request {
 
       // Create CDR input stream from the output buffer
       // Note: We need to skip past the return value that was already read
-      const outCdr = new CDRInputStream(result.outputBuffer, false); // Assuming big-endian
+      // Use the endianness from the reply (passed through the result)
+      const outCdr = new CDRInputStream(result.outputBuffer, result.isLittleEndian);
 
       // Skip the return value (assuming it's a long for now)
       try {

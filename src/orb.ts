@@ -60,7 +60,7 @@ export interface ORB {
     target: CORBA.ObjectRef,
     operation: string,
     encodedArgs: Uint8Array,
-  ): Promise<{ returnValue: unknown; outputBuffer: Uint8Array }>;
+  ): Promise<{ returnValue: unknown; outputBuffer: Uint8Array; isLittleEndian: boolean }>;
 
   /**
    * Convert a stringified object reference to an object
@@ -351,7 +351,7 @@ export class ORBImpl implements ORB {
     target: CORBA.ObjectRef,
     operation: string,
     encodedArgs: Uint8Array,
-  ): Promise<{ returnValue: unknown; outputBuffer: Uint8Array }> {
+  ): Promise<{ returnValue: unknown; outputBuffer: Uint8Array; isLittleEndian: boolean }> {
     const ior = (target as { _ior: IOR })._ior;
     if (!ior) {
       throw new CORBA.BAD_PARAM("Object reference does not contain IOR");
@@ -380,6 +380,7 @@ export class ORBImpl implements ORB {
       return {
         returnValue,
         outputBuffer: reply.body,
+        isLittleEndian: reply.isLittleEndian(),
       };
     } else if (reply.replyStatus === 2) { // SYSTEM_EXCEPTION
       const sysEx = reply.getSystemException();
