@@ -213,9 +213,17 @@ export class CDRInputStream {
    * Read a string (null-terminated)
    */
   readString(): string {
+    const lengthPos = this.position; // Save position before reading ULong
     const length = this.readULong();
     if (length === 0) {
       return "";
+    }
+
+    // Sanity check: strings shouldn't be larger than remaining buffer
+    // or unreasonably large (>10MB is suspicious for CORBA strings)
+    const maxReasonableLength = 10 * 1024 * 1024; // 10MB
+    if (length > this.remaining() || length > maxReasonableLength) {
+      throw new Error(`Invalid string length: ${length} (remaining: ${this.remaining()})`);
     }
 
     // Read string bytes (excluding null terminator)
@@ -232,9 +240,17 @@ export class CDRInputStream {
    * GIOP 1.2+ uses UTF-8 encoding with length prefix
    */
   readWString(): string {
+    const lengthPos = this.position; // Save position before reading ULong
     const length = this.readULong();
     if (length === 0) {
       return "";
+    }
+
+    // Sanity check: strings shouldn't be larger than remaining buffer
+    // or unreasonably large (>10MB is suspicious for CORBA strings)
+    const maxReasonableLength = 10 * 1024 * 1024; // 10MB
+    if (length > this.remaining() || length > maxReasonableLength) {
+      throw new Error(`Invalid string length: ${length} (remaining: ${this.remaining()})`);
     }
 
     const bytes = this.readOctetArray(length);
@@ -255,7 +271,15 @@ export class CDRInputStream {
    * Read an octet sequence (with length prefix)
    */
   readOctetSequence(): Uint8Array {
+    const lengthPos = this.position; // Save position before reading ULong
     const length = this.readULong();
+    
+    // Sanity check for corrupted length values
+    const maxReasonableLength = 100 * 1024 * 1024; // 100MB
+    if (length > this.remaining() || length > maxReasonableLength) {
+      throw new Error(`Invalid sequence length: ${length} (remaining: ${this.remaining()})`);
+    }
+    
     return this.readOctetArray(length);
   }
 

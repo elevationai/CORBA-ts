@@ -236,3 +236,94 @@ Deno.test("CDR: special float values", () => {
   assertEquals(inp.readDouble(), Infinity);
   assertEquals(inp.readDouble(), -Infinity);
 });
+
+// Buffer underflow tests - these prove the issue exists in the current code
+Deno.test("CDR: readString() buffer underflow with corrupted 67MB length", () => {
+  // This is the EXACT error from the logs:
+  // "Failed to decode output parameter: Error: Buffer underflow: need 67108863 bytes, have 208"
+  
+  // Create a 208-byte buffer where first 4 bytes = 0x03FFFFFF (67108863 in decimal)
+  const buffer = new Uint8Array(208);
+  buffer[0] = 0x03;
+  buffer[1] = 0xFF;
+  buffer[2] = 0xFF;
+  buffer[3] = 0xFF;
+  
+  const cdr = new CDRInputStream(buffer, false); // big-endian
+  
+  // This now throws an error before attempting the huge read
+  assertThrows(
+    () => cdr.readString(),
+    Error,
+    "Invalid string length: 67108863 (remaining: 204)"
+  );
+});
+
+Deno.test("CDR: readString() buffer underflow with corrupted 16MB length", () => {
+  // This is the OTHER error from the logs:
+  // "Failed to decode output parameter: Error: Buffer underflow: need 16777215 bytes, have 176"
+  
+  // Create a 176-byte buffer where first 4 bytes = 0x00FFFFFF (16777215 in decimal)
+  const buffer = new Uint8Array(176);
+  buffer[0] = 0x00;
+  buffer[1] = 0xFF;
+  buffer[2] = 0xFF;
+  buffer[3] = 0xFF;
+  
+  const cdr = new CDRInputStream(buffer, false); // big-endian
+  
+  // This now throws an error before attempting the huge read
+  assertThrows(
+    () => cdr.readString(),
+    Error,
+    "Invalid string length: 16777215 (remaining: 172)"
+  );
+});
+
+Deno.test("CDR: missing bounds checking on string length", () => {
+  // Even if we had enough memory, trying to allocate 67MB for a string is wrong
+  
+  const buffer = new Uint8Array(12);
+  buffer[0] = 0x03;
+  buffer[1] = 0xFF;
+  buffer[2] = 0xFF;
+  buffer[3] = 0xFF;  // length = 67108863
+  
+  const cdr = new CDRInputStream(buffer, false);
+  const length = cdr.readULong();
+  
+  // This proves we're reading an insane length value
+  assertEquals(length, 67108863);
+  
+  // And trying to use it will crash
+  assertThrows(
+    () => cdr.readOctetArray(length),
+    Error,
+    "Buffer underflow"
+  );
+});
+
+Deno.test("CDR: endianness mismatch causes incorrect length values", () => {
+  // If server sends little-endian but we read as big-endian, we get garbage
+  
+  // Write a reasonable length (30) in little-endian
+  const buffer = new Uint8Array(8);
+  buffer[0] = 0x1E;  // 30 in little-endian
+  buffer[1] = 0x00;
+  buffer[2] = 0x00;
+  buffer[3] = 0x00;
+  
+  // But read it as big-endian
+  const cdr = new CDRInputStream(buffer, false);
+  const length = cdr.readULong();
+  
+  // We get 0x1E000000 = 503316480 instead of 30!
+  assertEquals(length, 503316480);
+  
+  // Trying to read that much data will fail
+  assertThrows(
+    () => cdr.readOctetArray(length),
+    Error,
+    "Buffer underflow"
+  );
+});
