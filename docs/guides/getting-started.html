@@ -1,283 +1,455 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Getting Started - CORBA.ts Documentation</title>
-    <meta
-      name="description"
-      content="Get started with CORBA.ts - Learn how to install, configure, and create your first distributed application"
-    >
+    <meta name="description" content="Get started with CORBA.ts - Learn how to install, configure, and create your first distributed application">
     <link rel="stylesheet" href="../assets/css/main.css">
-    <link
-      rel="icon"
-      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>"
-    >
-  </head>
-  <body>
-    <header class="header">
-      <div class="container">
-        <nav class="nav">
-          <a href="../" class="logo">
-            <span class="logo-icon"></span>
-            CORBA.ts
-          </a>
-          <ul class="nav-links">
-            <li><a href="../">Home</a></li>
-            <li><a href="./" class="active">Guides</a></li>
-            <li><a href="../api/">API Reference</a></li>
-            <li><a href="../examples/">Examples</a></li>
-            <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
-          </ul>
-        </nav>
-      </div>
-    </header>
-
-    <main class="container mt-2">
-      <div class="grid-2">
-        <aside class="doc-nav">
-          <h3>Guides</h3>
-          <ul>
-            <li><a href="getting-started.html" class="active">Getting Started</a></li>
-            <li><a href="orb.html">Object Request Broker (ORB)</a></li>
-            <li><a href="poa.html">Portable Object Adapter (POA)</a></li>
-            <li><a href="naming-service.html">Naming Service</a></li>
-            <li><a href="idl-mapping.html">IDL Mapping</a></li>
-            <li><a href="giop-iiop.html">GIOP/IIOP Protocols</a></li>
-            <li><a href="typecode.html">TypeCode System</a></li>
-            <li><a href="value-types.html">Value Types</a></li>
-            <li><a href="dii.html">Dynamic Invocation Interface</a></li>
-            <li><a href="deployment.html">Deployment Guide</a></li>
-          </ul>
-
-          <h4>On This Page</h4>
-          <ul>
-            <li><a href="#installation">Installation</a></li>
-            <li><a href="#first-server">Creating a Server</a></li>
-            <li><a href="#first-client">Creating a Client</a></li>
-            <li><a href="#running">Running the Application</a></li>
-            <li><a href="#next-steps">Next Steps</a></li>
-          </ul>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body>
+    <div class="main-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="../" class="logo">CORBA.ts</a>
+                <div class="logo-subtitle">TypeScript CORBA 3.4 for Deno</div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Guides</div>
+                    <ul class="nav-links">
+                        <li><a href="getting-started.html" class="active">Getting Started</a></li>
+                        <li><a href="orb.html">Object Request Broker (ORB)</a></li>
+                        <li><a href="poa.html">Portable Object Adapter (POA)</a></li>
+                        <li><a href="naming-service.html">Naming Service</a></li>
+                        <li><a href="idl-mapping.html">IDL Mapping</a></li>
+                        <li><a href="giop-iiop.html">GIOP/IIOP Protocols</a></li>
+                        <li><a href="typecode.html">TypeCode System</a></li>
+                        <li><a href="value-types.html">Value Types</a></li>
+                        <li><a href="dii.html">Dynamic Invocation Interface</a></li>
+                        <li><a href="deployment.html">Deployment Guide</a></li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">On This Page</div>
+                    <ul class="nav-links nav-subsection">
+                        <li><a href="#installation">Installation</a></li>
+                        <li><a href="#first-server">Creating a Server</a></li>
+                        <li><a href="#first-client">Creating a Client</a></li>
+                        <li><a href="#running">Running the Application</a></li>
+                        <li><a href="#next-steps">Next Steps</a></li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">Resources</div>
+                    <ul class="nav-links">
+                        <li><a href="../">Home</a></li>
+                        <li><a href="../api/">API Reference</a></li>
+                        <li><a href="../examples/">Examples</a></li>
+                        <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
+                    </ul>
+                </div>
+            </nav>
         </aside>
+        
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+            ☰
+        </button>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <header class="top-header">
+                <div class="header-links">
+                    <a href="../">Home</a>
+                    <a href="../api/">API Docs</a>
+                    <a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a>
+                </div>
+            </header>
 
-        <article class="panel">
-          <h1>Getting Started with CORBA.ts</h1>
-          <p>
-            This guide will help you set up CORBA.ts and create your first distributed application. By the end of this
-            tutorial, you'll have a working CORBA server and client communicating over the network.
-          </p>
+            <main class="container">
+                <article>
+                    <h1>Getting Started with CORBA.ts</h1>
+                    <p>This guide will help you set up CORBA.ts and create your first distributed application. By the end of this tutorial, you'll have a working CORBA server and client communicating over the network.</p>
 
-          <div
-            class="panel mt-2"
-            style="background: rgba(100, 255, 218, 0.05); border-left: 4px solid var(--primary-cyan)"
-          >
-            <h3>Prerequisites</h3>
-            <ul>
-              <li>
-                <strong>Deno 1.37+</strong> - <a
-                  href="https://deno.land/manual/getting_started/installation"
-                  target="_blank"
-                >Install Deno</a>
-              </li>
-              <li><strong>Basic TypeScript knowledge</strong> - Familiarity with TypeScript syntax and concepts</li>
-              <li>
-                <strong>Network access</strong> - For downloading dependencies and testing client-server communication
-              </li>
-            </ul>
-          </div>
+                    <div class="panel mt-2" style="background: rgba(100, 255, 218, 0.05); border-left: 4px solid var(--primary-cyan);">
+                        <h3>Prerequisites</h3>
+                        <ul>
+                            <li><strong>Deno 1.37+</strong> - <a href="https://deno.land/manual/getting_started/installation" target="_blank">Install Deno</a></li>
+                            <li><strong>Basic TypeScript knowledge</strong> - Familiarity with TypeScript syntax and concepts</li>
+                            <li><strong>Network access</strong> - For downloading dependencies and testing client-server communication</li>
+                        </ul>
+                    </div>
 
-          <h2 id="installation">📦 Installation</h2>
-          <p>
-            CORBA.ts is available on JSR (JavaScript Registry) and Deno.land. We recommend using JSR for the best
-            experience:
-          </p>
+                    <h2 id="installation">📦 Installation</h2>
+                    <p>CORBA.ts is available on JSR (JavaScript Registry) and Deno.land. We recommend using JSR for the best experience:</p>
 
-          <h3>Using JSR (Recommended)</h3>
-          <div class="code-block" data-lang="typescript">
-            import * as CORBA from "jsr:@eai/corba"; import { Servant } from "jsr:@eai/corba/poa"; import { init,
-            ORB_instance, getRootPOA } from "jsr:@eai/corba";
-          </div>
+                    <h3>Using JSR (Recommended)</h3>
+                    <div class="code-block" data-lang="typescript">
+import * as CORBA from "jsr:@eai/corba";
+import { Servant } from "jsr:@eai/corba/poa";
+import { init, ORB_instance, getRootPOA } from "jsr:@eai/corba";
+</div>
 
-          <h3>Using Deno.land</h3>
-          <div class="code-block" data-lang="typescript">
-            import * as CORBA from "https://deno.land/x/corba_ts/mod.ts"; import { Servant } from
-            "https://deno.land/x/corba_ts/src/poa.ts";
-          </div>
+                    <h3>Using Deno.land</h3>
+                    <div class="code-block" data-lang="typescript">
+import * as CORBA from "https://deno.land/x/corba_ts/mod.ts";
+import { Servant } from "https://deno.land/x/corba_ts/src/poa.ts";
+</div>
 
-          <h2 id="first-server">🖥️ Creating Your First Server</h2>
-          <p>Let's create a simple "Hello World" CORBA server. Create a new file called <code>server.ts</code>:</p>
+                    <h2 id="first-server">🖥️ Creating Your First Server</h2>
+                    <p>Let's create a simple "Hello World" CORBA server. Create a new file called <code>server.ts</code>:</p>
 
-          <div class="code-block" data-lang="typescript">
-            // server.ts import { init, ORB_instance, getRootPOA } from "jsr:@eai/corba"; import { Servant } from
-            "jsr:@eai/corba/poa"; // Define the servant class class HelloServant extends Servant { // Every servant must
-            have a repository ID _repository_id(): string { return "IDL:Hello:1.0"; } // Our business method
-            sayHello(name: string): string { console.log(`Server: sayHello called with name: ${name}`); return `Hello,
-            ${name}! Welcome to CORBA.ts`; } // Method to get current server time getServerTime(): string { const now =
-            new Date(); console.log(`Server: getServerTime called`); return now.toISOString(); } } async function
-            startServer() { try { console.log("🚀 Starting CORBA.ts server..."); // Initialize the CORBA runtime await
-            init(); console.log("✅ CORBA runtime initialized"); // Get the ORB instance const orb = ORB_instance();
-            console.log("✅ ORB instance obtained"); // Get the Root POA and its manager const rootPOA = getRootPOA();
-            const poaManager = rootPOA.the_POAManager(); console.log("✅ Root POA obtained"); // Activate the POA
-            Manager await poaManager.activate(); console.log("✅ POA Manager activated"); // Create the servant const
-            servant = new HelloServant(); console.log("✅ Servant created"); // Activate the servant const oid = await
-            rootPOA.activate_object(servant); console.log(`✅ Servant activated with OID: ${oid}`); // Get the object
-            reference const helloRef = await rootPOA.id_to_reference(oid); console.log("✅ Object reference obtained");
-            // Convert to IOR string for clients to use const helloIOR = await orb.object_to_string(helloRef);
-            console.log("\n📋 Server is ready!"); console.log("📋 Copy this IOR for your client:");
-            console.log("=".repeat(50)); console.log(helloIOR); console.log("=".repeat(50)); // Save IOR to file for
-            easy client access await Deno.writeTextFile("hello.ior", helloIOR); console.log("💾 IOR saved to
-            hello.ior"); console.log("\n🏃 Running ORB... Press Ctrl+C to stop"); // Run the ORB (this blocks until
-            shutdown) await orb.run(); } catch (error) { console.error("❌ Server error:", error); Deno.exit(1); } } //
-            Handle graceful shutdown Deno.addSignalListener("SIGINT", () => { console.log("\n🛑 Shutting down
-            server..."); Deno.exit(0); }); // Start the server if (import.meta.main) { await startServer(); }
-          </div>
+                    <div class="code-block" data-lang="typescript">
+// server.ts
+import { init, ORB_instance, getRootPOA } from "jsr:@eai/corba";
+import { Servant } from "jsr:@eai/corba/poa";
 
-          <h2 id="first-client">💻 Creating Your First Client</h2>
-          <p>Now let's create a client that connects to our server. Create a new file called <code>client.ts</code>:</p>
+// Define the servant class
+class HelloServant extends Servant {
+  // Every servant must have a repository ID
+  _repository_id(): string {
+    return "IDL:Hello:1.0";
+  }
 
-          <div class="code-block" data-lang="typescript">
-            // client.ts import { init, ORB_instance } from "jsr:@eai/corba"; // Define the interface for type safety
-            interface Hello { sayHello(name: string): Promise&lt;string&gt;; getServerTime(): Promise&lt;string&gt;; }
-            async function runClient() { try { console.log("🔌 Starting CORBA.ts client..."); // Initialize the CORBA
-            runtime await init(); console.log("✅ CORBA runtime initialized"); // Get the ORB instance const orb =
-            ORB_instance(); console.log("✅ ORB instance obtained"); // Read the IOR from file (created by the server)
-            let ior: string; try { ior = await Deno.readTextFile("hello.ior"); console.log("✅ IOR loaded from
-            hello.ior"); } catch (error) { console.error("❌ Could not read hello.ior file"); console.error(" Make sure
-            the server is running and has created the IOR file"); Deno.exit(1); } // Convert IOR string to object
-            reference const helloRef = await orb.string_to_object(ior); console.log("✅ Object reference obtained"); //
-            Cast to our Hello interface for type safety const hello = helloRef as unknown as Hello; console.log("\n📞
-            Making remote calls..."); // Make some remote method calls const greeting = await hello.sayHello("CORBA.ts
-            User"); console.log("📥 Server response:", greeting); const serverTime = await hello.getServerTime();
-            console.log("📥 Server time:", serverTime); // Make multiple calls to demonstrate the connection
-            console.log("\n🔄 Making multiple calls..."); for (let i = 1; i <= 3; i++) { const response = await
-            hello.sayHello(`Client Call #${i}`); console.log(`📥 Call ${i} response:`, response); // Wait a bit between
-            calls await new Promise(resolve => setTimeout(resolve, 1000)); } console.log("\n✅ Client completed
-            successfully!"); } catch (error) { console.error("❌ Client error:", error); if
-            (error.message?.includes("Connection refused")) { console.error(" 💡 Make sure the server is running"); }
-            else if (error.message?.includes("Invalid IOR")) { console.error(" 💡 Check that the IOR is valid and the
-            server is accessible"); } Deno.exit(1); } } // Run the client if (import.meta.main) { await runClient(); }
-          </div>
+  // Our business method
+  sayHello(name: string): string {
+    console.log(`Server: sayHello called with name: ${name}`);
+    return `Hello, ${name}! Welcome to CORBA.ts`;
+  }
 
-          <h2 id="running">🏃 Running the Application</h2>
+  // Method to get current server time
+  getServerTime(): string {
+    const now = new Date();
+    console.log(`Server: getServerTime called`);
+    return now.toISOString();
+  }
+}
 
-          <h3>Step 1: Start the Server</h3>
-          <p>Open a terminal and run the server:</p>
-          <div class="code-block" data-lang="bash">
-            deno run --allow-net --allow-read --allow-write server.ts
-          </div>
+async function startServer() {
+  try {
+    console.log("🚀 Starting CORBA.ts server...");
 
-          <p>You should see output similar to:</p>
-          <div class="code-block" data-lang="text">
-            🚀 Starting CORBA.ts server... ✅ CORBA runtime initialized ✅ ORB instance obtained ✅ Root POA obtained ✅
-            POA Manager activated ✅ Servant created ✅ Servant activated with OID: ... ✅ Object reference obtained 📋
-            Server is ready! 📋 Copy this IOR for your client: ==================================================
-            IOR:010000002b00000049444c3a48656c6c6f3a312e3000000001000000000000007000000001010200...
-            ================================================== 💾 IOR saved to hello.ior 🏃 Running ORB... Press Ctrl+C
-            to stop
-          </div>
+    // Initialize the CORBA runtime
+    await init();
+    console.log("✅ CORBA runtime initialized");
 
-          <h3>Step 2: Run the Client</h3>
-          <p>Open a new terminal (keep the server running) and run the client:</p>
-          <div class="code-block" data-lang="bash">
-            deno run --allow-net --allow-read client.ts
-          </div>
+    // Get the ORB instance
+    const orb = ORB_instance();
+    console.log("✅ ORB instance obtained");
 
-          <p>You should see output like:</p>
-          <div class="code-block" data-lang="text">
-            🔌 Starting CORBA.ts client... ✅ CORBA runtime initialized ✅ ORB instance obtained ✅ IOR loaded from
-            hello.ior ✅ Object reference obtained 📞 Making remote calls... 📥 Server response: Hello, CORBA.ts User!
-            Welcome to CORBA.ts 📥 Server time: 2024-01-15T10:30:45.123Z 🔄 Making multiple calls... 📥 Call 1 response:
-            Hello, Client Call #1! Welcome to CORBA.ts 📥 Call 2 response: Hello, Client Call #2! Welcome to CORBA.ts 📥
-            Call 3 response: Hello, Client Call #3! Welcome to CORBA.ts ✅ Client completed successfully!
-          </div>
+    // Get the Root POA and its manager
+    const rootPOA = getRootPOA();
+    const poaManager = rootPOA.the_POAManager();
+    console.log("✅ Root POA obtained");
 
-          <h3>Understanding What Happened</h3>
-          <div
-            class="panel mt-1"
-            style="background: rgba(72, 202, 228, 0.05); border-left: 4px solid var(--secondary-blue)"
-          >
-            <ol>
-              <li>
-                <strong>Server Startup</strong>: The server initialized the CORBA runtime, created a servant, and
-                activated it in the POA
-              </li>
-              <li>
-                <strong>IOR Generation</strong>: The server generated an IOR (Interoperable Object Reference) containing
-                all the information needed to connect to the object
-              </li>
-              <li>
-                <strong>Client Connection</strong>: The client read the IOR, converted it to an object reference, and
-                made remote method calls
-              </li>
-              <li>
-                <strong>Network Communication</strong>: All communication happened transparently over GIOP/IIOP
-                protocols
-              </li>
-            </ol>
-          </div>
+    // Activate the POA Manager
+    await poaManager.activate();
+    console.log("✅ POA Manager activated");
 
-          <h2 id="next-steps">🎯 Next Steps</h2>
+    // Create the servant
+    const servant = new HelloServant();
+    console.log("✅ Servant created");
 
-          <div class="grid mt-2">
-            <div class="feature-card">
-              <h3>📚 Learn More CORBA</h3>
-              <p>Dive deeper into CORBA concepts and CORBA.ts-specific features.</p>
-              <ul>
-                <li><a href="orb.html">ORB Guide</a> - Understanding the Object Request Broker</li>
-                <li><a href="poa.html">POA Guide</a> - Advanced object lifecycle management</li>
-                <li><a href="naming-service.html">Naming Service</a> - Service discovery and location transparency</li>
-              </ul>
-            </div>
+    // Activate the servant
+    const oid = await rootPOA.activate_object(servant);
+    console.log(`✅ Servant activated with OID: ${oid}`);
 
-            <div class="feature-card">
-              <h3>🔧 Advanced Features</h3>
-              <p>Explore more advanced CORBA.ts capabilities.</p>
-              <ul>
-                <li><a href="idl-mapping.html">IDL Mapping</a> - Define interfaces with IDL</li>
-                <li><a href="value-types.html">Value Types</a> - Complex data structures</li>
-                <li><a href="dii.html">Dynamic Invocation</a> - Runtime method calls</li>
-              </ul>
-            </div>
+    // Get the object reference
+    const helloRef = await rootPOA.id_to_reference(oid);
+    console.log("✅ Object reference obtained");
 
-            <div class="feature-card">
-              <h3>💻 Practical Examples</h3>
-              <p>See real-world usage patterns and best practices.</p>
-              <ul>
-                <li><a href="../examples/client-server.html">Client/Server Patterns</a></li>
-                <li><a href="../examples/naming-service.html">Using Naming Service</a></li>
-                <li><a href="../examples/advanced.html">Advanced Scenarios</a></li>
-              </ul>
-            </div>
+    // Convert to IOR string for clients to use
+    const helloIOR = await orb.object_to_string(helloRef);
+    console.log("\n📋 Server is ready!");
+    console.log("📋 Copy this IOR for your client:");
+    console.log("=".repeat(50));
+    console.log(helloIOR);
+    console.log("=".repeat(50));
 
-            <div class="feature-card">
-              <h3>📖 API Reference</h3>
-              <p>Detailed documentation for all CORBA.ts APIs.</p>
-              <ul>
-                <li><a href="../api/orb.html">ORB API</a></li>
-                <li><a href="../api/poa.html">POA API</a></li>
-                <li><a href="../api/types.html">Types & TypeCodes</a></li>
-              </ul>
-            </div>
-          </div>
+    // Save IOR to file for easy client access
+    await Deno.writeTextFile("hello.ior", helloIOR);
+    console.log("💾 IOR saved to hello.ior");
 
-          <div class="panel mt-2 text-center">
-            <h3>🎉 Congratulations!</h3>
-            <p>
-              You've successfully created and run your first CORBA.ts application. You're now ready to build more
-              complex distributed systems!
-            </p>
-            <a href="orb.html" class="btn mt-1">Continue with ORB Guide</a>
-          </div>
-        </article>
-      </div>
-    </main>
+    console.log("\n🏃 Running ORB... Press Ctrl+C to stop");
 
-    <footer class="footer">
-      <div class="container">
-        <div class="footer-bottom">
-          <p>&copy; 2024 CORBA.ts. Licensed under the MIT License.</p>
+    // Run the ORB (this blocks until shutdown)
+    await orb.run();
+
+  } catch (error) {
+    console.error("❌ Server error:", error);
+    Deno.exit(1);
+  }
+}
+
+// Handle graceful shutdown
+Deno.addSignalListener("SIGINT", () => {
+  console.log("\n🛑 Shutting down server...");
+  Deno.exit(0);
+});
+
+// Start the server
+if (import.meta.main) {
+  await startServer();
+}
+</div>
+
+                    <h2 id="first-client">💻 Creating Your First Client</h2>
+                    <p>Now let's create a client that connects to our server. Create a new file called <code>client.ts</code>:</p>
+
+                    <div class="code-block" data-lang="typescript">
+// client.ts
+import { init, ORB_instance } from "jsr:@eai/corba";
+
+// Define the interface for type safety
+interface Hello {
+  sayHello(name: string): Promise&lt;string&gt;;
+  getServerTime(): Promise&lt;string&gt;;
+}
+
+async function runClient() {
+  try {
+    console.log("🔌 Starting CORBA.ts client...");
+
+    // Initialize the CORBA runtime
+    await init();
+    console.log("✅ CORBA runtime initialized");
+
+    // Get the ORB instance
+    const orb = ORB_instance();
+    console.log("✅ ORB instance obtained");
+
+    // Read the IOR from file (created by the server)
+    let ior: string;
+    try {
+      ior = await Deno.readTextFile("hello.ior");
+      console.log("✅ IOR loaded from hello.ior");
+    } catch (error) {
+      console.error("❌ Could not read hello.ior file");
+      console.error("   Make sure the server is running and has created the IOR file");
+      Deno.exit(1);
+    }
+
+    // Convert IOR string to object reference
+    const helloRef = await orb.string_to_object(ior);
+    console.log("✅ Object reference obtained");
+
+    // Cast to our Hello interface for type safety
+    const hello = helloRef as unknown as Hello;
+
+    console.log("\n📞 Making remote calls...");
+
+    // Make some remote method calls
+    const greeting = await hello.sayHello("CORBA.ts User");
+    console.log("📥 Server response:", greeting);
+
+    const serverTime = await hello.getServerTime();
+    console.log("📥 Server time:", serverTime);
+
+    // Make multiple calls to demonstrate the connection
+    console.log("\n🔄 Making multiple calls...");
+    for (let i = 1; i <= 3; i++) {
+      const response = await hello.sayHello(`Client Call #${i}`);
+      console.log(`📥 Call ${i} response:`, response);
+      
+      // Wait a bit between calls
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    console.log("\n✅ Client completed successfully!");
+
+  } catch (error) {
+    console.error("❌ Client error:", error);
+    
+    if (error.message?.includes("Connection refused")) {
+      console.error("   💡 Make sure the server is running");
+    } else if (error.message?.includes("Invalid IOR")) {
+      console.error("   💡 Check that the IOR is valid and the server is accessible");
+    }
+    
+    Deno.exit(1);
+  }
+}
+
+// Run the client
+if (import.meta.main) {
+  await runClient();
+}
+</div>
+
+                    <h2 id="running">🏃 Running the Application</h2>
+
+                    <h3>Step 1: Start the Server</h3>
+                    <p>Open a terminal and run the server:</p>
+                    <div class="code-block" data-lang="bash">
+deno run --allow-net --allow-read --allow-write server.ts
+</div>
+
+                    <p>You should see output similar to:</p>
+                    <div class="code-block" data-lang="text">
+🚀 Starting CORBA.ts server...
+✅ CORBA runtime initialized
+✅ ORB instance obtained
+✅ Root POA obtained
+✅ POA Manager activated
+✅ Servant created
+✅ Servant activated with OID: ...
+✅ Object reference obtained
+
+📋 Server is ready!
+📋 Copy this IOR for your client:
+==================================================
+IOR:010000002b00000049444c3a48656c6c6f3a312e3000000001000000000000007000000001010200...
+==================================================
+💾 IOR saved to hello.ior
+
+🏃 Running ORB... Press Ctrl+C to stop
+</div>
+
+                    <h3>Step 2: Run the Client</h3>
+                    <p>Open a new terminal (keep the server running) and run the client:</p>
+                    <div class="code-block" data-lang="bash">
+deno run --allow-net --allow-read client.ts
+</div>
+
+                    <p>You should see output like:</p>
+                    <div class="code-block" data-lang="text">
+🔌 Starting CORBA.ts client...
+✅ CORBA runtime initialized
+✅ ORB instance obtained
+✅ IOR loaded from hello.ior
+✅ Object reference obtained
+
+📞 Making remote calls...
+📥 Server response: Hello, CORBA.ts User! Welcome to CORBA.ts
+📥 Server time: 2024-01-15T10:30:45.123Z
+
+🔄 Making multiple calls...
+📥 Call 1 response: Hello, Client Call #1! Welcome to CORBA.ts
+📥 Call 2 response: Hello, Client Call #2! Welcome to CORBA.ts
+📥 Call 3 response: Hello, Client Call #3! Welcome to CORBA.ts
+
+✅ Client completed successfully!
+</div>
+
+                    <h3>Understanding What Happened</h3>
+                    <div class="panel mt-1" style="background: rgba(72, 202, 228, 0.05); border-left: 4px solid var(--secondary-blue);">
+                        <ol>
+                            <li><strong>Server Startup</strong>: The server initialized the CORBA runtime, created a servant, and activated it in the POA</li>
+                            <li><strong>IOR Generation</strong>: The server generated an IOR (Interoperable Object Reference) containing all the information needed to connect to the object</li>
+                            <li><strong>Client Connection</strong>: The client read the IOR, converted it to an object reference, and made remote method calls</li>
+                            <li><strong>Network Communication</strong>: All communication happened transparently over GIOP/IIOP protocols</li>
+                        </ol>
+                    </div>
+
+                    <h2 id="next-steps">🎯 Next Steps</h2>
+
+                    <div class="grid mt-2">
+                        <div class="feature-card">
+                            <h3>📚 Learn More CORBA</h3>
+                            <p>Dive deeper into CORBA concepts and CORBA.ts-specific features.</p>
+                            <ul>
+                                <li><a href="orb.html">ORB Guide</a> - Understanding the Object Request Broker</li>
+                                <li><a href="poa.html">POA Guide</a> - Advanced object lifecycle management</li>
+                                <li><a href="naming-service.html">Naming Service</a> - Service discovery and location transparency</li>
+                            </ul>
+                        </div>
+
+                        <div class="feature-card">
+                            <h3>🔧 Advanced Features</h3>
+                            <p>Explore more advanced CORBA.ts capabilities.</p>
+                            <ul>
+                                <li><a href="idl-mapping.html">IDL Mapping</a> - Define interfaces with IDL</li>
+                                <li><a href="value-types.html">Value Types</a> - Complex data structures</li>
+                                <li><a href="dii.html">Dynamic Invocation</a> - Runtime method calls</li>
+                            </ul>
+                        </div>
+
+                        <div class="feature-card">
+                            <h3>💻 Practical Examples</h3>
+                            <p>See real-world usage patterns and best practices.</p>
+                            <ul>
+                                <li><a href="../examples/client-server.html">Client/Server Patterns</a></li>
+                                <li><a href="../examples/naming-service.html">Using Naming Service</a></li>
+                                <li><a href="../examples/advanced.html">Advanced Scenarios</a></li>
+                            </ul>
+                        </div>
+
+                        <div class="feature-card">
+                            <h3>📖 API Reference</h3>
+                            <p>Detailed documentation for all CORBA.ts APIs.</p>
+                            <ul>
+                                <li><a href="../api/orb.html">ORB API</a></li>
+                                <li><a href="../api/poa.html">POA API</a></li>
+                                <li><a href="../api/types.html">Types & TypeCodes</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="panel mt-2 text-center">
+                        <h3>🎉 Congratulations!</h3>
+                        <p>You've successfully created and run your first CORBA.ts application. You're now ready to build more complex distributed systems!</p>
+                        <a href="orb.html" class="btn mt-1">Continue with ORB Guide</a>
+                    </div>
+                </article>
+            </main>
+
+            <footer class="footer">
+                <div class="container">
+                    <div class="footer-bottom">
+                        <p>&copy; 2024 CORBA.ts. Licensed under the MIT License.</p>
+                    </div>
+                </div>
+            </footer>
         </div>
-      </div>
-    </footer>
-  </body>
+    </div>
+
+    <script>
+        // Mobile menu toggle
+        const sidebar = document.getElementById('sidebar');
+        const menuToggle = document.getElementById('mobile-menu-toggle');
+        
+        menuToggle?.addEventListener('click', () => {
+            sidebar?.classList.toggle('open');
+        });
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 1024) {
+                if (!sidebar?.contains(e.target) && e.target !== menuToggle) {
+                    sidebar?.classList.remove('open');
+                }
+            }
+        });
+        
+        // Highlight active section in sidebar
+        const sidebarLinks = document.querySelectorAll('.nav-subsection a');
+        const sections = document.querySelectorAll('h2[id], h3[id]');
+        
+        function updateActiveSection() {
+            let current = '';
+            sections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top <= 100 && rect.bottom >= 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            sidebarLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        }
+        
+        window.addEventListener('scroll', updateActiveSection);
+        updateActiveSection();
+    </script>
+</body>
 </html>

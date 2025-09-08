@@ -15,29 +15,45 @@
     >
   </head>
   <body>
-    <header class="header">
-      <div class="container">
-        <nav class="nav">
-          <a href="../" class="logo">
-            <span class="logo-icon"></span>
-            CORBA.ts
-          </a>
-          <ul class="nav-links">
-            <li><a href="../">Home</a></li>
-            <li><a href="../guides/">Guides</a></li>
-            <li><a href="./" class="active">API Reference</a></li>
-            <li><a href="../examples/">Examples</a></li>
-            <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
-          </ul>
-        </nav>
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <a href="../" class="logo">
+          <span class="logo-icon"></span>
+          CORBA.ts
+        </a>
+        <button class="mobile-menu-toggle" id="mobileMenuToggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
       </div>
-    </header>
 
-    <main class="container mt-2">
-      <div class="grid-2">
-        <aside class="doc-nav">
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <h3>Getting Started</h3>
+          <ul>
+            <li><a href="../">Home</a></li>
+            <li><a href="../guides/getting-started.html">Quick Start</a></li>
+            <li><a href="../#installation">Installation</a></li>
+          </ul>
+        </div>
+
+        <div class="nav-section">
+          <h3>Documentation</h3>
+          <ul>
+            <li><a href="../guides/">Guides Overview</a></li>
+            <li><a href="../guides/orb.html">Object Request Broker</a></li>
+            <li><a href="../guides/poa.html">Portable Object Adapter</a></li>
+            <li><a href="../guides/naming-service.html">Naming Service</a></li>
+            <li><a href="../guides/idl-mapping.html">IDL Mapping</a></li>
+            <li><a href="../guides/giop-iiop.html">GIOP/IIOP Protocols</a></li>
+          </ul>
+        </div>
+
+        <div class="nav-section">
           <h3>API Reference</h3>
           <ul>
+            <li><a href="./" class="active">API Overview</a></li>
             <li><a href="orb.html">ORB</a></li>
             <li><a href="poa.html">POA</a></li>
             <li><a href="types.html">Types & TypeCodes</a></li>
@@ -48,9 +64,29 @@
             <li><a href="valuetypes.html">Value Types</a></li>
             <li><a href="policy.html">Policies</a></li>
           </ul>
-        </aside>
+        </div>
 
-        <article class="panel">
+        <div class="nav-section">
+          <h3>Examples</h3>
+          <ul>
+            <li><a href="../examples/">All Examples</a></li>
+            <li><a href="../examples/hello-world.html">Hello World</a></li>
+          </ul>
+        </div>
+
+        <div class="nav-section">
+          <h3>Resources</h3>
+          <ul>
+            <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
+            <li><a href="https://jsr.io/@eai/corba" target="_blank">JSR Package</a></li>
+            <li><a href="https://github.com/elevationai/CORBA-ts/issues" target="_blank">Issues</a></li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+
+    <main class="main-content">
+      <article class="content-wrapper">
           <h1>CORBA.ts API Reference</h1>
           <p>
             Complete API documentation for all CORBA.ts classes, interfaces, types, and functions. The API is organized
@@ -274,16 +310,14 @@
               <a href="types.html" class="btn btn-secondary">Types</a>
             </div>
           </div>
-        </article>
-      </div>
+      </article>
     </main>
 
-    <footer class="footer">
-      <div class="container">
-        <div class="footer-bottom">
-          <p>&copy; 2024 CORBA.ts. Licensed under the MIT License.</p>
-        </div>
-      </div>
-    </footer>
+    <script>
+      // Mobile menu toggle
+      document.getElementById('mobileMenuToggle').addEventListener('click', function() {
+        document.querySelector('.sidebar').classList.toggle('mobile-open');
+      });
+    </script>
   </body>
 </html>

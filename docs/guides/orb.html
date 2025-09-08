@@ -15,43 +15,76 @@
     >
   </head>
   <body>
-    <header class="header">
-      <div class="container">
-        <nav class="nav">
-          <a href="../" class="logo">
-            <span class="logo-icon"></span>
-            CORBA.ts
-          </a>
-          <ul class="nav-links">
-            <li><a href="../">Home</a></li>
-            <li><a href="./" class="active">Guides</a></li>
-            <li><a href="../api/">API Reference</a></li>
-            <li><a href="../examples/">Examples</a></li>
-            <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
-          </ul>
-        </nav>
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <a href="../" class="logo">
+          <span class="logo-icon"></span>
+          CORBA.ts
+        </a>
+        <button class="mobile-menu-toggle" id="mobileMenuToggle">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
       </div>
-    </header>
 
-    <main class="container mt-2">
-      <div class="grid-2">
-        <aside class="doc-nav">
-          <h3>Guides</h3>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <h3>Getting Started</h3>
           <ul>
-            <li><a href="getting-started.html">Getting Started</a></li>
-            <li><a href="orb.html" class="active">Object Request Broker (ORB)</a></li>
-            <li><a href="poa.html">Portable Object Adapter (POA)</a></li>
+            <li><a href="../">Home</a></li>
+            <li><a href="getting-started.html">Quick Start</a></li>
+            <li><a href="../#installation">Installation</a></li>
+          </ul>
+        </div>
+
+        <div class="nav-section">
+          <h3>Documentation</h3>
+          <ul>
+            <li><a href="./" class="active">Guides Overview</a></li>
+            <li><a href="orb.html" class="active">Object Request Broker</a></li>
+            <li><a href="poa.html">Portable Object Adapter</a></li>
             <li><a href="naming-service.html">Naming Service</a></li>
             <li><a href="idl-mapping.html">IDL Mapping</a></li>
             <li><a href="giop-iiop.html">GIOP/IIOP Protocols</a></li>
             <li><a href="typecode.html">TypeCode System</a></li>
             <li><a href="value-types.html">Value Types</a></li>
-            <li><a href="dii.html">Dynamic Invocation Interface</a></li>
-            <li><a href="deployment.html">Deployment Guide</a></li>
+            <li><a href="dii.html">Dynamic Invocation</a></li>
+            <li><a href="deployment.html">Deployment</a></li>
           </ul>
+        </div>
 
-          <h4>On This Page</h4>
+        <div class="nav-section">
+          <h3>API Reference</h3>
           <ul>
+            <li><a href="../api/">API Overview</a></li>
+            <li><a href="../api/orb.html">ORB API</a></li>
+            <li><a href="../api/poa.html">POA API</a></li>
+            <li><a href="../api/types.html">Types</a></li>
+            <li><a href="../api/exceptions.html">Exceptions</a></li>
+          </ul>
+        </div>
+
+        <div class="nav-section">
+          <h3>Examples</h3>
+          <ul>
+            <li><a href="../examples/">All Examples</a></li>
+            <li><a href="../examples/hello-world.html">Hello World</a></li>
+          </ul>
+        </div>
+
+        <div class="nav-section">
+          <h3>Resources</h3>
+          <ul>
+            <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
+            <li><a href="https://jsr.io/@eai/corba" target="_blank">JSR Package</a></li>
+            <li><a href="https://github.com/elevationai/CORBA-ts/issues" target="_blank">Issues</a></li>
+          </ul>
+        </div>
+
+        <div class="nav-section">
+          <h3>On This Page</h3>
+          <ul class="on-page-nav">
             <li><a href="#overview">What is the ORB?</a></li>
             <li><a href="#initialization">ORB Initialization</a></li>
             <li><a href="#object-references">Object References</a></li>
@@ -61,9 +94,12 @@
             <li><a href="#configuration">Configuration</a></li>
             <li><a href="#best-practices">Best Practices</a></li>
           </ul>
-        </aside>
+        </div>
+      </nav>
+    </div>
 
-        <article class="panel">
+    <main class="main-content">
+      <article class="content-wrapper">
           <h1>Object Request Broker (ORB)</h1>
           <p>
             The Object Request Broker (ORB) is the central component of CORBA that enables transparent communication
@@ -356,16 +392,35 @@
               <a href="../api/orb.html" class="btn btn-secondary">ORB API Reference</a>
             </div>
           </div>
-        </article>
-      </div>
+      </article>
     </main>
 
-    <footer class="footer">
-      <div class="container">
-        <div class="footer-bottom">
-          <p>&copy; 2024 CORBA.ts. Licensed under the MIT License.</p>
-        </div>
-      </div>
-    </footer>
+    <script>
+      // Mobile menu toggle
+      document.getElementById('mobileMenuToggle').addEventListener('click', function() {
+        document.querySelector('.sidebar').classList.toggle('mobile-open');
+      });
+
+      // Highlight active section on scroll
+      window.addEventListener('scroll', function() {
+        const sections = document.querySelectorAll('h2[id], h3[id]');
+        const navLinks = document.querySelectorAll('.on-page-nav a');
+        
+        let current = '';
+        sections.forEach(section => {
+          const rect = section.getBoundingClientRect();
+          if (rect.top <= 100) {
+            current = section.getAttribute('id');
+          }
+        });
+        
+        navLinks.forEach(link => {
+          link.classList.remove('active');
+          if (link.getAttribute('href') === '#' + current) {
+            link.classList.add('active');
+          }
+        });
+      });
+    </script>
   </body>
 </html>
