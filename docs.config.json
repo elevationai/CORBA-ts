@@ -1,0 +1,26 @@
+{
+  "name": "CORBA-ts",
+  "input": ".",
+  "output": "docs/api",
+  "githubUrl": "https://github.com/elevationai/CORBA.ts",
+  "skipAssets": false,
+  "index": {
+    "title": "CORBA-ts API Reference",
+    "description": "Complete API documentation for CORBA-ts"
+  },
+  "header": {
+    "project": "CORBA-ts",
+    "nav": {
+      "Home": "../",
+      "API Reference": "../api",
+      "Github": "https://github.com/elevationai/CORBA.ts"
+    }
+  },
+  "footer": {
+    "nav": {
+      "Github": "https://github.com/elevationai/CORBA.ts"
+    }
+  },
+  "generatedAt": "2025-09-09T07:24:57.677Z",
+  "version": "1.0.0"
+}

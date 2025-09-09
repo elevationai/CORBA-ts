@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Types &amp; TypeCodes API Reference - CORBA.ts Documentation</title>
+  <meta name="description" content="CORBA type system, TypeCodes for describing data structures, and Any type for dynamic values">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <!-- Prism.js CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body class="api-page">
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <a href="../" class="logo">
+      <span>⚡</span> CORBA.ts
+    </a>
+    <ul class="nav-links">
+      <li><a href="../">Home</a></li>
+      <li><a href="./">API Reference</a></li>
+      <li><a href="../guides/">Guides & Examples</a></li>
+      <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
+    </ul>
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+  </nav>
+
+  <!-- Layout Container -->
+  <div class="layout-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="api-sidebar-header">
+        <a href="./" class="api-back-link">
+          <span>←</span> Back to API Reference
+        </a>
+        <h2 class="api-page-title">Types &amp; TypeCodes</h2>
+      </div>
+      
+      
+    <nav class="on-page-nav">
+      <ul>
+        
+      <li>
+        <a href="#infertypecode">inferTypeCode</a>
+        <ul><li><a href="#infertypecode-infertypecode">inferTypeCode()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#typecode">TypeCode</a>
+        <ul><li><a href="#typecode-kind">kind()</a></li>
+<li><a href="#typecode-equal">equal()</a></li>
+<li><a href="#typecode-id">id()</a></li>
+<li><a href="#typecode-name">name()</a></li>
+<li><a href="#typecode-member_count">member_count()</a></li>
+<li><a href="#typecode-member_name">member_name()</a></li>
+<li><a href="#typecode-member_type">member_type()</a></li>
+<li><a href="#typecode-content_type">content_type()</a></li>
+<li><a href="#typecode-length">length()</a></li>
+<li><a href="#typecode-set_param">set_param()</a></li>
+<li><a href="#typecode-check_method_validity">check_method_validity()</a></li>
+<li><a href="#typecode-check_index">check_index()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#bad-typecode">BAD_TYPECODE</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#giopversion">GIOPVersion</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#servicecontext">ServiceContext</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#ior">IOR</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#taggedprofile">TaggedProfile</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#iiopprofilebody">IIOPProfileBody</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#taggedcomponent">TaggedComponent</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#systemexceptionreplybody">SystemExceptionReplyBody</a>
+        
+      </li>
+    
+      </ul>
+    </nav>
+  
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <article class="content-wrapper">
+        <div class="page-header">
+          <h1>Types &amp; TypeCodes API Reference</h1>
+          <p>CORBA type system, TypeCodes for describing data structures, and Any type for dynamic values</p>
+        </div>
+
+        
+    <section id="infertypecode" class="api-section">
+      <h2>inferTypeCode</h2>
+      <p>Infer TypeCode from a JavaScript value</p>
+      
+      
+      
+      
+        
+        
+    <section class="method" id="infertypecode-infertypecode">
+      
+      <pre><code class="language-typescript">// Infer TypeCode from a JavaScript value
+inferTypeCode(value: unknown): TypeCode</code></pre>
+    </section>
+  
+      
+    </section>
+  
+
+    <section id="typecode" class="api-section">
+      <h2>TypeCode</h2>
+      <p>TypeCode class and namespace</p>
+      
+      
+        <h3>Properties</h3>
+        <table class="api-table">
+          <tbody>
+            
+    <tr>
+      <td><code>_kind</code></td>
+      <td><span class="return-type">TypeCode.Kind</span></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>_params</code></td>
+      <td><span class="return-type">Map</span></td>
+      <td></td>
+    </tr>
+    
+          </tbody>
+        </table>
+      
+      
+      
+        <h3>Methods</h3>
+        
+    <section class="method" id="typecode-kind">
+      
+      <pre><code class="language-typescript">// Get the kind of this TypeCode
+kind(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="typecode-equal">
+      
+      <pre><code class="language-typescript">// Check if this TypeCode is equal to another
+equal(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="typecode-id">
+      
+      <pre><code class="language-typescript">// Get the ID for this type
+// Only valid for certain kinds of TypeCodes
+id(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="typecode-name">
+      
+      <pre><code class="language-typescript">// Get the name for this type
+// Only valid for certain kinds of TypeCodes
+name(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="typecode-member_count">
+      
+      <pre><code class="language-typescript">// Get the member count
+// Only valid for struct, union, enum, exception, and value types
+member_count(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="typecode-member_name">
+      
+      <pre><code class="language-typescript">// Get the name of a member
+// Only valid for struct, union, enum, exception, and value types
+member_name(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="typecode-member_type">
+      
+      <pre><code class="language-typescript">// Get the TypeCode of a member
+// Only valid for struct, union, exception, and value types
+member_type(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="typecode-content_type">
+      
+      <pre><code class="language-typescript">// Get the content type for sequences and arrays
+content_type(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="typecode-length">
+      
+      <pre><code class="language-typescript">// Get the length for bounded sequences and arrays
+length(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="typecode-set_param">
+      
+      <pre><code class="language-typescript">// Set a parameter for this TypeCode
+// Used internally during TypeCode construction
+set_param(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="typecode-check_method_validity">
+      
+      <pre><code class="language-typescript">// Helper to check if a method is valid for this TypeCode kind
+check_method_validity(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="typecode-check_index">
+      
+      <pre><code class="language-typescript">// Helper to check array index validity
+check_index(): void</code></pre>
+    </section>
+  
+      
+    </section>
+  
+
+    <section id="bad-typecode" class="api-section">
+      <h2>BAD_TYPECODE</h2>
+      <p>BAD_TYPECODE - Bad TypeCode</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="giopversion" class="api-section">
+      <h2>GIOPVersion</h2>
+      <p>GIOP Version</p>
+      
+      
+        <h3>Properties</h3>
+        <table class="api-table">
+          <tbody>
+            
+    <tr>
+      <td><code>major</code></td>
+      <td><span class="return-type">number</span></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>minor</code></td>
+      <td><span class="return-type">number</span></td>
+      <td></td>
+    </tr>
+    
+          </tbody>
+        </table>
+      
+      
+      
+    </section>
+  
+
+    <section id="servicecontext" class="api-section">
+      <h2>ServiceContext</h2>
+      <p>Service Context</p>
+      
+      
+        <h3>Properties</h3>
+        <table class="api-table">
+          <tbody>
+            
+    <tr>
+      <td><code>contextId</code></td>
+      <td><span class="return-type">number</span></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>contextData</code></td>
+      <td><span class="return-type">Uint8Array</span></td>
+      <td></td>
+    </tr>
+    
+          </tbody>
+        </table>
+      
+      
+      
+    </section>
+  
+
+    <section id="ior" class="api-section">
+      <h2>IOR</h2>
+      <p>IOR (Interoperable Object Reference)</p>
+      
+      
+        <h3>Properties</h3>
+        <table class="api-table">
+          <tbody>
+            
+    <tr>
+      <td><code>typeId</code></td>
+      <td><span class="return-type">string</span></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>profiles</code></td>
+      <td><span class="return-type">TaggedProfile[]</span></td>
+      <td></td>
+    </tr>
+    
+          </tbody>
+        </table>
+      
+      
+      
+    </section>
+  
+
+    <section id="taggedprofile" class="api-section">
+      <h2>TaggedProfile</h2>
+      <p>Tagged Profile</p>
+      
+      
+        <h3>Properties</h3>
+        <table class="api-table">
+          <tbody>
+            
+    <tr>
+      <td><code>profileId</code></td>
+      <td><span class="return-type">number</span></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>profileData</code></td>
+      <td><span class="return-type">Uint8Array</span></td>
+      <td></td>
+    </tr>
+    
+          </tbody>
+        </table>
+      
+      
+      
+    </section>
+  
+
+    <section id="iiopprofilebody" class="api-section">
+      <h2>IIOPProfileBody</h2>
+      <p>IIOP Profile Body</p>
+      
+      
+        <h3>Properties</h3>
+        <table class="api-table">
+          <tbody>
+            
+    <tr>
+      <td><code>iiop_version</code></td>
+      <td><span class="return-type">GIOPVersion</span></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>host</code></td>
+      <td><span class="return-type">string</span></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>port</code></td>
+      <td><span class="return-type">number</span></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>object_key</code></td>
+      <td><span class="return-type">Uint8Array</span></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>components</code></td>
+      <td><span class="return-type">TaggedComponent[]</span></td>
+      <td></td>
+    </tr>
+    
+          </tbody>
+        </table>
+      
+      
+      
+    </section>
+  
+
+    <section id="taggedcomponent" class="api-section">
+      <h2>TaggedComponent</h2>
+      <p>Tagged Component</p>
+      
+      
+        <h3>Properties</h3>
+        <table class="api-table">
+          <tbody>
+            
+    <tr>
+      <td><code>componentId</code></td>
+      <td><span class="return-type">number</span></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>componentData</code></td>
+      <td><span class="return-type">Uint8Array</span></td>
+      <td></td>
+    </tr>
+    
+          </tbody>
+        </table>
+      
+      
+      
+    </section>
+  
+
+    <section id="systemexceptionreplybody" class="api-section">
+      <h2>SystemExceptionReplyBody</h2>
+      <p>System Exception Reply Body</p>
+      
+      
+        <h3>Properties</h3>
+        <table class="api-table">
+          <tbody>
+            
+    <tr>
+      <td><code>exceptionId</code></td>
+      <td><span class="return-type">string</span></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>minor</code></td>
+      <td><span class="return-type">number</span></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>completionStatus</code></td>
+      <td><span class="return-type">number</span></td>
+      <td></td>
+    </tr>
+    
+          </tbody>
+        </table>
+      
+      
+      
+    </section>
+  
+
+        <!-- Related Documentation -->
+        <div class="panel mt-3">
+          <h3>Related Documentation</h3>
+          <div class="grid mt-1">
+            <div class="feature-card">
+              <h4><a href="types.html">Types API</a></h4>
+              <p>TypeCode system and Any type</p>
+            </div>
+            <div class="feature-card">
+              <h4><a href="orb.html">ORB API</a></h4>
+              <p>Object Request Broker reference</p>
+            </div>
+            <div class="feature-card">
+              <h4><a href="exceptions.html">Exceptions API</a></h4>
+              <p>Exception handling in CORBA</p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </main>
+  </div>
+  <!-- End layout-container -->
+
+  <!-- Prism.js JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  
+  <!-- API Documentation JavaScript -->
+  <script src="../assets/js/api-docs.js"></script>
+</body>
+</html>

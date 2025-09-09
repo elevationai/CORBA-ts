@@ -27,6 +27,9 @@ export * from "./context.ts";
 // Export ValueType interfaces
 export * from "./valuetype.ts";
 
+// Export Exceptions
+export * from "./core/exceptions/system.ts";
+
 // Export POA
 export * from "./poa.ts";
 

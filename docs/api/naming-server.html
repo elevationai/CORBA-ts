@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CORBA-ts - Naming Server API Reference</title>
+  <meta name="description" content="API documentation for naming server module">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <!-- Prism.js CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body class="api-page">
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <a href="../" class="logo">
+      CORBA-ts
+    </a>
+    <ul class="nav-links">
+      <li><a href="../">Home</a></li>
+<li><a href="../api">API Reference</a></li>
+<li><a href="https://github.com/elevationai/CORBA.ts" target="_blank">Github</a></li>
+    </ul>
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+  </nav>
+
+  <!-- Layout Container -->
+  <div class="layout-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="api-sidebar-header">
+        <a href="./" class="api-back-link">
+          <span>←</span> Back to API Reference
+        </a>
+        <h2 class="api-page-title">Naming Server</h2>
+      </div>
+      
+      
+    <nav class="on-page-nav">
+      <ul>
+        
+      <li>
+        <a href="#namingserver">NamingServer</a>
+        <ul><li><a href="#namingserver-start">start()</a></li>
+<li><a href="#namingserver-stop">stop()</a></li>
+<li><a href="#namingserver-getior">getIOR()</a></li>
+<li><a href="#namingserver-getrootcontext">getRootContext()</a></li>
+<li><a href="#namingserver-isrunning">isRunning()</a></li>
+<li><a href="#namingserver-getstatistics">getStatistics()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#namingservercli">NamingServerCLI</a>
+        <ul><li><a href="#namingservercli-run">run()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#namingserverconfig">NamingServerConfig</a>
+        
+      </li>
+    
+      </ul>
+    </nav>
+  
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <article class="content-wrapper">
+        <div class="page-header">
+          <h1>Naming Server API Reference</h1>
+          <p>API documentation for naming server module</p>
+        </div>
+
+        
+    <section id="namingserver" class="api-section">
+      <h2>NamingServer</h2>
+      <pre><code class="language-typescript">class NamingServer</code></pre>
+      <p>CORBA Naming Service Server</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="namingserver-start">
+      <pre><code class="language-typescript">// Start the naming service server
+async start(): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingserver-stop">
+      <pre><code class="language-typescript">// Stop the naming service server
+async stop(): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingserver-getior">
+      <pre><code class="language-typescript">// Get the IOR string for the root naming context
+getIOR(): string</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingserver-getrootcontext">
+      <pre><code class="language-typescript">// Get the root naming context
+getRootContext(): NamingContextExt</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingserver-isrunning">
+      <pre><code class="language-typescript">// Check if the server is running
+isRunning(): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingserver-getstatistics">
+      <pre><code class="language-typescript">// Get server statistics
+getStatistics(): object</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="namingservercli" class="api-section">
+      <h2>NamingServerCLI</h2>
+      <pre><code class="language-typescript">class NamingServerCLI</code></pre>
+      <p>Command-line interface for the naming service server</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="namingservercli-run">
+      <pre><code class="language-typescript">// Run the naming service server from command line
+static async run(args: string[] = Deno.args): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="namingserverconfig" class="api-section">
+      <h2>NamingServerConfig</h2>
+      <pre><code class="language-typescript">interface NamingServerConfig</code></pre>
+      <p>Configuration for the naming service server</p>
+      
+      <h3>Properties</h3>
+    <section class="properties-block">
+      <pre><code class="language-typescript">  host: string; // Host to bind the server to
+  port: number; // Port to bind the server to
+  persistent?: boolean; // Enable persistent storage
+  persistentFile?: string; // File path for persistent storage
+  enableLogging?: boolean; // Enable logging
+  maxConnections?: number; // Maximum number of concurrent connections</code></pre>
+    </section>
+      
+    </section>
+  
+
+      </article>
+    </main>
+  </div>
+  <!-- End layout-container -->
+
+  <!-- Footer -->
+  <footer class="api-footer">
+    <div class="footer-content">
+      <p>
+        &copy; 2025 Elevation AI. All rights reserved.
+         • <a href="https://github.com/elevationai/CORBA.ts" target="_blank">Github</a>
+      </p>
+    </div>
+  </footer>
+
+  <!-- Prism.js JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  
+  <!-- API Documentation JavaScript -->
+  <script src="../assets/js/api-docs.js"></script>
+</body>
+</html>

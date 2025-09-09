@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Reference - CORBA.ts Documentation</title>
+  <meta name="description" content="Complete API reference for CORBA.ts - Classes, interfaces, types, and functions documentation">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <!-- Prism.js CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body class="api-page">
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <a href="../" class="logo">
+      <span>⚡</span> CORBA.ts
+    </a>
+    <ul class="nav-links">
+      <li><a href="../">Home</a></li>
+      <li><a href="./" class="active">API Reference</a></li>
+      <li><a href="../guides/">Guides & Examples</a></li>
+      <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
+    </ul>
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+  </nav>
+
+  <!-- Layout Container -->
+  <div class="layout-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="api-sidebar-header">
+        <h2 class="api-page-title">API Reference</h2>
+      </div>
+      
+      <nav class="on-page-nav">
+        <ul>
+          <li><a href="#core-apis">Core APIs</a></li>
+          <li><a href="#protocol-apis">Protocol APIs</a></li>
+          <li><a href="#service-apis">Service APIs</a></li>
+          <li><a href="#advanced-apis">Advanced APIs</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <article class="content-wrapper">
+        <div class="page-header">
+          <h1>CORBA.ts API Reference</h1>
+          <p class="lead">
+            Complete API documentation for all CORBA.ts classes, interfaces, types, and functions. The API is organized
+            by functional areas to help you find what you need quickly.
+          </p>
+        </div>
+
+        <section id="core-apis" class="api-section">
+          <h2>📚 Core APIs</h2>
+          <p>Essential components for working with CORBA in TypeScript</p>
+          
+          <div class="api-grid">
+            <div class="api-card">
+              <h3><a href="orb.html">🌐 ORB</a></h3>
+              <p class="api-card-desc">Object Request Broker - manages object references, request routing, and CORBA services</p>
+              <div class="api-card-tags">
+                <span class="tag">Core</span>
+                <span class="tag">Required</span>
+              </div>
+            </div>
+
+            <div class="api-card">
+              <h3><a href="poa.html">🎯 POA</a></h3>
+              <p class="api-card-desc">Portable Object Adapter - manages servant lifecycle and request dispatching</p>
+              <div class="api-card-tags">
+                <span class="tag">Core</span>
+                <span class="tag">Server</span>
+              </div>
+            </div>
+
+            <div class="api-card">
+              <h3><a href="types.html">📝 Types & TypeCodes</a></h3>
+              <p class="api-card-desc">Type system, TypeCodes, and Any type for dynamic typing</p>
+              <div class="api-card-tags">
+                <span class="tag">Core</span>
+                <span class="tag">Types</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="protocol-apis" class="api-section">
+          <h2>🔌 Protocol APIs</h2>
+          <p>Network protocols and communication layers</p>
+          
+          <div class="api-grid">
+            <div class="api-card">
+              <h3><a href="giop.html">📡 GIOP/IIOP</a></h3>
+              <p class="api-card-desc">General Inter-ORB Protocol and Internet Inter-ORB Protocol implementation</p>
+              <div class="api-card-tags">
+                <span class="tag">Protocol</span>
+                <span class="tag">Network</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="service-apis" class="api-section">
+          <h2>🛠️ Service APIs</h2>
+          <p>CORBA services and utilities</p>
+          
+          <div class="api-grid">
+            <div class="api-card">
+              <h3><a href="naming.html">📖 Naming Service</a></h3>
+              <p class="api-card-desc">Object naming and directory service for registering and resolving object references</p>
+              <div class="api-card-tags">
+                <span class="tag">Service</span>
+                <span class="tag">Discovery</span>
+              </div>
+            </div>
+
+            <div class="api-card">
+              <h3><a href="dii.html">🔧 Dynamic Invocation</a></h3>
+              <p class="api-card-desc">Dynamic Invocation Interface - enables calling CORBA methods at runtime without compile-time stubs</p>
+              <div class="api-card-tags">
+                <span class="tag">Advanced</span>
+                <span class="tag">Dynamic</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="advanced-apis" class="api-section">
+          <h2>⚙️ Advanced APIs</h2>
+          <p>Specialized types and error handling</p>
+          
+          <div class="api-grid">
+            <div class="api-card">
+              <h3><a href="exceptions.html">⚠️ Exceptions</a></h3>
+              <p class="api-card-desc">CORBA exception types and error handling</p>
+              <div class="api-card-tags">
+                <span class="tag">Error Handling</span>
+              </div>
+            </div>
+
+            <div class="api-card">
+              <h3><a href="valuetypes.html">💎 Value Types</a></h3>
+              <p class="api-card-desc">Support for CORBA value types and abstract interfaces</p>
+              <div class="api-card-tags">
+                <span class="tag">Types</span>
+                <span class="tag">Advanced</span>
+              </div>
+            </div>
+
+            <div class="api-card">
+              <h3><a href="policy.html">📋 Policies</a></h3>
+              <p class="api-card-desc">POA and ORB policy management</p>
+              <div class="api-card-tags">
+                <span class="tag">Configuration</span>
+                <span class="tag">Advanced</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="getting-started-section">
+          <h2>🚀 Getting Started</h2>
+          <div class="info-box">
+            <p><strong>New to CORBA.ts?</strong> Start with the <a href="../guides/getting-started.html">Getting Started Guide</a> for a step-by-step introduction.</p>
+          </div>
+          
+          <h3>Quick Example</h3>
+          <pre><code class="language-typescript">import { init, string_to_object } from "jsr:@eai/corba";
+
+// Initialize the ORB
+await init();
+
+// Get an object reference
+const obj = string_to_object("corbaloc::localhost:2809/NameService");
+
+// Use the object
+const result = await obj._request("resolve")
+  .add_in_arg([{id: "test", kind: ""}])
+  .invoke();</code></pre>
+        </section>
+
+        <section class="api-footer">
+          <div class="next-steps">
+            <h3>Next Steps</h3>
+            <ul>
+              <li>📖 Read the <a href="../guides/">Guides</a> for in-depth tutorials</li>
+              <li>💻 Explore <a href="../examples/">Code Examples</a></li>
+              <li>🐛 Report issues on <a href="https://github.com/elevationai/CORBA-ts/issues">GitHub</a></li>
+            </ul>
+          </div>
+        </section>
+      </article>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  <script>
+    // Mobile menu toggle
+    document.getElementById('mobileMenuToggle').addEventListener('click', function() {
+      document.getElementById('sidebar').classList.toggle('active');
+    });
+
+    // Syntax highlighting
+    Prism.highlightAll();
+  </script>
+</body>
+</html>

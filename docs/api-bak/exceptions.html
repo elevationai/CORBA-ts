@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exceptions API Reference - CORBA.ts Documentation</title>
+  <meta name="description" content="CORBA exception handling - system exceptions, user exceptions, and completion status">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <!-- Prism.js CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body class="api-page">
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <a href="../" class="logo">
+      <span>⚡</span> CORBA.ts
+    </a>
+    <ul class="nav-links">
+      <li><a href="../">Home</a></li>
+      <li><a href="./">API Reference</a></li>
+      <li><a href="../guides/">Guides & Examples</a></li>
+      <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
+    </ul>
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+  </nav>
+
+  <!-- Layout Container -->
+  <div class="layout-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="api-sidebar-header">
+        <a href="./" class="api-back-link">
+          <span>←</span> Back to API Reference
+        </a>
+        <h2 class="api-page-title">Exceptions</h2>
+      </div>
+      
+      
+    <nav class="on-page-nav">
+      <ul>
+        
+      <li>
+        <a href="#systemexception">SystemException</a>
+        <ul><li><a href="#systemexception-tostring">toString()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#unknown">UNKNOWN</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#bad-param">BAD_PARAM</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#no-memory">NO_MEMORY</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#imp-limit">IMP_LIMIT</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#comm-failure">COMM_FAILURE</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#inv-objref">INV_OBJREF</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#no-permission">NO_PERMISSION</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#internal">INTERNAL</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#marshal">MARSHAL</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#no-implement">NO_IMPLEMENT</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#bad-operation">BAD_OPERATION</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#no-resources">NO_RESOURCES</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#no-response">NO_RESPONSE</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#persist-store">PERSIST_STORE</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#bad-inv-order">BAD_INV_ORDER</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#transient">TRANSIENT</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#free-mem">FREE_MEM</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#inv-ident">INV_IDENT</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#inv-flag">INV_FLAG</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#intf-repos">INTF_REPOS</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#bad-context">BAD_CONTEXT</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#obj-adapter">OBJ_ADAPTER</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#data-conversion">DATA_CONVERSION</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#object-not-exist">OBJECT_NOT_EXIST</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#transaction-required">TRANSACTION_REQUIRED</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#transaction-rolledback">TRANSACTION_ROLLEDBACK</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#invalid-transaction">INVALID_TRANSACTION</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#inv-policy">INV_POLICY</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#codeset-incompatible">CODESET_INCOMPATIBLE</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#timeout">TIMEOUT</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#transaction-unavailable">TRANSACTION_UNAVAILABLE</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#transaction-mode">TRANSACTION_MODE</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#bad-qos">BAD_QOS</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#userexception">UserException</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#createsystemexception">createSystemException</a>
+        <ul><li><a href="#createsystemexception-createsystemexception">createSystemException()</a></li></ul>
+      </li>
+    
+      </ul>
+    </nav>
+  
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <article class="content-wrapper">
+        <div class="page-header">
+          <h1>Exceptions API Reference</h1>
+          <p>CORBA exception handling - system exceptions, user exceptions, and completion status</p>
+        </div>
+
+        
+    <section id="systemexception" class="api-section">
+      <h2>SystemException</h2>
+      <p>Base class for all CORBA system exceptions</p>
+      
+      
+        <h3>Properties</h3>
+        <table class="api-table">
+          <tbody>
+            
+    <tr>
+      <td><code>minor</code></td>
+      <td><span class="return-type">number</span></td>
+      <td><span class="badge badge-readonly">readonly</span> </td>
+    </tr>
+    
+    <tr>
+      <td><code>completed</code></td>
+      <td><span class="return-type">CompletionStatus</span></td>
+      <td><span class="badge badge-readonly">readonly</span> </td>
+    </tr>
+    
+          </tbody>
+        </table>
+      
+      
+      
+        <h3>Methods</h3>
+        
+    <section class="method" id="systemexception-tostring">
+      
+      <pre><code class="language-typescript">toString(): void</code></pre>
+    </section>
+  
+      
+    </section>
+  
+
+    <section id="unknown" class="api-section">
+      <h2>UNKNOWN</h2>
+      <p>UNKNOWN - Unknown exception</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="bad-param" class="api-section">
+      <h2>BAD_PARAM</h2>
+      <p>BAD_PARAM - Invalid parameter passed</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="no-memory" class="api-section">
+      <h2>NO_MEMORY</h2>
+      <p>NO_MEMORY - Insufficient memory</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="imp-limit" class="api-section">
+      <h2>IMP_LIMIT</h2>
+      <p>IMP_LIMIT - Implementation limit exceeded</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="comm-failure" class="api-section">
+      <h2>COMM_FAILURE</h2>
+      <p>COMM_FAILURE - Communication failure</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="inv-objref" class="api-section">
+      <h2>INV_OBJREF</h2>
+      <p>INV_OBJREF - Invalid object reference</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="no-permission" class="api-section">
+      <h2>NO_PERMISSION</h2>
+      <p>NO_PERMISSION - No permission for operation</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="internal" class="api-section">
+      <h2>INTERNAL</h2>
+      <p>INTERNAL - Internal ORB error</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="marshal" class="api-section">
+      <h2>MARSHAL</h2>
+      <p>MARSHAL - Error marshaling parameter or result</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="no-implement" class="api-section">
+      <h2>NO_IMPLEMENT</h2>
+      <p>NO_IMPLEMENT - Operation not implemented</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="bad-operation" class="api-section">
+      <h2>BAD_OPERATION</h2>
+      <p>BAD_OPERATION - Invalid operation</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="no-resources" class="api-section">
+      <h2>NO_RESOURCES</h2>
+      <p>NO_RESOURCES - Insufficient resources</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="no-response" class="api-section">
+      <h2>NO_RESPONSE</h2>
+      <p>NO_RESPONSE - No response from server</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="persist-store" class="api-section">
+      <h2>PERSIST_STORE</h2>
+      <p>PERSIST_STORE - Persistent storage failure</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="bad-inv-order" class="api-section">
+      <h2>BAD_INV_ORDER</h2>
+      <p>BAD_INV_ORDER - Operations invoked in wrong order</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="transient" class="api-section">
+      <h2>TRANSIENT</h2>
+      <p>TRANSIENT - Transient failure</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="free-mem" class="api-section">
+      <h2>FREE_MEM</h2>
+      <p>FREE_MEM - Cannot free memory</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="inv-ident" class="api-section">
+      <h2>INV_IDENT</h2>
+      <p>INV_IDENT - Invalid identifier</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="inv-flag" class="api-section">
+      <h2>INV_FLAG</h2>
+      <p>INV_FLAG - Invalid flag</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="intf-repos" class="api-section">
+      <h2>INTF_REPOS</h2>
+      <p>INTF_REPOS - Interface repository error</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="bad-context" class="api-section">
+      <h2>BAD_CONTEXT</h2>
+      <p>BAD_CONTEXT - Invalid context</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="obj-adapter" class="api-section">
+      <h2>OBJ_ADAPTER</h2>
+      <p>OBJ_ADAPTER - Object adapter failure</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="data-conversion" class="api-section">
+      <h2>DATA_CONVERSION</h2>
+      <p>DATA_CONVERSION - Data conversion error</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="object-not-exist" class="api-section">
+      <h2>OBJECT_NOT_EXIST</h2>
+      <p>OBJECT_NOT_EXIST - Object does not exist</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="transaction-required" class="api-section">
+      <h2>TRANSACTION_REQUIRED</h2>
+      <p>TRANSACTION_REQUIRED - Transaction required</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="transaction-rolledback" class="api-section">
+      <h2>TRANSACTION_ROLLEDBACK</h2>
+      <p>TRANSACTION_ROLLEDBACK - Transaction rolled back</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="invalid-transaction" class="api-section">
+      <h2>INVALID_TRANSACTION</h2>
+      <p>INVALID_TRANSACTION - Invalid transaction</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="inv-policy" class="api-section">
+      <h2>INV_POLICY</h2>
+      <p>INV_POLICY - Invalid policy</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="codeset-incompatible" class="api-section">
+      <h2>CODESET_INCOMPATIBLE</h2>
+      <p>CODESET_INCOMPATIBLE - Incompatible code set</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="timeout" class="api-section">
+      <h2>TIMEOUT</h2>
+      <p>TIMEOUT - Operation timed out</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="transaction-unavailable" class="api-section">
+      <h2>TRANSACTION_UNAVAILABLE</h2>
+      <p>TRANSACTION_UNAVAILABLE - Transaction unavailable</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="transaction-mode" class="api-section">
+      <h2>TRANSACTION_MODE</h2>
+      <p>TRANSACTION_MODE - Invalid transaction mode</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="bad-qos" class="api-section">
+      <h2>BAD_QOS</h2>
+      <p>BAD_QOS - Bad quality of service</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="userexception" class="api-section">
+      <h2>UserException</h2>
+      <p>User exception base class</p>
+      
+      
+      
+      
+    </section>
+  
+
+    <section id="createsystemexception" class="api-section">
+      <h2>createSystemException</h2>
+      <p>Factory for creating system exceptions by name</p>
+      
+      
+      
+      
+        
+        
+    <section class="method" id="createsystemexception-createsystemexception">
+      
+      <pre><code class="language-typescript">// Factory for creating system exceptions by name
+createSystemException(name: string, message?: string, undefined: void, undefined: void): SystemException</code></pre>
+    </section>
+  
+      
+    </section>
+  
+
+        <!-- Related Documentation -->
+        <div class="panel mt-3">
+          <h3>Related Documentation</h3>
+          <div class="grid mt-1">
+            <div class="feature-card">
+              <h4><a href="types.html">Types API</a></h4>
+              <p>TypeCode system and Any type</p>
+            </div>
+            <div class="feature-card">
+              <h4><a href="orb.html">ORB API</a></h4>
+              <p>Object Request Broker reference</p>
+            </div>
+            <div class="feature-card">
+              <h4><a href="exceptions.html">Exceptions API</a></h4>
+              <p>Exception handling in CORBA</p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </main>
+  </div>
+  <!-- End layout-container -->
+
+  <!-- Prism.js JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  
+  <!-- API Documentation JavaScript -->
+  <script src="../assets/js/api-docs.js"></script>
+</body>
+</html>

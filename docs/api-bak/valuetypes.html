@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Value Types API Reference - CORBA.ts Documentation</title>
+  <meta name="description" content="CORBA value types - pass-by-value semantics and custom marshaling">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <!-- Prism.js CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body class="api-page">
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <a href="../" class="logo">
+      <span>⚡</span> CORBA.ts
+    </a>
+    <ul class="nav-links">
+      <li><a href="../">Home</a></li>
+      <li><a href="./">API Reference</a></li>
+      <li><a href="../guides/">Guides & Examples</a></li>
+      <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
+    </ul>
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+  </nav>
+
+  <!-- Layout Container -->
+  <div class="layout-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="api-sidebar-header">
+        <a href="./" class="api-back-link">
+          <span>←</span> Back to API Reference
+        </a>
+        <h2 class="api-page-title">Value Types</h2>
+      </div>
+      
+      
+    <nav class="on-page-nav">
+      <ul>
+        
+      <li>
+        <a href="#valuebase">ValueBase</a>
+        <ul><li><a href="#valuebase-_type_id">_type_id()</a></li>
+<li><a href="#valuebase-_copy_value">_copy_value()</a></li>
+<li><a href="#valuebase-_marshal">_marshal()</a></li>
+<li><a href="#valuebase-_unmarshal">_unmarshal()</a></li>
+<li><a href="#valuebase-_truncatable_to">_truncatable_to()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#valuefactory">ValueFactory</a>
+        <ul><li><a href="#valuefactory-create_for_unmarshal">create_for_unmarshal()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#defaultvaluefactory">DefaultValueFactory</a>
+        <ul><li><a href="#defaultvaluefactory-_repository_id">_repository_id()</a></li>
+<li><a href="#defaultvaluefactory-create_for_unmarshal">create_for_unmarshal()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#valuefactoryregistry">ValueFactoryRegistry</a>
+        <ul><li><a href="#valuefactoryregistry-get_instance">get_instance()</a></li>
+<li><a href="#valuefactoryregistry-register_factory">register_factory()</a></li>
+<li><a href="#valuefactoryregistry-lookup_factory">lookup_factory()</a></li>
+<li><a href="#valuefactoryregistry-unregister_factory">unregister_factory()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#boxedvaluebase">BoxedValueBase</a>
+        <ul><li><a href="#boxedvaluebase-_type_id">_type_id()</a></li>
+<li><a href="#boxedvaluebase-_copy_value">_copy_value()</a></li>
+<li><a href="#boxedvaluebase-_deepcopy">_deepCopy()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#boxedvaluefactory">BoxedValueFactory</a>
+        <ul><li><a href="#boxedvaluefactory-_repository_id">_repository_id()</a></li>
+<li><a href="#boxedvaluefactory-create_for_unmarshal">create_for_unmarshal()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#abstractbase">AbstractBase</a>
+        <ul><li><a href="#abstractbase-_is_a">_is_a()</a></li>
+<li><a href="#abstractbase-_get_servant">_get_servant()</a></li></ul>
+      </li>
+    
+      </ul>
+    </nav>
+  
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <article class="content-wrapper">
+        <div class="page-header">
+          <h1>Value Types API Reference</h1>
+          <p>CORBA value types - pass-by-value semantics and custom marshaling</p>
+        </div>
+
+        
+    <section id="valuebase" class="api-section">
+      <h2>ValueBase</h2>
+      <p>Base class for all value types</p>
+      
+      
+      
+      
+        
+        
+    <section class="method" id="valuebase-_type_id">
+      
+      <pre><code class="language-typescript">// Get the type id for this value type
+_type_id(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="valuebase-_copy_value">
+      
+      <pre><code class="language-typescript">// Create a copy of this value
+_copy_value(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="valuebase-_marshal">
+      
+      <pre><code class="language-typescript">// Marshal the value to a stream
+// This would be implemented in a complete CORBA implementation
+_marshal(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="valuebase-_unmarshal">
+      
+      <pre><code class="language-typescript">// Unmarshal the value from a stream
+// This would be implemented in a complete CORBA implementation
+_unmarshal(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="valuebase-_truncatable_to">
+      
+      <pre><code class="language-typescript">// Convert to truncatable base type
+_truncatable_to(): void</code></pre>
+    </section>
+  
+      
+    </section>
+  
+
+    <section id="valuefactory" class="api-section">
+      <h2>ValueFactory</h2>
+      <p>Interface for value factories</p>
+      
+      
+      
+      
+        
+        
+    <section class="method" id="valuefactory-create_for_unmarshal">
+      
+      <pre><code class="language-typescript">// Create a new value instance
+create_for_unmarshal(): ValueBase</code></pre>
+    </section>
+  
+      
+    </section>
+  
+
+    <section id="defaultvaluefactory" class="api-section">
+      <h2>DefaultValueFactory</h2>
+      <p>Abstract base class for implementing value factories</p>
+      
+      
+      
+      
+        
+        
+    <section class="method" id="defaultvaluefactory-_repository_id">
+      
+      <pre><code class="language-typescript">// The repository ID this factory creates
+_repository_id(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="defaultvaluefactory-create_for_unmarshal">
+      
+      <pre><code class="language-typescript">// Create a new instance - must be implemented by subclasses
+create_for_unmarshal(): void</code></pre>
+    </section>
+  
+      
+    </section>
+  
+
+    <section id="valuefactoryregistry" class="api-section">
+      <h2>ValueFactoryRegistry</h2>
+      <p>Registry of value factories</p>
+      
+      
+        <h3>Properties</h3>
+        <table class="api-table">
+          <tbody>
+            
+    <tr>
+      <td><code>_instance</code></td>
+      <td><span class="return-type">ValueFactoryRegistry | null</span></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>_factories</code></td>
+      <td><span class="return-type">Map</span></td>
+      <td></td>
+    </tr>
+    
+          </tbody>
+        </table>
+      
+      
+      
+        <h3>Methods</h3>
+        
+    <section class="method" id="valuefactoryregistry-get_instance">
+      
+      <pre><code class="language-typescript">// Get the singleton instance
+get_instance(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="valuefactoryregistry-register_factory">
+      
+      <pre><code class="language-typescript">// Register a value factory
+register_factory(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="valuefactoryregistry-lookup_factory">
+      
+      <pre><code class="language-typescript">// Find a factory by id
+lookup_factory(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="valuefactoryregistry-unregister_factory">
+      
+      <pre><code class="language-typescript">// Unregister a factory
+unregister_factory(): void</code></pre>
+    </section>
+  
+      
+    </section>
+  
+
+    <section id="boxedvaluebase" class="api-section">
+      <h2>BoxedValueBase</h2>
+      <p>BoxedValueBase is a special case of ValueBase for boxed values</p>
+      
+      
+        <h3>Properties</h3>
+        <table class="api-table">
+          <tbody>
+            
+    <tr>
+      <td><code>_id</code></td>
+      <td><span class="return-type">string</span></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>_value</code></td>
+      <td><span class="return-type">T</span></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>get/set value()</code></td>
+      <td><span class="return-type">T</span></td>
+      <td>Get the contained value</td>
+    </tr>
+    
+          </tbody>
+        </table>
+      
+      
+      
+        <h3>Methods</h3>
+        
+    <section class="method" id="boxedvaluebase-_type_id">
+      
+      <pre><code class="language-typescript">_type_id(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="boxedvaluebase-_copy_value">
+      
+      <pre><code class="language-typescript">_copy_value(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="boxedvaluebase-_deepcopy">
+      
+      <pre><code class="language-typescript">// Deep copy implementation for boxed values
+_deepCopy(): void</code></pre>
+    </section>
+  
+      
+    </section>
+  
+
+    <section id="boxedvaluefactory" class="api-section">
+      <h2>BoxedValueFactory</h2>
+      <p>Factory for creating boxed values</p>
+      
+      
+        <h3>Properties</h3>
+        <table class="api-table">
+          <tbody>
+            
+    <tr>
+      <td><code>_id</code></td>
+      <td><span class="return-type">string</span></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>_default_value</code></td>
+      <td><span class="return-type">T</span></td>
+      <td></td>
+    </tr>
+    
+          </tbody>
+        </table>
+      
+      
+      
+        <h3>Methods</h3>
+        
+    <section class="method" id="boxedvaluefactory-_repository_id">
+      
+      <pre><code class="language-typescript">_repository_id(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="boxedvaluefactory-create_for_unmarshal">
+      
+      <pre><code class="language-typescript">create_for_unmarshal(): void</code></pre>
+    </section>
+  
+      
+    </section>
+  
+
+    <section id="abstractbase" class="api-section">
+      <h2>AbstractBase</h2>
+      <p>AbstractBase is the root of the abstract interface inheritance tree</p>
+      
+      
+      
+      
+        
+        
+    <section class="method" id="abstractbase-_is_a">
+      
+      <pre><code class="language-typescript">// Check if this object supports a specific interface
+_is_a(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="abstractbase-_get_servant">
+      
+      <pre><code class="language-typescript">// Get a local servant for this abstract object
+_get_servant(): void</code></pre>
+    </section>
+  
+      
+    </section>
+  
+
+        <!-- Related Documentation -->
+        <div class="panel mt-3">
+          <h3>Related Documentation</h3>
+          <div class="grid mt-1">
+            <div class="feature-card">
+              <h4><a href="types.html">Types API</a></h4>
+              <p>TypeCode system and Any type</p>
+            </div>
+            <div class="feature-card">
+              <h4><a href="orb.html">ORB API</a></h4>
+              <p>Object Request Broker reference</p>
+            </div>
+            <div class="feature-card">
+              <h4><a href="exceptions.html">Exceptions API</a></h4>
+              <p>Exception handling in CORBA</p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </main>
+  </div>
+  <!-- End layout-container -->
+
+  <!-- Prism.js JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  
+  <!-- API Documentation JavaScript -->
+  <script src="../assets/js/api-docs.js"></script>
+</body>
+</html>

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CORBA-ts - Naming API Reference</title>
+  <meta name="description" content="API documentation for naming module">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <!-- Prism.js CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body class="api-page">
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <a href="../" class="logo">
+      CORBA-ts
+    </a>
+    <ul class="nav-links">
+      <li><a href="../">Home</a></li>
+<li><a href="../api">API Reference</a></li>
+<li><a href="https://github.com/elevationai/CORBA.ts" target="_blank">Github</a></li>
+    </ul>
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+  </nav>
+
+  <!-- Layout Container -->
+  <div class="layout-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="api-sidebar-header">
+        <a href="./" class="api-back-link">
+          <span>←</span> Back to API Reference
+        </a>
+        <h2 class="api-page-title">Naming</h2>
+      </div>
+      
+      
+    <nav class="on-page-nav">
+      <ul>
+        
+      <li>
+        <a href="#namecomponent">NameComponent</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#binding">Binding</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#namingcontext">NamingContext</a>
+        <ul><li><a href="#namingcontext-bind">bind()</a></li>
+<li><a href="#namingcontext-bind_context">bind_context()</a></li>
+<li><a href="#namingcontext-rebind">rebind()</a></li>
+<li><a href="#namingcontext-rebind_context">rebind_context()</a></li>
+<li><a href="#namingcontext-resolve">resolve()</a></li>
+<li><a href="#namingcontext-unbind">unbind()</a></li>
+<li><a href="#namingcontext-new_context">new_context()</a></li>
+<li><a href="#namingcontext-bind_new_context">bind_new_context()</a></li>
+<li><a href="#namingcontext-destroy">destroy()</a></li>
+<li><a href="#namingcontext-list">list()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#bindingiterator">BindingIterator</a>
+        <ul><li><a href="#bindingiterator-next_one">next_one()</a></li>
+<li><a href="#bindingiterator-next_n">next_n()</a></li>
+<li><a href="#bindingiterator-destroy">destroy()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#namingcontextext">NamingContextExt</a>
+        <ul><li><a href="#namingcontextext-to_name">to_name()</a></li>
+<li><a href="#namingcontextext-to_string">to_string()</a></li>
+<li><a href="#namingcontextext-to_url">to_url()</a></li>
+<li><a href="#namingcontextext-resolve_str">resolve_str()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#namingcontextimpl">NamingContextImpl</a>
+        <ul><li><a href="#namingcontextimpl-bind">bind()</a></li>
+<li><a href="#namingcontextimpl-bind_context">bind_context()</a></li>
+<li><a href="#namingcontextimpl-rebind">rebind()</a></li>
+<li><a href="#namingcontextimpl-rebind_context">rebind_context()</a></li>
+<li><a href="#namingcontextimpl-resolve">resolve()</a></li>
+<li><a href="#namingcontextimpl-unbind">unbind()</a></li>
+<li><a href="#namingcontextimpl-new_context">new_context()</a></li>
+<li><a href="#namingcontextimpl-bind_new_context">bind_new_context()</a></li>
+<li><a href="#namingcontextimpl-destroy">destroy()</a></li>
+<li><a href="#namingcontextimpl-exists">exists()</a></li>
+<li><a href="#namingcontextimpl-contains">contains()</a></li>
+<li><a href="#namingcontextimpl-size">size()</a></li>
+<li><a href="#namingcontextimpl-isempty">isEmpty()</a></li>
+<li><a href="#namingcontextimpl-list">list()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#bindingiteratorimpl">BindingIteratorImpl</a>
+        <ul><li><a href="#bindingiteratorimpl-next_one">next_one()</a></li>
+<li><a href="#bindingiteratorimpl-next_n">next_n()</a></li>
+<li><a href="#bindingiteratorimpl-destroy">destroy()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#namingcontextextimpl">NamingContextExtImpl</a>
+        <ul><li><a href="#namingcontextextimpl-to_name">to_name()</a></li>
+<li><a href="#namingcontextextimpl-to_string">to_string()</a></li>
+<li><a href="#namingcontextextimpl-to_url">to_url()</a></li>
+<li><a href="#namingcontextextimpl-resolve_str">resolve_str()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#nameutil">NameUtil</a>
+        <ul><li><a href="#nameutil-createsimplename">createSimpleName()</a></li>
+<li><a href="#nameutil-createcompoundname">createCompoundName()</a></li>
+<li><a href="#nameutil-areequal">areEqual()</a></li>
+<li><a href="#nameutil-tostring">toString()</a></li>
+<li><a href="#nameutil-isvalid">isValid()</a></li>
+<li><a href="#nameutil-getparentname">getParentName()</a></li>
+<li><a href="#nameutil-getlastcomponent">getLastComponent()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#create-naming-context">create_naming_context</a>
+        <ul><li><a href="#create-naming-context-create_naming_context">create_naming_context()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#create-naming-context-ext">create_naming_context_ext</a>
+        <ul><li><a href="#create-naming-context-ext-create_naming_context_ext">create_naming_context_ext()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#init-naming-service">init_naming_service</a>
+        <ul><li><a href="#init-naming-service-init_naming_service">init_naming_service()</a></li></ul>
+      </li>
+    
+      </ul>
+    </nav>
+  
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <article class="content-wrapper">
+        <div class="page-header">
+          <h1>Naming API Reference</h1>
+          <p>API documentation for naming module</p>
+        </div>
+
+        
+    <section id="namecomponent" class="api-section">
+      <h2>NameComponent</h2>
+      <pre><code class="language-typescript">interface NameComponent</code></pre>
+      <p>NameComponent - a single component of a compound name</p>
+      
+      <h3>Properties</h3>
+    <section class="properties-block">
+      <pre><code class="language-typescript">  id: string;
+  kind: string;</code></pre>
+    </section>
+      
+    </section>
+  
+
+    <section id="binding" class="api-section">
+      <h2>Binding</h2>
+      <pre><code class="language-typescript">interface Binding</code></pre>
+      <p>Binding structure</p>
+      
+      <h3>Properties</h3>
+    <section class="properties-block">
+      <pre><code class="language-typescript">  binding_name: Name;
+  binding_type: BindingType;</code></pre>
+    </section>
+      
+    </section>
+  
+
+    <section id="namingcontext" class="api-section">
+      <h2>NamingContext</h2>
+      <pre><code class="language-typescript">interface NamingContext extends [CORBA.ObjectRef]</code></pre>
+      <p>Interface for a naming context</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="namingcontext-bind">
+      <pre><code class="language-typescript">// Bind an object to a name within this context
+bind(n: Name, obj: CORBA.ObjectRef): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontext-bind_context">
+      <pre><code class="language-typescript">// Bind a naming context to a name within this context
+bind_context(n: Name, nc: NamingContext): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontext-rebind">
+      <pre><code class="language-typescript">// Rebind an object to a name within this context
+rebind(n: Name, obj: CORBA.ObjectRef): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontext-rebind_context">
+      <pre><code class="language-typescript">// Rebind a naming context to a name within this context
+rebind_context(n: Name, nc: NamingContext): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontext-resolve">
+      <pre><code class="language-typescript">// Resolve a name to an object reference
+resolve(n: Name): Promise&lt;CORBA.ObjectRef&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontext-unbind">
+      <pre><code class="language-typescript">// Unbind a name from this context
+unbind(n: Name): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontext-new_context">
+      <pre><code class="language-typescript">// Create a new context
+new_context(): Promise&lt;NamingContext&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontext-bind_new_context">
+      <pre><code class="language-typescript">// Create a new subcontext
+bind_new_context(n: Name): Promise&lt;NamingContext&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontext-destroy">
+      <pre><code class="language-typescript">// Destroy this context
+destroy(): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontext-list">
+      <pre><code class="language-typescript">// List the bindings in this context
+list(how_many: number): Promise&lt;object&gt;</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="bindingiterator" class="api-section">
+      <h2>BindingIterator</h2>
+      <pre><code class="language-typescript">interface BindingIterator extends [CORBA.ObjectRef]</code></pre>
+      <p>Interface for a binding iterator</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="bindingiterator-next_one">
+      <pre><code class="language-typescript">// Get the next binding
+next_one(): Promise&lt;object&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="bindingiterator-next_n">
+      <pre><code class="language-typescript">// Get the next n bindings
+next_n(how_many: number): Promise&lt;object&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="bindingiterator-destroy">
+      <pre><code class="language-typescript">// Destroy this iterator
+destroy(): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="namingcontextext" class="api-section">
+      <h2>NamingContextExt</h2>
+      <pre><code class="language-typescript">interface NamingContextExt extends NamingContext</code></pre>
+      <p>Interface for the naming context factory</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="namingcontextext-to_name">
+      <pre><code class="language-typescript">// Convert a string name to a Name
+to_name(sn: string): Promise&lt;Name&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextext-to_string">
+      <pre><code class="language-typescript">// Convert a Name to a string
+to_string(n: Name): Promise&lt;string&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextext-to_url">
+      <pre><code class="language-typescript">// Convert a URL to a string name
+to_url(addr: string, sn: string): Promise&lt;string&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextext-resolve_str">
+      <pre><code class="language-typescript">// Resolve a stringified name to an object reference
+resolve_str(sn: string): Promise&lt;CORBA.ObjectRef&gt;</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="namingcontextimpl" class="api-section">
+      <h2>NamingContextImpl</h2>
+      <pre><code class="language-typescript">class NamingContextImpl extends ObjectReference implements NamingContext</code></pre>
+      <p>Implementation of NamingContext</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="namingcontextimpl-bind">
+      <pre><code class="language-typescript">async bind(n: Name, obj: CORBA.ObjectRef): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextimpl-bind_context">
+      <pre><code class="language-typescript">async bind_context(n: Name, nc: NamingContext): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextimpl-rebind">
+      <pre><code class="language-typescript">async rebind(n: Name, obj: CORBA.ObjectRef): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextimpl-rebind_context">
+      <pre><code class="language-typescript">async rebind_context(n: Name, nc: NamingContext): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextimpl-resolve">
+      <pre><code class="language-typescript">resolve(n: Name): Promise&lt;CORBA.ObjectRef&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextimpl-unbind">
+      <pre><code class="language-typescript">async unbind(n: Name): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextimpl-new_context">
+      <pre><code class="language-typescript">new_context(): Promise&lt;NamingContext&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextimpl-bind_new_context">
+      <pre><code class="language-typescript">async bind_new_context(n: Name): Promise&lt;NamingContext&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextimpl-destroy">
+      <pre><code class="language-typescript">destroy(): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextimpl-exists">
+      <pre><code class="language-typescript">// Check if a name exists in this context
+exists(n: Name): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextimpl-contains">
+      <pre><code class="language-typescript">// Check if a name is contained in this context (alias for exists)
+contains(n: Name): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextimpl-size">
+      <pre><code class="language-typescript">// Get the number of bindings in this context
+size(): number</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextimpl-isempty">
+      <pre><code class="language-typescript">// Check if the context is empty
+isEmpty(): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextimpl-list">
+      <pre><code class="language-typescript">list(how_many: number): Promise&lt;object&gt;</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="bindingiteratorimpl" class="api-section">
+      <h2>BindingIteratorImpl</h2>
+      <pre><code class="language-typescript">class BindingIteratorImpl extends ObjectReference implements BindingIterator</code></pre>
+      <p>Implementation of BindingIterator</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="bindingiteratorimpl-next_one">
+      <pre><code class="language-typescript">next_one(): Promise&lt;object&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="bindingiteratorimpl-next_n">
+      <pre><code class="language-typescript">next_n(how_many: number): Promise&lt;object&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="bindingiteratorimpl-destroy">
+      <pre><code class="language-typescript">destroy(): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="namingcontextextimpl" class="api-section">
+      <h2>NamingContextExtImpl</h2>
+      <pre><code class="language-typescript">class NamingContextExtImpl extends NamingContextImpl implements NamingContextExt</code></pre>
+      <p>Implementation of NamingContextExt</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="namingcontextextimpl-to_name">
+      <pre><code class="language-typescript">to_name(sn: string): Promise&lt;Name&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextextimpl-to_string">
+      <pre><code class="language-typescript">to_string(n: Name): Promise&lt;string&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextextimpl-to_url">
+      <pre><code class="language-typescript">to_url(addr: string, sn: string): Promise&lt;string&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="namingcontextextimpl-resolve_str">
+      <pre><code class="language-typescript">async resolve_str(sn: string): Promise&lt;CORBA.ObjectRef&gt;</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="nameutil" class="api-section">
+      <h2>NameUtil</h2>
+      <pre><code class="language-typescript">class NameUtil</code></pre>
+      <p>Utility functions for name manipulation</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="nameutil-createsimplename">
+      <pre><code class="language-typescript">// Create a simple name with a single component
+static createSimpleName(id: string, kind: string): Name</code></pre>
+    </section>
+  
+
+    <section class="method" id="nameutil-createcompoundname">
+      <pre><code class="language-typescript">// Create a compound name from individual components
+static createCompoundName(undefined: Array&lt;object&gt;): Name</code></pre>
+    </section>
+  
+
+    <section class="method" id="nameutil-areequal">
+      <pre><code class="language-typescript">// Check if two names are equal
+static areEqual(n1: Name, n2: Name): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="nameutil-tostring">
+      <pre><code class="language-typescript">// Get the string representation of a name for display
+static toString(n: Name): string</code></pre>
+    </section>
+  
+
+    <section class="method" id="nameutil-isvalid">
+      <pre><code class="language-typescript">// Validate that a name is well-formed
+static isValid(n: Name): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="nameutil-getparentname">
+      <pre><code class="language-typescript">// Get the parent name (all components except the last)
+static getParentName(n: Name): Name</code></pre>
+    </section>
+  
+
+    <section class="method" id="nameutil-getlastcomponent">
+      <pre><code class="language-typescript">// Get the last component of a name
+static getLastComponent(n: Name): NameComponent | null</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="create-naming-context" class="api-section">
+      <h2>create_naming_context</h2>
+      
+      <p>Create a new naming context</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="create-naming-context-create_naming_context">
+      <pre><code class="language-typescript">// Create a new naming context
+create_naming_context(): NamingContext</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="create-naming-context-ext" class="api-section">
+      <h2>create_naming_context_ext</h2>
+      
+      <p>Create a new extended naming context</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="create-naming-context-ext-create_naming_context_ext">
+      <pre><code class="language-typescript">// Create a new extended naming context
+create_naming_context_ext(): NamingContextExt</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="init-naming-service" class="api-section">
+      <h2>init_naming_service</h2>
+      
+      <p>Initialize the naming service and register it with the ORB</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="init-naming-service-init_naming_service">
+      <pre><code class="language-typescript">// Initialize the naming service and register it with the ORB
+async init_naming_service(): Promise&lt;NamingContextExt&gt;</code></pre>
+    </section>
+  
+    </section>
+  
+
+      </article>
+    </main>
+  </div>
+  <!-- End layout-container -->
+
+  <!-- Footer -->
+  <footer class="api-footer">
+    <div class="footer-content">
+      <p>
+        &copy; 2025 Elevation AI. All rights reserved.
+         • <a href="https://github.com/elevationai/CORBA.ts" target="_blank">Github</a>
+      </p>
+    </div>
+  </footer>
+
+  <!-- Prism.js JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  
+  <!-- API Documentation JavaScript -->
+  <script src="../assets/js/api-docs.js"></script>
+</body>
+</html>
