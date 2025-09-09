@@ -369,21 +369,21 @@ export namespace TypeCode {
   }
 
   // Basic TypeCode constants
-  export const TC_void = new TypeCode(Kind.tk_void);
-  export const TC_short = new TypeCode(Kind.tk_short);
-  export const TC_long = new TypeCode(Kind.tk_long);
-  export const TC_longlong = new TypeCode(Kind.tk_longlong);
-  export const TC_ushort = new TypeCode(Kind.tk_ushort);
-  export const TC_ulong = new TypeCode(Kind.tk_ulong);
-  export const TC_ulonglong = new TypeCode(Kind.tk_ulonglong);
-  export const TC_float = new TypeCode(Kind.tk_float);
-  export const TC_double = new TypeCode(Kind.tk_double);
-  export const TC_longdouble = new TypeCode(Kind.tk_longdouble);
-  export const TC_char = new TypeCode(Kind.tk_char);
-  export const TC_wchar = new TypeCode(Kind.tk_wchar);
-  export const TC_boolean = new TypeCode(Kind.tk_boolean);
-  export const TC_octet = new TypeCode(Kind.tk_octet);
-  export const TC_any = new TypeCode(Kind.tk_any);
-  export const TC_string = new TypeCode(Kind.tk_string);
-  export const TC_wstring = new TypeCode(Kind.tk_wstring);
+  export const TC_void: TypeCode = new TypeCode(Kind.tk_void);
+  export const TC_short: TypeCode = new TypeCode(Kind.tk_short);
+  export const TC_long: TypeCode = new TypeCode(Kind.tk_long);
+  export const TC_longlong: TypeCode = new TypeCode(Kind.tk_longlong);
+  export const TC_ushort: TypeCode = new TypeCode(Kind.tk_ushort);
+  export const TC_ulong: TypeCode = new TypeCode(Kind.tk_ulong);
+  export const TC_ulonglong: TypeCode = new TypeCode(Kind.tk_ulonglong);
+  export const TC_float: TypeCode = new TypeCode(Kind.tk_float);
+  export const TC_double: TypeCode = new TypeCode(Kind.tk_double);
+  export const TC_longdouble: TypeCode = new TypeCode(Kind.tk_longdouble);
+  export const TC_char: TypeCode = new TypeCode(Kind.tk_char);
+  export const TC_wchar: TypeCode = new TypeCode(Kind.tk_wchar);
+  export const TC_boolean: TypeCode = new TypeCode(Kind.tk_boolean);
+  export const TC_octet: TypeCode = new TypeCode(Kind.tk_octet);
+  export const TC_any: TypeCode = new TypeCode(Kind.tk_any);
+  export const TC_string: TypeCode = new TypeCode(Kind.tk_string);
+  export const TC_wstring: TypeCode = new TypeCode(Kind.tk_wstring);
 }

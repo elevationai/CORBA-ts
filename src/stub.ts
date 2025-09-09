@@ -4,7 +4,7 @@
  */
 
 import { CORBA } from "./types.ts";
-import { Object } from "./object.ts";
+import { InterfaceDef, Object } from "./object.ts";
 
 /**
  * Helper types for typing the constructor side of subclasses
@@ -66,21 +66,21 @@ export abstract class CorbaStub implements Object {
   }
 
   // Implement Object interface by delegating to _ref if it's an Object
-  get_interface() {
+  get_interface(): Promise<InterfaceDef> {
     if ("get_interface" in this._ref && typeof this._ref.get_interface === "function") {
       return this._ref.get_interface();
     }
     throw new Error("get_interface not available on ObjectRef");
   }
 
-  is_nil() {
+  is_nil(): boolean {
     if ("is_nil" in this._ref && typeof this._ref.is_nil === "function") {
       return this._ref.is_nil();
     }
     return false;
   }
 
-  is_equivalent(other_object: Object) {
+  is_equivalent(other_object: Object): boolean {
     if ("is_equivalent" in this._ref && typeof this._ref.is_equivalent === "function") {
       return this._ref.is_equivalent(other_object);
     }
@@ -90,7 +90,7 @@ export abstract class CorbaStub implements Object {
     return false;
   }
 
-  is_a(repository_id: string) {
+  is_a(repository_id: string): Promise<boolean> {
     if ("is_a" in this._ref && typeof this._ref.is_a === "function") {
       return this._ref.is_a(repository_id);
     }
@@ -100,7 +100,7 @@ export abstract class CorbaStub implements Object {
     return Promise.resolve(false);
   }
 
-  non_existent() {
+  non_existent(): Promise<boolean> {
     if ("non_existent" in this._ref && typeof this._ref.non_existent === "function") {
       return this._ref.non_existent();
     }
@@ -110,7 +110,7 @@ export abstract class CorbaStub implements Object {
     return Promise.resolve(false);
   }
 
-  hash(maximum: number) {
+  hash(maximum: number): number {
     if ("hash" in this._ref && typeof this._ref.hash === "function") {
       return this._ref.hash(maximum);
     }
@@ -120,77 +120,80 @@ export abstract class CorbaStub implements Object {
     return 0;
   }
 
-  duplicate() {
+  duplicate(): Object {
     if ("duplicate" in this._ref && typeof this._ref.duplicate === "function") {
       return this._ref.duplicate();
     }
     return this; // Return self if no duplicate method
   }
 
-  release() {
+  release(): void {
     if ("release" in this._ref && typeof this._ref.release === "function") {
       return this._ref.release();
     }
     // No-op if no release method
   }
 
-  get_domain_managers() {
+  get_domain_managers(): Promise<Object[]> {
     if ("get_domain_managers" in this._ref && typeof this._ref.get_domain_managers === "function") {
       return this._ref.get_domain_managers();
     }
     return Promise.resolve([]);
   }
 
-  set_policy_overrides(policies: import("./policy.ts").Policy[], set_add: import("./object.ts").SetOverrideType) {
+  set_policy_overrides(
+    policies: import("./policy.ts").Policy[],
+    set_add: import("./object.ts").SetOverrideType,
+  ): Object {
     if ("set_policy_overrides" in this._ref && typeof this._ref.set_policy_overrides === "function") {
       return this._ref.set_policy_overrides(policies, set_add);
     }
     return this;
   }
 
-  get_policy(policy_type: number) {
+  get_policy(policy_type: number): import("./policy.ts").Policy {
     if ("get_policy" in this._ref && typeof this._ref.get_policy === "function") {
       return this._ref.get_policy(policy_type);
     }
     throw new Error("get_policy not available");
   }
 
-  get_client_policy(type: number) {
+  get_client_policy(type: number): import("./policy.ts").Policy {
     if ("get_client_policy" in this._ref && typeof this._ref.get_client_policy === "function") {
       return this._ref.get_client_policy(type);
     }
     throw new Error("get_client_policy not available");
   }
 
-  get_policy_overrides(types: number[]) {
+  get_policy_overrides(types: number[]): import("./policy.ts").Policy[] {
     if ("get_policy_overrides" in this._ref && typeof this._ref.get_policy_overrides === "function") {
       return this._ref.get_policy_overrides(types);
     }
     return [];
   }
 
-  validate_connection(inconsistent_policies: import("./policy.ts").Policy[]) {
+  validate_connection(inconsistent_policies: import("./policy.ts").Policy[]): boolean {
     if ("validate_connection" in this._ref && typeof this._ref.validate_connection === "function") {
       return this._ref.validate_connection(inconsistent_policies);
     }
     return true;
   }
 
-  get_component() {
+  get_component(): Object {
     if ("get_component" in this._ref && typeof this._ref.get_component === "function") {
       return this._ref.get_component();
     }
     throw new Error("get_component not available");
   }
 
-  get_type_id() {
+  get_type_id(): Promise<string> {
     if ("get_type_id" in this._ref && typeof this._ref.get_type_id === "function") {
       return this._ref.get_type_id();
     }
     return Promise.resolve((this.constructor as { _repository_id?: string })._repository_id || "unknown");
   }
 
-  _get_interface_id() {
+  _get_interface_id(): string {
     if ("_get_interface_id" in this._ref && typeof this._ref._get_interface_id === "function") {
       return this._ref._get_interface_id();
     }
