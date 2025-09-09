@@ -273,13 +273,13 @@ export class CDRInputStream {
   readOctetSequence(): Uint8Array {
     // Save position before reading ULong (for debugging if needed)
     const length = this.readULong();
-    
+
     // Sanity check for corrupted length values
     const maxReasonableLength = 100 * 1024 * 1024; // 100MB
     if (length > this.remaining() || length > maxReasonableLength) {
       throw new Error(`Invalid sequence length: ${length} (remaining: ${this.remaining()})`);
     }
-    
+
     return this.readOctetArray(length);
   }
 

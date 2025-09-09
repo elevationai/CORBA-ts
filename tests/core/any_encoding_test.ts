@@ -128,7 +128,7 @@ Deno.test("Any encoding: Rejects generic objects", () => {
   const tc = new TypeCode(TypeCode.Kind.tk_any);
 
   const obj = { name: "test", value: 123 };
-  
+
   // Generic objects should be rejected for Any encoding (proper CORBA behavior)
   try {
     encodeWithTypeCode(cdr, obj, tc);

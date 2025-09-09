@@ -79,7 +79,7 @@ Deno.test("ValueType: Deep copy creates independent copy", () => {
       items: number[];
     };
   };
-  
+
   const original = new BoxedValueBase("IDL:Test/Value:1.0", {
     name: "test",
     count: 42,
@@ -112,7 +112,7 @@ Deno.test("ValueType: Handles Date objects in deep copy", () => {
     created: Date;
     expires: Date;
   };
-  
+
   const date = new Date(2024, 0, 1);
   const original = new BoxedValueBase("IDL:Test/DateValue:1.0", {
     created: date,
@@ -138,7 +138,7 @@ Deno.test("ValueType: Handles arrays in deep copy", () => {
   type ArrayValue = {
     matrix: number[][];
   };
-  
+
   const original = new BoxedValueBase("IDL:Test/ArrayValue:1.0", {
     matrix: [
       [1, 2, 3],
@@ -167,7 +167,10 @@ Deno.test("ValueType: Handles primitives in deep copy", () => {
   // Test with string
   const strOriginal = new BoxedValueBase("IDL:Test/String:1.0", "hello");
   const strCopy = strOriginal._copy_value() as BoxedValueBase<string>;
-  assertEquals((strOriginal as unknown as { _value: string })._value, (strCopy as unknown as { _value: string })._value);
+  assertEquals(
+    (strOriginal as unknown as { _value: string })._value,
+    (strCopy as unknown as { _value: string })._value,
+  );
 });
 
 Deno.test("ValueType: Handles null and undefined in deep copy", () => {

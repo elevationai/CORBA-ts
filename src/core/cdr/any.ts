@@ -77,32 +77,32 @@ function inferTypeCode(value: CORBAValue): TypeCode {
   if (value === null || value === undefined) {
     return new TypeCode(TCKind.tk_null);
   }
-  
+
   if (typeof value === "boolean") {
     return new TypeCode(TCKind.tk_boolean);
   }
-  
+
   if (typeof value === "number") {
     if (Number.isInteger(value)) {
       return new TypeCode(TCKind.tk_long);
     }
     return new TypeCode(TCKind.tk_double);
   }
-  
+
   if (typeof value === "string") {
     return new TypeCode(TCKind.tk_string);
   }
-  
+
   if (typeof value === "bigint") {
     return new TypeCode(TCKind.tk_longlong);
   }
-  
+
   if (Array.isArray(value)) {
     // For arrays, create a sequence TypeCode
     const elementType = value.length > 0 ? inferTypeCode(value[0]) : new TypeCode(TCKind.tk_any);
     return TypeCode.createSequence(elementType);
   }
-  
+
   if (typeof value === "object") {
     // Check if it's an object reference
     if ((value as CORBAObjectRef)._ior) {
@@ -111,7 +111,7 @@ function inferTypeCode(value: CORBAValue): TypeCode {
     // Generic objects can't be auto-encoded without proper TypeCode
     throw new Error("Cannot infer TypeCode for generic object. Provide explicit TypeCode.");
   }
-  
+
   // Fallback
   throw new Error(`Cannot infer TypeCode for value of type: ${typeof value}`);
 }
@@ -651,7 +651,7 @@ function detectTypeCode(value: CORBAValue): TypeCode {
     // Generic objects can't be auto-encoded without proper TypeCode
     throw new Error("Cannot infer TypeCode for generic object. Provide explicit TypeCode.");
   }
-  
+
   // Fallback
   throw new Error(`Cannot infer TypeCode for value of type: ${typeof value}`);
 }
