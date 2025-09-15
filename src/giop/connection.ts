@@ -138,9 +138,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
 
       this._state = ConnectionState.DISCONNECTED;
       this._conn = null;
-      throw new Error(
-        `Failed to connect to ${this._endpoint.host}:${this._endpoint.port}: ${error}`,
-      );
+      throw error;
     }
   }
 

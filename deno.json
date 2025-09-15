@@ -23,12 +23,10 @@
     ]
   },
   "fmt": {
-    "useTabs": false,
-    "lineWidth": 120,
-    "indentWidth": 2,
-    "singleQuote": false,
+    "lineWidth": 140,
     "proseWrap": "preserve",
-    "exclude": ["docs/**", "docs.config.json"]
+    "nextControlFlowPosition": "nextLine",
+    "exclude": ["docs/**"]
   },
   "lint": {
     "rules": {

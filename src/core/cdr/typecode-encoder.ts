@@ -125,14 +125,21 @@ export function encodeWithTypeCode(
     case TypeCode.Kind.tk_objref: {
       // Encode object reference as IOR string
       if (value === null || value === undefined) {
-        // Null reference - encode empty IOR string
-        cdr.writeString("");
+        // Null reference - encode as IOR with empty type_id and empty profiles
+        cdr.writeString("");  // Empty type_id
+        cdr.writeULong(0);    // Empty profiles sequence (length = 0)
       } else if (typeof value === "object" && "_ior" in value) {
         // Has _ior property - encode it as string
         cdr.writeString((value as { _ior: string })._ior);
       } else {
         throw new Error("Invalid object reference: must be null or have _ior property");
       }
+      break;
+    }
+
+    case TypeCode.Kind.tk_union: {
+      // Encode union type
+      encodeUnion(cdr, value as { discriminator: unknown; [key: string]: unknown }, tc);
       break;
     }
 
@@ -209,6 +216,86 @@ function encodeArray(
       encodeWithTypeCode(cdr, element, elementType);
     } else {
       encodeBasedOnValueType(cdr, element);
+    }
+  }
+}
+
+/**
+ * Encode a union based on its TypeCode
+ */
+function encodeUnion(
+  cdr: CDROutputStream,
+  value: { discriminator: unknown; [key: string]: unknown },
+  tc: TypeCode,
+): void {
+  // Get discriminator type
+  const discriminatorType = tc.discriminator_type();
+  
+  
+  // Handle discriminator encoding
+  let discriminatorValue = value.discriminator;
+  
+  // If discriminator type is enum, convert string to index
+  if (discriminatorType && discriminatorType.kind() === TypeCode.Kind.tk_enum) {
+    // Get enum member names
+    const enumMemberCount = discriminatorType.member_count();
+    for (let i = 0; i < enumMemberCount; i++) {
+      const memberName = discriminatorType.member_name(i);
+      if (memberName === value.discriminator) {
+        discriminatorValue = i;
+        break;
+      }
+    }
+  }
+  
+  // Encode the discriminator
+  if (discriminatorType) {
+    encodeWithTypeCode(cdr, discriminatorValue, discriminatorType);
+  } else {
+    // Default to encoding as ulong for discriminator
+    cdr.writeULong(discriminatorValue as number);
+  }
+  
+  // Find the appropriate member based on the discriminator
+  const memberCount = tc.member_count();
+  
+  for (let i = 0; i < memberCount; i++) {
+    const label = tc.member_label(i);
+    
+    // Check if this member matches the discriminator
+    // Compare with the appropriate value (enum index or original value)
+    let matches = false;
+    if (discriminatorType && discriminatorType.kind() === TypeCode.Kind.tk_enum) {
+      // For enum discriminators, compare the label (which should be the string) with the original discriminator
+      matches = label === value.discriminator;
+    } else {
+      // For other discriminators, compare directly
+      matches = label === discriminatorValue;
+    }
+    
+    if (matches) {
+      const memberName = tc.member_name(i);
+      const memberType = tc.member_type(i);
+      const memberValue = value[memberName];
+      
+      
+      // Encode the member value (even if it's null/undefined for Any types)
+      if (memberType) {
+        encodeWithTypeCode(cdr, memberValue !== undefined ? memberValue : null, memberType);
+      }
+      return;
+    }
+  }
+  
+  // If no matching member found, check for default case
+  const defaultIndex = tc.default_index();
+  if (defaultIndex >= 0) {
+    const memberName = tc.member_name(defaultIndex);
+    const memberType = tc.member_type(defaultIndex);
+    const memberValue = value[memberName];
+    
+    if (memberType && memberValue !== undefined) {
+      encodeWithTypeCode(cdr, memberValue, memberType);
     }
   }
 }

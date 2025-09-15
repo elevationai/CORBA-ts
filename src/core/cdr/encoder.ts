@@ -73,7 +73,8 @@ export class CDROutputStream {
    * Get the encoded buffer (trimmed to actual size)
    */
   getBuffer(): Uint8Array {
-    return this.buffer.subarray(0, this.position);
+    const result = this.buffer.subarray(0, this.position);
+    return result;
   }
 
   /**
@@ -209,9 +210,14 @@ export class CDROutputStream {
    */
   writeString(value: string): void {
     const bytes = new TextEncoder().encode(value);
-    this.writeULong(bytes.length + 1); // Include null terminator in length
-    this.writeOctetArray(bytes);
-    this.writeOctet(0); // Null terminator
+    // For empty strings (like null IOR), write length 0 with no data
+    if (bytes.length === 0) {
+      this.writeULong(0);
+    } else {
+      this.writeULong(bytes.length + 1); // Include null terminator in length
+      this.writeOctetArray(bytes);
+      this.writeOctet(0); // Null terminator
+    }
   }
 
   /**

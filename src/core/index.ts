@@ -1,5 +1,5 @@
 /**
- * CORBA.ts Core Module - Phase 1
+ * CORBA.ts Core Module
  * Exports CDR encoding, network layer, and system exceptions
  */
 

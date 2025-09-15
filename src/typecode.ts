@@ -111,9 +111,20 @@ export class TypeCode {
    */
   member_name(index: number): string {
     this.check_method_validity("member_name");
-    const members = this._params.get("members") as Array<{ name: string; type: TypeCode }>;
-    this.check_index(index, members.length);
-    return members[index].name;
+    const members = this._params.get("members");
+    
+    // Handle different member storage formats
+    if (this._kind === TypeCode.Kind.tk_enum) {
+      // Enums store members as a simple string array
+      const enumMembers = members as string[];
+      this.check_index(index, enumMembers.length);
+      return enumMembers[index];
+    } else {
+      // Structs, unions, etc. store members as objects
+      const structMembers = members as Array<{ name: string; type: TypeCode }>;
+      this.check_index(index, structMembers.length);
+      return structMembers[index].name;
+    }
   }
 
   /**
@@ -141,6 +152,33 @@ export class TypeCode {
   length(): number {
     this.check_method_validity("length");
     return this._params.get("length") as number;
+  }
+
+  /**
+   * Get the discriminator type for unions
+   */
+  discriminator_type(): TypeCode {
+    this.check_method_validity("discriminator_type");
+    return this._params.get("discriminator_type") as TypeCode;
+  }
+
+  /**
+   * Get the label for a union member
+   */
+  member_label(index: number): unknown {
+    this.check_method_validity("member_label");
+    const members = this._params.get("members") as Array<{ label: unknown; name: string; type: TypeCode }>;
+    this.check_index(index, members.length);
+    return members[index].label;
+  }
+
+  /**
+   * Get the default index for unions (-1 if no default)
+   */
+  default_index(): number {
+    this.check_method_validity("default_index");
+    const defaultIdx = this._params.get("default_index");
+    return defaultIdx !== undefined ? defaultIdx as number : -1;
   }
 
   /**
@@ -266,11 +304,14 @@ export namespace TypeCode {
         return [...basic_methods, "id", "name"];
 
       case Kind.tk_struct:
-      case Kind.tk_union:
       case Kind.tk_enum:
       case Kind.tk_except:
       case Kind.tk_value:
         return [...basic_methods, "id", "name", "member_count", "member_name", "member_type"];
+      
+      case Kind.tk_union:
+        return [...basic_methods, "id", "name", "member_count", "member_name", "member_type", 
+                "discriminator_type", "member_label", "default_index"];
 
       case Kind.tk_string:
       case Kind.tk_wstring:
