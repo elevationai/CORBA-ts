@@ -6,6 +6,8 @@
 import { TypeCode } from "../../typecode.ts";
 import { CDROutputStream } from "./encoder.ts";
 import { Any, encodeAny } from "./any.ts";
+import { IORUtil } from "../../giop/ior.ts";
+import type { IOR } from "../../giop/types.ts";
 // Import CDR TypeCode for handling internal CDR types
 // deno-lint-ignore no-unused-vars
 import { TCKind, TypeCode as CDRTypeCode } from "./typecode.ts";
@@ -123,14 +125,51 @@ export function encodeWithTypeCode(
     }
 
     case TypeCode.Kind.tk_objref: {
-      // Encode object reference as IOR string
+      // Encode object reference as IOR
       if (value === null || value === undefined) {
-        // Null reference - encode as IOR with empty type_id and empty profiles
+        // Null reference - encode as empty IOR
         cdr.writeString("");  // Empty type_id
         cdr.writeULong(0);    // Empty profiles sequence (length = 0)
       } else if (typeof value === "object" && "_ior" in value) {
-        // Has _ior property - encode it as string
-        cdr.writeString((value as { _ior: string })._ior);
+        // Has _ior property - need to encode the IOR structure
+        const iorValue = (value as { _ior: string | IOR })._ior;
+
+        if (typeof iorValue === "string") {
+          // IOR is a string (e.g., "IOR:..." or "corbaloc:...")
+          // Parse it to get the structured IOR
+          const parsedIOR = IORUtil.fromString(iorValue);
+
+          // Encode the parsed IOR structure
+          cdr.writeString(parsedIOR.typeId || "");
+          const profiles = parsedIOR.profiles || [];
+          cdr.writeULong(profiles.length);
+          for (const profile of profiles) {
+            cdr.writeULong(profile.profileId || 0);
+            const profileData = profile.profileData || new Uint8Array(0);
+            cdr.writeULong(profileData.length);
+            cdr.writeOctetArray(profileData);
+          }
+        } else if (iorValue && typeof iorValue === "object") {
+          // IOR is an object with typeId and profiles
+          // Encode type_id
+          cdr.writeString(iorValue.typeId || "");
+
+          // Encode profiles sequence
+          const profiles = iorValue.profiles || [];
+          cdr.writeULong(profiles.length);
+
+          for (const profile of profiles) {
+            // Encode profile_id (tag)
+            cdr.writeULong(profile.profileId || 0);
+
+            // Encode profile_data length and data separately (not as a sequence)
+            const profileData = profile.profileData || new Uint8Array(0);
+            cdr.writeULong(profileData.length);
+            cdr.writeOctetArray(profileData);
+          }
+        } else {
+          throw new Error("Invalid IOR structure in object reference");
+        }
       } else {
         throw new Error("Invalid object reference: must be null or have _ior property");
       }
@@ -230,11 +269,10 @@ function encodeUnion(
 ): void {
   // Get discriminator type
   const discriminatorType = tc.discriminator_type();
-  
-  
+
   // Handle discriminator encoding
   let discriminatorValue = value.discriminator;
-  
+
   // If discriminator type is enum, convert string to index
   if (discriminatorType && discriminatorType.kind() === TypeCode.Kind.tk_enum) {
     // Get enum member names
@@ -247,7 +285,7 @@ function encodeUnion(
       }
     }
   }
-  
+
   // Encode the discriminator
   if (discriminatorType) {
     encodeWithTypeCode(cdr, discriminatorValue, discriminatorType);
@@ -255,13 +293,14 @@ function encodeUnion(
     // Default to encoding as ulong for discriminator
     cdr.writeULong(discriminatorValue as number);
   }
-  
+
   // Find the appropriate member based on the discriminator
   const memberCount = tc.member_count();
-  
+
   for (let i = 0; i < memberCount; i++) {
     const label = tc.member_label(i);
-    
+    const memberName = tc.member_name(i);
+
     // Check if this member matches the discriminator
     // Compare with the appropriate value (enum index or original value)
     let matches = false;
@@ -272,13 +311,11 @@ function encodeUnion(
       // For other discriminators, compare directly
       matches = label === discriminatorValue;
     }
-    
+
     if (matches) {
-      const memberName = tc.member_name(i);
       const memberType = tc.member_type(i);
       const memberValue = value[memberName];
-      
-      
+
       // Encode the member value (even if it's null/undefined for Any types)
       if (memberType) {
         encodeWithTypeCode(cdr, memberValue !== undefined ? memberValue : null, memberType);

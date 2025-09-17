@@ -5,7 +5,11 @@
 
 import { CDROutputStream } from "./encoder.ts";
 import { CDRInputStream } from "./decoder.ts";
-import { decodeTypeCode, encodeTypeCode, TCKind, TypeCode } from "./typecode.ts";
+import { decodeTypeCode, encodeTypeCode } from "./typecode.ts";
+import { TypeCode } from "../../typecode.ts";
+
+// Use the Kind enum from the main TypeCode for consistency
+const TCKind = TypeCode.Kind;
 
 /**
  * CORBA value type - represents any value that can be encoded in CDR
@@ -62,7 +66,22 @@ export function encodeAny(out: CDROutputStream, any: Any): void {
  */
 export function decodeAny(inp: CDRInputStream): Any {
   // Decode the TypeCode
-  const type = decodeTypeCode(inp);
+  const cdrType = decodeTypeCode(inp);
+
+  // Convert CDR TypeCode to main TypeCode for proper use
+  // The CDR TypeCode has 'kind' as a property, but decodeValue expects a TypeCode with 'kind()' as a method
+  let type: TypeCode;
+  if (typeof cdrType.kind === 'function') {
+    // Already a main TypeCode
+    type = cdrType as unknown as TypeCode;
+  } else {
+    // CDR TypeCode - create a main TypeCode
+    type = new TypeCode(cdrType.kind as unknown as TypeCode.Kind);
+    // For strings, we may need to set the length
+    if ((cdrType.kind === TCKind.tk_string as number || cdrType.kind === TCKind.tk_wstring as number) && cdrType.length !== undefined) {
+      type.set_param("length", cdrType.length);
+    }
+  }
 
   // Decode the value based on TypeCode
   const value = decodeValue(inp, type);
@@ -100,7 +119,7 @@ function inferTypeCode(value: CORBAValue): TypeCode {
   if (Array.isArray(value)) {
     // For arrays, create a sequence TypeCode
     const elementType = value.length > 0 ? inferTypeCode(value[0]) : new TypeCode(TCKind.tk_any);
-    return TypeCode.createSequence(elementType);
+    return TypeCode.create_sequence_tc(0, elementType);
   }
 
   if (typeof value === "object") {
@@ -120,7 +139,9 @@ function inferTypeCode(value: CORBAValue): TypeCode {
  * Encode a value based on its TypeCode
  */
 export function encodeValue(out: CDROutputStream, value: CORBAValue, type: TypeCode): void {
-  switch (type.kind) {
+  const typeKind = type.kind();
+
+  switch (typeKind) {
     case TCKind.tk_null:
     case TCKind.tk_void:
       // No value to encode
@@ -183,8 +204,8 @@ export function encodeValue(out: CDROutputStream, value: CORBAValue, type: TypeC
       break;
 
     case TCKind.tk_fixed:
-      encodeFixed(out, value as string, type.digits!, type.scale!);
-      break;
+      // TODO: Fixed type encoding - need to get digits/scale from TypeCode
+      throw new Error("Fixed type encoding not yet implemented");
 
     case TCKind.tk_any:
       // If value is not already an Any, wrap it
@@ -239,13 +260,17 @@ export function encodeValue(out: CDROutputStream, value: CORBAValue, type: TypeC
       break;
 
     case TCKind.tk_alias:
-    case TCKind.tk_value_box:
+    case TCKind.tk_value_box: {
       // Encode the aliased/boxed type
-      encodeValue(out, value, type.contentType!);
+      const contentType = type.content_type();
+      if (contentType) {
+        encodeValue(out, value, contentType);
+      }
       break;
+    }
 
     default:
-      throw new Error(`Unsupported type kind for encoding: ${type.kind}`);
+      throw new Error(`Unsupported type kind for encoding: ${typeKind}`);
   }
 }
 
@@ -253,7 +278,8 @@ export function encodeValue(out: CDROutputStream, value: CORBAValue, type: TypeC
  * Decode a value based on its TypeCode
  */
 export function decodeValue(inp: CDRInputStream, type: TypeCode): CORBAValue {
-  switch (type.kind) {
+  const typeKind = type.kind();
+  switch (typeKind) {
     case TCKind.tk_null:
     case TCKind.tk_void:
       return null;
@@ -301,7 +327,8 @@ export function decodeValue(inp: CDRInputStream, type: TypeCode): CORBAValue {
       return inp.readWChar();
 
     case TCKind.tk_fixed:
-      return decodeFixed(inp, type.digits!, type.scale!);
+      // TODO: Fixed type decoding - need to get digits/scale from TypeCode
+      throw new Error("Fixed type decoding not yet implemented");
 
     case TCKind.tk_any:
       return decodeAny(inp);
@@ -333,18 +360,23 @@ export function decodeValue(inp: CDRInputStream, type: TypeCode): CORBAValue {
       return decodeArray(inp, type);
 
     case TCKind.tk_alias:
-    case TCKind.tk_value_box:
+    case TCKind.tk_value_box: {
       // Decode the aliased/boxed type
-      return decodeValue(inp, type.contentType!);
+      const contentType2 = type.content_type();
+      if (contentType2) {
+        return decodeValue(inp, contentType2);
+      }
+      return null;
+    }
 
     default:
-      throw new Error(`Unsupported type kind for decoding: ${type.kind}`);
+      throw new Error(`Unsupported type kind for decoding: ${typeKind}`);
   }
 }
 
 // Helper functions for complex type encoding/decoding
 
-function encodeFixed(out: CDROutputStream, value: string, digits: number, scale: number): void {
+function _encodeFixed(out: CDROutputStream, value: string, digits: number, scale: number): void {
   // Parse the decimal string
   const parts = value.split(".");
   const intPart = parts[0] || "0";
@@ -390,7 +422,7 @@ function encodeFixed(out: CDROutputStream, value: string, digits: number, scale:
   out.writeOctetArray(bcd);
 }
 
-function decodeFixed(inp: CDRInputStream, digits: number, scale: number): string {
+function _decodeFixed(inp: CDRInputStream, digits: number, scale: number): string {
   const bytes = Math.ceil((digits + 1) / 2);
   const bcd = inp.readOctetArray(bytes);
 
@@ -476,17 +508,27 @@ async function decodeObjectReference(inp: CDRInputStream): Promise<CORBAValue> {
 }
 
 function encodeStruct(out: CDROutputStream, value: CORBAValue, type: TypeCode): void {
-  for (const member of type.members || []) {
-    const memberValue = (value as Record<string, CORBAValue>)[member.name];
-    encodeValue(out, memberValue, member.type);
+  const memberCount = type.member_count();
+  for (let i = 0; i < memberCount; i++) {
+    const memberName = type.member_name(i);
+    const memberType = type.member_type(i);
+    if (memberType) {
+      const memberValue = (value as Record<string, CORBAValue>)[memberName];
+      encodeValue(out, memberValue, memberType);
+    }
   }
 }
 
 function decodeStruct(inp: CDRInputStream, type: TypeCode): CORBAValue {
   const result: Record<string, CORBAValue> = {};
 
-  for (const member of type.members || []) {
-    result[member.name] = decodeValue(inp, member.type);
+  const memberCount = type.member_count();
+  for (let i = 0; i < memberCount; i++) {
+    const memberName = type.member_name(i);
+    const memberType = type.member_type(i);
+    if (memberType) {
+      result[memberName] = decodeValue(inp, memberType);
+    }
   }
 
   return result;
@@ -495,20 +537,33 @@ function decodeStruct(inp: CDRInputStream, type: TypeCode): CORBAValue {
 function encodeUnion(out: CDROutputStream, value: CORBAValue, type: TypeCode): void {
   // Encode discriminator
   const discriminator = (value as CORBAUnion)._discriminator;
-  encodeValue(out, discriminator, type.discriminatorType!);
+  const discriminatorType = type.discriminator_type();
+  if (discriminatorType) {
+    encodeValue(out, discriminator, discriminatorType);
+  }
 
-  // Find matching member
-  for (const member of type.unionMembers || []) {
-    if (member.label === discriminator) {
-      encodeValue(out, (value as Record<string, CORBAValue>)[member.name], member.type);
+  // Find matching member - need to use TypeCode methods
+  const memberCount = type.member_count();
+  for (let i = 0; i < memberCount; i++) {
+    const label = type.member_label(i);
+    if (label === discriminator) {
+      const memberName = type.member_name(i);
+      const memberType = type.member_type(i);
+      if (memberType) {
+        encodeValue(out, (value as Record<string, CORBAValue>)[memberName], memberType);
+      }
       return;
     }
   }
 
   // Use default member if no match
-  if (type.defaultIndex !== undefined && type.unionMembers) {
-    const defaultMember = type.unionMembers[type.defaultIndex];
-    encodeValue(out, (value as Record<string, CORBAValue>)[defaultMember.name], defaultMember.type);
+  const defaultIndex = type.default_index();
+  if (defaultIndex >= 0) {
+    const memberName = type.member_name(defaultIndex);
+    const memberType = type.member_type(defaultIndex);
+    if (memberType) {
+      encodeValue(out, (value as Record<string, CORBAValue>)[memberName], memberType);
+    }
   }
 }
 
@@ -516,21 +571,32 @@ function decodeUnion(inp: CDRInputStream, type: TypeCode): CORBAValue {
   const result: Record<string, CORBAValue> = {};
 
   // Decode discriminator
-  const discriminator = decodeValue(inp, type.discriminatorType!);
+  const discriminatorType = type.discriminator_type();
+  const discriminator = discriminatorType ? decodeValue(inp, discriminatorType) : inp.readULong();
   result._discriminator = discriminator;
 
-  // Find matching member
-  for (const member of type.unionMembers || []) {
-    if (member.label === discriminator) {
-      result[member.name] = decodeValue(inp, member.type);
+  // Find matching member - need to use TypeCode methods
+  const memberCount = type.member_count();
+  for (let i = 0; i < memberCount; i++) {
+    const label = type.member_label(i);
+    if (label === discriminator) {
+      const memberName = type.member_name(i);
+      const memberType = type.member_type(i);
+      if (memberType) {
+        result[memberName] = decodeValue(inp, memberType);
+      }
       return result;
     }
   }
 
   // Use default member if no match
-  if (type.defaultIndex !== undefined && type.unionMembers) {
-    const defaultMember = type.unionMembers[type.defaultIndex];
-    result[defaultMember.name] = decodeValue(inp, defaultMember.type);
+  const defaultIndex = type.default_index();
+  if (defaultIndex >= 0) {
+    const memberName = type.member_name(defaultIndex);
+    const memberType = type.member_type(defaultIndex);
+    if (memberType) {
+      result[memberName] = decodeValue(inp, memberType);
+    }
   }
 
   return result;
@@ -539,8 +605,15 @@ function decodeUnion(inp: CDRInputStream, type: TypeCode): CORBAValue {
 function encodeSequence(out: CDROutputStream, value: CORBAValue[], type: TypeCode): void {
   out.writeULong(value.length);
 
+  // Handle both CDR TypeCode (property) and main TypeCode (method)
+  const contentType = typeof type.content_type === 'function' ? type.content_type() : (type as any).contentType;
   for (const element of value) {
-    encodeValue(out, element, type.contentType!);
+    if (contentType) {
+      encodeValue(out, element, contentType);
+    } else {
+      // If no content type, encode as Any
+      encodeAny(out, Any.fromValue(element));
+    }
   }
 }
 
@@ -548,8 +621,29 @@ function decodeSequence(inp: CDRInputStream, type: TypeCode): CORBAValue[] {
   const length = inp.readULong();
   const result: CORBAValue[] = [];
 
+  // Handle both CDR TypeCode (property) and main TypeCode (method)
+  let contentType: TypeCode | undefined;
+  if (typeof type.content_type === 'function') {
+    try {
+      contentType = type.content_type();
+    } catch {
+      // Method might not exist or throw
+    }
+  } else if ('contentType' in type) {
+    contentType = (type as any).contentType;
+  }
+
   for (let i = 0; i < length; i++) {
-    result.push(decodeValue(inp, type.contentType!));
+    if (contentType) {
+      result.push(decodeValue(inp, contentType));
+    } else {
+      // If no content type and still have data, decode as long (default)
+      if (inp.remaining() >= 4) {
+        result.push(inp.readLong());
+      } else {
+        break; // No more data
+      }
+    }
   }
 
   return result;
@@ -557,19 +651,43 @@ function decodeSequence(inp: CDRInputStream, type: TypeCode): CORBAValue[] {
 
 function encodeArray(out: CDROutputStream, value: CORBAValue[], type: TypeCode): void {
   // Arrays don't encode length (fixed size)
-  const length = type.length || 0;
+  const length = typeof type.length === 'function' ? type.length() : (type as any).length || 0;
 
+  const contentType = typeof type.content_type === 'function' ? type.content_type() : (type as any).contentType;
   for (let i = 0; i < length; i++) {
-    encodeValue(out, value[i], type.contentType!);
+    if (contentType) {
+      encodeValue(out, value[i], contentType);
+    }
   }
 }
 
 function decodeArray(inp: CDRInputStream, type: TypeCode): CORBAValue[] {
-  const length = type.length || 0;
+  const length = typeof type.length === 'function' ? type.length() : (type as any).length || 0;
   const result: CORBAValue[] = [];
 
+  // Handle both CDR TypeCode (property) and main TypeCode (method)
+  let contentType: TypeCode | undefined;
+  if (typeof type.content_type === 'function') {
+    try {
+      contentType = type.content_type();
+    } catch {
+      // Method might not exist or throw
+    }
+  } else if ('contentType' in type) {
+    contentType = (type as any).contentType;
+  }
+
   for (let i = 0; i < length; i++) {
-    result.push(decodeValue(inp, type.contentType!));
+    if (contentType) {
+      result.push(decodeValue(inp, contentType));
+    } else {
+      // If no content type and still have data, decode as long (default)
+      if (inp.remaining() >= 4) {
+        result.push(inp.readLong());
+      } else {
+        break; // No more data
+      }
+    }
   }
 
   return result;
@@ -580,38 +698,38 @@ function decodeArray(inp: CDRInputStream, type: TypeCode): CORBAValue[] {
  */
 function detectTypeCode(value: CORBAValue): TypeCode {
   if (value === null || value === undefined) {
-    return new TypeCode(TCKind.tk_null);
+    return new TypeCode(TypeCode.Kind.tk_null);
   }
 
   if (typeof value === "boolean") {
-    return new TypeCode(TCKind.tk_boolean);
+    return new TypeCode(TypeCode.Kind.tk_boolean);
   }
 
   if (typeof value === "number") {
     if (Number.isInteger(value)) {
       if (value >= -2147483648 && value <= 2147483647) {
-        return new TypeCode(TCKind.tk_long);
+        return new TypeCode(TypeCode.Kind.tk_long);
       } else {
-        return new TypeCode(TCKind.tk_longlong);
+        return new TypeCode(TypeCode.Kind.tk_longlong);
       }
     } else {
-      return new TypeCode(TCKind.tk_double);
+      return new TypeCode(TypeCode.Kind.tk_double);
     }
   }
 
   if (typeof value === "string") {
-    return new TypeCode(TCKind.tk_string);
+    return new TypeCode(TypeCode.Kind.tk_string);
   }
 
   if (typeof value === "bigint") {
-    return new TypeCode(TCKind.tk_longlong);
+    return new TypeCode(TypeCode.Kind.tk_longlong);
   }
 
   if (Array.isArray(value)) {
     // Try to detect element type from array contents
     if (value.length === 0) {
       // Empty array - default to sequence of any
-      return TypeCode.createSequence(new TypeCode(TCKind.tk_any));
+      return TypeCode.create_sequence_tc(0, new TypeCode(TypeCode.Kind.tk_any));
     }
 
     // Check if all elements are of the same type
@@ -628,25 +746,25 @@ function detectTypeCode(value: CORBAValue): TypeCode {
 
     if (uniformType) {
       // All elements are the same type, use that
-      return TypeCode.createSequence(firstElemType);
+      return TypeCode.create_sequence_tc(0, firstElemType);
     } else {
       // Mixed types - use any
-      return TypeCode.createSequence(new TypeCode(TCKind.tk_any));
+      return TypeCode.create_sequence_tc(0, new TypeCode(TypeCode.Kind.tk_any));
     }
   }
 
   if (value instanceof Any) {
-    return new TypeCode(TCKind.tk_any);
+    return new TypeCode(TypeCode.Kind.tk_any);
   }
 
   if (value instanceof TypeCode) {
-    return new TypeCode(TCKind.tk_TypeCode);
+    return new TypeCode(TypeCode.Kind.tk_TypeCode);
   }
 
   if (typeof value === "object") {
     // Check if it's an object reference
     if ((value as CORBAObjectRef)._ior) {
-      return new TypeCode(TCKind.tk_objref);
+      return new TypeCode(TypeCode.Kind.tk_objref);
     }
     // Generic objects can't be auto-encoded without proper TypeCode
     throw new Error("Cannot infer TypeCode for generic object. Provide explicit TypeCode.");

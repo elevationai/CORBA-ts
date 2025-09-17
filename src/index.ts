@@ -18,6 +18,9 @@ export * from "./stub.ts";
 // Export TypeCode
 export * from "./typecode.ts";
 
+// Export Any class
+export { Any } from "./core/cdr/any.ts";
+
 // Export Policy interfaces
 export * from "./policy.ts";
 
@@ -48,6 +51,9 @@ export type { NamingServerConfig } from "./naming_server.ts";
 
 // Export Proxy functionality
 export * from "./proxy.ts";
+
+// Export EventHandler
+export { EventHandler, createEventHandler, type Event, type EventCallback, type EventListener } from "./event_handler.ts";
 
 // Main initialization function
 import { init as initORB } from "./orb.ts";

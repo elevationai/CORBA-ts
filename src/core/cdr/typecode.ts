@@ -5,6 +5,7 @@
 
 import { CDROutputStream } from "./encoder.ts";
 import { CDRInputStream } from "./decoder.ts";
+import { TypeCode as MainTypeCode } from "../../typecode.ts";
 
 /**
  * TypeCode kinds as defined in CORBA specification
@@ -205,12 +206,15 @@ export class TypeCode {
 /**
  * Encode a TypeCode to CDR
  */
-export function encodeTypeCode(out: CDROutputStream, tc: TypeCode): void {
+export function encodeTypeCode(out: CDROutputStream, tc: TypeCode | MainTypeCode): void {
+  // Handle both CDR TypeCode and main TypeCode
+  const kind = typeof tc.kind === 'function' ? tc.kind() : tc.kind;
+
   // Write the kind
-  out.writeULong(tc.kind);
+  out.writeULong(kind);
 
   // Write type-specific parameters
-  switch (tc.kind) {
+  switch (kind) {
     // Simple types with no parameters
     case TCKind.tk_null:
     case TCKind.tk_void:
@@ -234,61 +238,75 @@ export function encodeTypeCode(out: CDROutputStream, tc: TypeCode): void {
       break;
 
     case TCKind.tk_string:
-    case TCKind.tk_wstring:
+    case TCKind.tk_wstring: {
       // Write bound (0 for unbounded)
-      out.writeULong(tc.length || 0);
+      // Handle both CDR TypeCode (property) and main TypeCode (method)
+      let bound = 0;
+      if (typeof tc.length === 'function') {
+        try {
+          bound = tc.length() || 0;
+        } catch {
+          bound = 0;  // If method throws, use 0 (unbounded)
+        }
+      } else {
+        bound = tc.length || 0;
+      }
+      out.writeULong(bound);
       break;
+    }
 
-    case TCKind.tk_fixed:
+    case TCKind.tk_fixed: {
       // Write digits and scale
-      out.writeUShort(tc.digits || 0);
-      out.writeShort(tc.scale || 0);
+      const cdrTc = tc as TypeCode;
+      out.writeUShort(cdrTc.digits || 0);
+      out.writeShort(cdrTc.scale || 0);
       break;
+    }
 
     case TCKind.tk_objref:
     case TCKind.tk_abstract_interface:
     case TCKind.tk_native:
     case TCKind.tk_local_interface:
       // Complex type: write encapsulation
-      encodeComplex(out, tc);
+      encodeComplex(out, tc as TypeCode);
       break;
 
     case TCKind.tk_struct:
     case TCKind.tk_except:
       // Write struct/exception TypeCode
-      encodeStruct(out, tc);
+      encodeStruct(out, tc as TypeCode);
       break;
 
     case TCKind.tk_union:
       // Write union TypeCode
-      encodeUnion(out, tc);
+      encodeUnion(out, tc as TypeCode);
       break;
 
     case TCKind.tk_enum:
       // Write enum TypeCode
-      encodeEnum(out, tc);
+      encodeEnum(out, tc as TypeCode);
       break;
 
     case TCKind.tk_sequence:
     case TCKind.tk_array:
       // Write sequence/array TypeCode
-      encodeSequence(out, tc);
+      encodeSequence(out, tc as TypeCode);
       break;
 
     case TCKind.tk_alias:
     case TCKind.tk_value_box:
       // Write alias TypeCode
-      encodeAlias(out, tc);
+      encodeAlias(out, tc as TypeCode);
       break;
 
     case TCKind.tk_value:
     case TCKind.tk_event:
       // Write value TypeCode
-      encodeValue(out, tc);
+      encodeValue(out, tc as TypeCode);
       break;
 
     default:
-      throw new Error(`Unsupported TypeCode kind: ${tc.kind}`);
+      throw new Error(`Unsupported TypeCode kind: ${typeof tc.kind === 'function' ? tc.kind() : tc.kind}`);
   }
 }
 
@@ -534,8 +552,17 @@ function decodeEnum(inp: CDRInputStream, kind: TCKind): TypeCode {
 function encodeSequence(out: CDROutputStream, tc: TypeCode): void {
   const encap = new CDROutputStream(256, out.isLittleEndian());
 
-  encodeTypeCode(encap, tc.contentType!);
-  encap.writeULong(tc.length || 0);
+  // Handle both CDR TypeCode (property) and main TypeCode (method)
+  const contentType = tc.contentType || (typeof (tc as any).content_type === 'function' ? (tc as any).content_type() : undefined);
+  if (contentType) {
+    encodeTypeCode(encap, contentType);
+  } else {
+    // Default to tk_any if no content type
+    encodeTypeCode(encap, new TypeCode(TCKind.tk_any));
+  }
+
+  const length = tc.length || (typeof (tc as any).length === 'function' ? (tc as any).length() : 0);
+  encap.writeULong(length || 0);
 
   const encapBuffer = encap.getBuffer();
   out.writeULong(encapBuffer.length);

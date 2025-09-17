@@ -210,9 +210,11 @@ export class CDROutputStream {
    */
   writeString(value: string): void {
     const bytes = new TextEncoder().encode(value);
-    // For empty strings (like null IOR), write length 0 with no data
+    // CORBA spec: even empty strings must have a null terminator
+    // Empty string is encoded as length=1 with just null byte
     if (bytes.length === 0) {
-      this.writeULong(0);
+      this.writeULong(1);  // Length 1 for null terminator
+      this.writeOctet(0);  // Write null terminator
     } else {
       this.writeULong(bytes.length + 1); // Include null terminator in length
       this.writeOctetArray(bytes);

@@ -139,6 +139,9 @@ export class IORUtil {
   static createIIOPProfile(body: IIOPProfileBody): TaggedProfile {
     const cdr = new CDROutputStream();
 
+    // IIOP profiles must be encapsulated - start with byte order marker
+    cdr.writeOctet(0); // 0 = big-endian (default)
+
     // Encode profile body
     // Version
     cdr.writeOctet(body.iiop_version.major);
@@ -178,7 +181,15 @@ export class IORUtil {
       return null;
     }
 
-    const cdr = new CDRInputStream(profile.profileData);
+    // IIOP profiles are encapsulated - first byte is byte order marker
+    const byteOrder = profile.profileData[0];
+    const isLittleEndian = byteOrder !== 0;
+
+    // Create CDR stream with proper endianness for the encapsulated data
+    const cdr = new CDRInputStream(profile.profileData, isLittleEndian);
+
+    // Skip the byte order marker we already read
+    cdr.readOctet();
 
     // Version
     const major = cdr.readOctet();
