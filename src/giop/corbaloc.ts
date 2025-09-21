@@ -27,7 +27,7 @@ export enum CorbalocProtocol {
  * A single address in a corbaloc URL
  */
 export interface CorbalocAddress {
-  protocol: CorbalocProtocol;
+  protocol: CorbalocProtocol | string;  // Allow string for custom protocols
   version?: GIOPVersion;
   host?: string;
   port?: number;
