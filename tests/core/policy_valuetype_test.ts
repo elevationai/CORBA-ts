@@ -2,7 +2,7 @@
  * Policy and ValueType implementation tests
  */
 
-import { assert, assertEquals } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import { assert, assertEquals } from "@std/assert";
 import { Policy } from "../../src/policy.ts";
 import { BoxedValueBase } from "../../src/valuetype.ts";
 

@@ -2,7 +2,7 @@
  * CDR Encoder/Decoder Tests
  */
 
-import { assertEquals, assertThrows } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import { assertEquals, assertThrows } from "@std/assert";
 import { CDROutputStream } from "../../src/core/cdr/encoder.ts";
 import { CDRInputStream } from "../../src/core/cdr/decoder.ts";
 

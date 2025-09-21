@@ -2,7 +2,7 @@
  * Proxy transport and serialization tests
  */
 
-import { assertEquals, assertExists } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import { assertEquals, assertExists } from "@std/assert";
 import { ProxyFactory } from "../../src/proxy.ts";
 import { init } from "../../src/orb.ts";
 import { CORBA } from "../../src/types.ts";

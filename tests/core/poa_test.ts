@@ -3,7 +3,7 @@
  * Testing proper IOR creation and object ID extraction
  */
 
-import { assertEquals, assertExists } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import { assertEquals, assertExists } from "@std/assert";
 import { POA, RootPOA, type Servant } from "../../src/poa.ts";
 import { IORUtil } from "../../src/giop/ior.ts";
 import { CDRInputStream } from "../../src/core/cdr/decoder.ts";

@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std/testing/asserts.ts";
+import { assertEquals } from "@std/assert";
 import { CDROutputStream } from "../../src/core/cdr/encoder.ts";
 import { CDRInputStream } from "../../src/core/cdr/decoder.ts";
 import { encodeWithTypeCode } from "../../src/core/cdr/typecode-encoder.ts";

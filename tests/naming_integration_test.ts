@@ -3,7 +3,7 @@
  * Tests the complete naming service including server, client, and network communication
  */
 
-import { assert, assertEquals, assertExists } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import { assert, assertEquals, assertExists } from "@std/assert";
 import { NamingServer } from "../src/naming_server.ts";
 import { NameBuilder, NamingUtils } from "../src/naming_client.ts";
 import { NameUtil } from "../src/naming.ts";

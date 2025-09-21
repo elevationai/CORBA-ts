@@ -2,7 +2,7 @@
  * Unit Tests for CORBA Naming Service
  */
 
-import { assert, assertEquals, assertExists, assertRejects } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import { assert, assertEquals, assertExists, assertRejects } from "@std/assert";
 import {
   BindingType,
   CosNaming,

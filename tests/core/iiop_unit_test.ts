@@ -3,7 +3,7 @@
  * These are UNIT tests - no actual network connections
  */
 
-import { assertEquals } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import { assertEquals } from "@std/assert";
 
 /**
  * Test GIOP message creation and validation

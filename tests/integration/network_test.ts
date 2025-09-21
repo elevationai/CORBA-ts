@@ -3,7 +3,7 @@
  * Tests actual TCP communication between GIOP client and server
  */
 
-import { assertEquals, assertExists } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import { assertEquals, assertExists } from "@std/assert";
 import { GIOPTransport } from "../../src/giop/transport.ts";
 import { GIOPReply, GIOPRequest } from "../../src/giop/messages.ts";
 import { ConnectionEndpoint } from "../../src/giop/connection.ts";

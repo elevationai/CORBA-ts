@@ -3,7 +3,7 @@
  * No actual network binding
  */
 
-import { assertEquals } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import { assertEquals } from "@std/assert";
 
 Deno.test("IIOP: GIOP message format validation", () => {
   // Test GIOP header creation

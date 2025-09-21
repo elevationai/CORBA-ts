@@ -3,7 +3,7 @@
  * that were updated from placeholder implementations to full CDR-based serialization
  */
 
-import { assertEquals } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import { assertEquals } from "@std/assert";
 import { createIOR, GIOPReplyMessage, GIOPReplyStatusType, GIOPRequestMessage, IIOPProfile, parseIOR } from "../../src/giop.ts";
 
 Deno.test("GIOP Request: Basic serialization", async () => {

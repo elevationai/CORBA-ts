@@ -2,7 +2,7 @@
  * ORB invoke() method tests - specifically testing the TypeCode-aware improvements
  */
 
-import { assertEquals, assertThrows } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import { assertEquals, assertThrows } from "@std/assert";
 import { init, ORB_instance } from "../../src/orb.ts";
 import { CORBA } from "../../src/types.ts";
 

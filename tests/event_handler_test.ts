@@ -2,7 +2,7 @@
  * Tests for EventHandler
  */
 
-import { assert, assertEquals, assertExists } from "jsr:@std/assert@1";
+import { assert, assertEquals, assertExists } from "@std/assert";
 import { createEventHandler, type Event, type EventCallback, EventHandler } from "../src/event_handler.ts";
 import { init } from "../src/orb.ts";
 import { getRootPOA } from "../src/poa.ts";

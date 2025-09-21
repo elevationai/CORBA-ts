@@ -2,7 +2,7 @@
  * Naming Service implementation tests
  */
 
-import { assertEquals, assertExists } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import { assertEquals, assertExists } from "@std/assert";
 import { BindingType, NamingContextImpl } from "../../src/naming.ts";
 import { CORBA } from "../../src/types.ts";
 

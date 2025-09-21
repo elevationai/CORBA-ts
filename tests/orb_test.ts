@@ -1,4 +1,4 @@
-import { assertEquals, assertExists } from "https://deno.land/std/testing/asserts.ts";
+import { assertEquals, assertExists } from "@std/assert";
 import { init, ORB_instance } from "../src/orb.ts";
 import { CORBA, init as initCORBA } from "../src/index.ts";
 import { CDROutputStream } from "../src/core/cdr/encoder.ts";

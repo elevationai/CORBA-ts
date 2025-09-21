@@ -4,7 +4,8 @@
  */
 
 import { CDRInputStream, CDROutputStream } from "../core/cdr/index.ts";
-import { ComponentId, GIOPVersion, IIOPProfileBody, IOR, ProfileId, TaggedComponent, TaggedProfile } from "./types.ts";
+import { ComponentId, IIOPProfileBody, IOR, ProfileId, TaggedComponent, TaggedProfile } from "./types.ts";
+import { parseCorbaloc as parseCorbalocURL, CorbalocProtocol } from "./corbaloc.ts";
 
 /**
  * IOR utilities and operations
@@ -56,40 +57,66 @@ export class IORUtil {
   }
 
   /**
-   * Parse corbaloc URL
-   * Format: corbaloc:[iiop]:[version@]host[:port][/object_key]
+   * Parse corbaloc URL with full feature support
+   * Supports multiple addresses, protocols, IPv6, and proper escaping
    */
   private static parseCorbaloc(url: string): IOR {
-    // Simple corbaloc parser (IIOP only)
-    const parts = url.match(/^(?:iiop:)?(?:(\d+\.\d+)@)?([^:/]+)(?::(\d+))?(?:\/(.*))?$/);
+    const parsed = parseCorbalocURL("corbaloc:" + url);
+    const profiles: TaggedProfile[] = [];
 
-    if (!parts) {
-      throw new Error("Invalid corbaloc URL");
+    // Create profiles for each address
+    for (const addr of parsed.addresses) {
+      if (addr.protocol === CorbalocProtocol.RIR) {
+        // RIR protocol - special handling for resolve initial references
+        // This is typically used with local ORB references
+        // For now, we'll create a special marker profile
+        profiles.push({
+          profileId: ProfileId.TAG_MULTIPLE_COMPONENTS,
+          profileData: new Uint8Array([0]), // Placeholder for RIR
+        });
+      } else if (addr.protocol === CorbalocProtocol.IIOP || addr.protocol === CorbalocProtocol.SSLIOP) {
+        // Create IIOP profile for this address
+        if (!addr.host || !addr.port) {
+          throw new Error(`Invalid address: missing host or port for ${addr.protocol}`);
+        }
+
+        const profile = this.createIIOPProfile({
+          iiop_version: addr.version || { major: 1, minor: 2 },
+          host: addr.host,
+          port: addr.port,
+          object_key: parsed.rawObjectKey,
+          components: addr.protocol === CorbalocProtocol.SSLIOP ? [
+            // Add SSL component for SSLIOP
+            this.createSSLComponent(addr.port),
+          ] : [],
+        });
+        profiles.push(profile);
+      }
     }
 
-    const [, version, host, portStr, keyStr] = parts;
-
-    // Parse version
-    const iiop_version: GIOPVersion = version ? { major: parseInt(version[0]), minor: parseInt(version[2]) } : { major: 1, minor: 2 };
-
-    // Parse port
-    const port = portStr ? parseInt(portStr) : 2809; // Default IIOP port
-
-    // Parse object key
-    const object_key = keyStr ? new TextEncoder().encode(decodeURIComponent(keyStr)) : new Uint8Array(0);
-
-    // Create IIOP profile
-    const profile = this.createIIOPProfile({
-      iiop_version,
-      host,
-      port,
-      object_key,
-      components: [],
-    });
+    // Derive type ID - use standard CORBA Object if not specified
+    const typeId = "IDL:omg.org/CORBA/Object:1.0";
 
     return {
-      typeId: "",
-      profiles: [profile],
+      typeId,
+      profiles,
+    };
+  }
+
+  /**
+   * Create SSL/TLS component for SSLIOP profiles
+   */
+  private static createSSLComponent(port: number): TaggedComponent {
+    const cdr = new CDROutputStream();
+
+    // SSL component structure (simplified)
+    cdr.writeUShort(0x0001); // Supports
+    cdr.writeUShort(0x0001); // Requires
+    cdr.writeUShort(port);   // Port
+
+    return {
+      componentId: ComponentId.TAG_SSL_SEC_TRANS,
+      componentData: cdr.getBuffer(),
     };
   }
 

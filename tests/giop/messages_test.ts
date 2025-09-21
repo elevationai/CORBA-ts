@@ -2,7 +2,7 @@
  * GIOP Message Tests
  */
 
-import { assertEquals, assertExists } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import { assertEquals, assertExists } from "@std/assert";
 import { GIOPCancelRequest, GIOPCloseConnection, GIOPMessageError, GIOPReply, GIOPRequest } from "../../src/giop/messages.ts";
 import { AddressingDisposition, GIOPMessageType, ReplyStatusType } from "../../src/giop/types.ts";
 import { CDROutputStream } from "../../src/core/cdr/index.ts";
