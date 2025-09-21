@@ -10,7 +10,8 @@ import { NamingServer, NamingServerCLI } from "../src/naming_server.ts";
 if (import.meta.main) {
   // Run the CLI
   await NamingServerCLI.run();
-} else {
+}
+else {
   // Export for programmatic usage
   console.log("Example: Programmatic usage of NamingServer");
 
@@ -34,7 +35,8 @@ if (import.meta.main) {
       await server.stop();
       console.log("Example completed");
     }, 30000);
-  } catch (error) {
+  }
+  catch (error) {
     console.error("Failed to start naming service:", error);
   }
 }

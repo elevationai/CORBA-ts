@@ -4,14 +4,7 @@
  */
 
 import { assertEquals } from "https://deno.land/std@0.220.0/assert/mod.ts";
-import {
-  createIOR,
-  GIOPReplyMessage,
-  GIOPReplyStatusType,
-  GIOPRequestMessage,
-  IIOPProfile,
-  parseIOR,
-} from "../../src/giop.ts";
+import { createIOR, GIOPReplyMessage, GIOPReplyStatusType, GIOPRequestMessage, IIOPProfile, parseIOR } from "../../src/giop.ts";
 
 Deno.test("GIOP Request: Basic serialization", async () => {
   const request = new GIOPRequestMessage();

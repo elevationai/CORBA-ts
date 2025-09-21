@@ -32,9 +32,11 @@ export class IORUtil {
   static fromString(iorString: string): IOR {
     if (iorString.startsWith("IOR:")) {
       return this.parseHexIOR(iorString.substring(4));
-    } else if (iorString.startsWith("corbaloc:")) {
+    }
+    else if (iorString.startsWith("corbaloc:")) {
       return this.parseCorbaloc(iorString.substring(9));
-    } else {
+    }
+    else {
       throw new Error("Invalid IOR string format");
     }
   }
@@ -68,9 +70,7 @@ export class IORUtil {
     const [, version, host, portStr, keyStr] = parts;
 
     // Parse version
-    const iiop_version: GIOPVersion = version
-      ? { major: parseInt(version[0]), minor: parseInt(version[2]) }
-      : { major: 1, minor: 2 };
+    const iiop_version: GIOPVersion = version ? { major: parseInt(version[0]), minor: parseInt(version[2]) } : { major: 1, minor: 2 };
 
     // Parse port
     const port = portStr ? parseInt(portStr) : 2809; // Default IIOP port

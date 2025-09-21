@@ -73,7 +73,8 @@ export function decodeWithTypeCode(
       const contentType = tc.content_type();
       if (contentType) {
         return decodeWithTypeCode(cdr, contentType);
-      } else {
+      }
+      else {
         // Fallback to string
         return cdr.readString();
       }
@@ -91,7 +92,8 @@ export function decodeWithTypeCode(
       if (iorString === "") {
         // Empty IOR string represents null reference
         return { _ior: "" };
-      } else {
+      }
+      else {
         // Return object with _ior property
         return { _ior: iorString };
       }
@@ -121,7 +123,8 @@ function decodeStruct(
 
     if (memberType) {
       result[memberName] = decodeWithTypeCode(cdr, memberType);
-    } else {
+    }
+    else {
       // If no member type info, try to decode based on common patterns
       result[memberName] = decodeBasedOnName(cdr, memberName);
     }
@@ -148,7 +151,8 @@ function decodeSequence(
   for (let i = 0; i < length; i++) {
     if (elementType) {
       result.push(decodeWithTypeCode(cdr, elementType));
-    } else {
+    }
+    else {
       // Fallback to string
       result.push(cdr.readString());
     }
@@ -176,7 +180,8 @@ function decodeArray(
   for (let i = 0; i < length; i++) {
     if (elementType) {
       result.push(decodeWithTypeCode(cdr, elementType));
-    } else {
+    }
+    else {
       // Fallback to string
       result.push(cdr.readString());
     }
@@ -193,13 +198,17 @@ function decodeBasedOnName(cdr: CDRInputStream, name: string): unknown {
 
   if (lowerName.includes("id") || lowerName.includes("code") || lowerName.includes("type")) {
     return cdr.readLong();
-  } else if (lowerName.includes("name") || lowerName.includes("string") || lowerName.includes("text")) {
+  }
+  else if (lowerName.includes("name") || lowerName.includes("string") || lowerName.includes("text")) {
     return cdr.readString();
-  } else if (lowerName.includes("flag") || lowerName.includes("enabled") || lowerName.includes("active")) {
+  }
+  else if (lowerName.includes("flag") || lowerName.includes("enabled") || lowerName.includes("active")) {
     return cdr.readBoolean();
-  } else if (lowerName.includes("count") || lowerName.includes("size") || lowerName.includes("length")) {
+  }
+  else if (lowerName.includes("count") || lowerName.includes("size") || lowerName.includes("length")) {
     return cdr.readULong();
-  } else {
+  }
+  else {
     // Default to string
     return cdr.readString();
   }

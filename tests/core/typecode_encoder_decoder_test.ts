@@ -312,8 +312,7 @@ Deno.test("TypeCode Encoder/Decoder: Complex nested sequence", () => {
   const structTc = new TypeCode(TypeCode.Kind.tk_struct);
   structTc.member_count = () => 2;
   structTc.member_name = (i: number) => ["id", "value"][i];
-  structTc.member_type = (i: number) =>
-    i === 0 ? new TypeCode(TypeCode.Kind.tk_long) : new TypeCode(TypeCode.Kind.tk_string);
+  structTc.member_type = (i: number) => i === 0 ? new TypeCode(TypeCode.Kind.tk_long) : new TypeCode(TypeCode.Kind.tk_string);
 
   const tc = new TypeCode(TypeCode.Kind.tk_sequence);
   tc.content_type = () => structTc;
@@ -347,7 +346,8 @@ Deno.test("TypeCode Encoder/Decoder: Any type with unsupported object", () => {
   try {
     encodeWithTypeCode(cdr, value, tc);
     assertEquals(true, false, "Expected error for unsupported object in Any");
-  } catch (error) {
+  }
+  catch (error) {
     assertEquals((error as Error).message.includes("Cannot infer TypeCode"), true);
   }
 });
@@ -362,7 +362,8 @@ Deno.test("TypeCode Encoder/Decoder: Unknown type handling", () => {
   try {
     encodeWithTypeCode(cdr, value, tc);
     assertEquals(true, false, "Expected error for unknown TypeCode kind");
-  } catch (error) {
+  }
+  catch (error) {
     assertEquals((error as Error).message.includes("Unsupported TypeCode kind"), true);
   }
 });

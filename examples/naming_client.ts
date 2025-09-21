@@ -68,7 +68,8 @@ function demonstrateNamingClient() {
     console.log(`   catch (error) { if (error instanceof CosNaming.NotFound) { ... } }\n`);
 
     console.log("=== Example completed ===");
-  } catch (error) {
+  }
+  catch (error) {
     console.error("Error:", error);
   }
 }

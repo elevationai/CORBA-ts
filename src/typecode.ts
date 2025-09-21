@@ -20,10 +20,12 @@ export function inferTypeCode(value: unknown): TypeCode {
       if (Number.isInteger(value)) {
         if (value >= -2147483648 && value <= 2147483647) {
           return new TypeCode(TypeCode.Kind.tk_long);
-        } else {
+        }
+        else {
           return new TypeCode(TypeCode.Kind.tk_longlong);
         }
-      } else {
+      }
+      else {
         return new TypeCode(TypeCode.Kind.tk_double);
       }
     case "string":
@@ -33,7 +35,8 @@ export function inferTypeCode(value: unknown): TypeCode {
     case "object":
       if (Array.isArray(value)) {
         return new TypeCode(TypeCode.Kind.tk_sequence);
-      } else {
+      }
+      else {
         return new TypeCode(TypeCode.Kind.tk_any);
       }
     default:
@@ -112,14 +115,15 @@ export class TypeCode {
   member_name(index: number): string {
     this.check_method_validity("member_name");
     const members = this._params.get("members");
-    
+
     // Handle different member storage formats
     if (this._kind === TypeCode.Kind.tk_enum) {
       // Enums store members as a simple string array
       const enumMembers = members as string[];
       this.check_index(index, enumMembers.length);
       return enumMembers[index];
-    } else {
+    }
+    else {
       // Structs, unions, etc. store members as objects
       const structMembers = members as Array<{ name: string; type: TypeCode }>;
       this.check_index(index, structMembers.length);
@@ -187,6 +191,14 @@ export class TypeCode {
    */
   set_param(name: string, value: unknown): void {
     this._params.set(name, value);
+  }
+
+  /**
+   * Get a parameter for this TypeCode
+   * Used internally during TypeCode encoding
+   */
+  get_param(name: string): unknown {
+    return this._params.get(name);
   }
 
   /**
@@ -308,10 +320,19 @@ export namespace TypeCode {
       case Kind.tk_except:
       case Kind.tk_value:
         return [...basic_methods, "id", "name", "member_count", "member_name", "member_type"];
-      
+
       case Kind.tk_union:
-        return [...basic_methods, "id", "name", "member_count", "member_name", "member_type", 
-                "discriminator_type", "member_label", "default_index"];
+        return [
+          ...basic_methods,
+          "id",
+          "name",
+          "member_count",
+          "member_name",
+          "member_type",
+          "discriminator_type",
+          "member_label",
+          "default_index",
+        ];
 
       case Kind.tk_string:
       case Kind.tk_wstring:
@@ -384,6 +405,93 @@ export namespace TypeCode {
     const tc = new TypeCode(Kind.tk_enum);
     tc.set_param("id", id);
     tc.set_param("name", name);
+    tc.set_param("members", members);
+    return tc;
+  }
+
+  /**
+   * Create a TypeCode for an exception
+   */
+  export function create_exception_tc(
+    id: string,
+    name: string,
+    members: Array<{ name: string; type: TypeCode }>,
+  ): TypeCode {
+    const tc = new TypeCode(Kind.tk_except);
+    tc.set_param("id", id);
+    tc.set_param("name", name);
+    tc.set_param("members", members);
+    return tc;
+  }
+
+  /**
+   * Create a TypeCode for an array
+   */
+  export function create_array_tc(length: number, element_type: TypeCode): TypeCode {
+    const tc = new TypeCode(Kind.tk_array);
+    tc.set_param("length", length);
+    tc.set_param("content_type", element_type);
+    return tc;
+  }
+
+  /**
+   * Create a TypeCode for an alias
+   */
+  export function create_alias_tc(id: string, name: string, original_type: TypeCode): TypeCode {
+    const tc = new TypeCode(Kind.tk_alias);
+    tc.set_param("id", id);
+    tc.set_param("name", name);
+    tc.set_param("content_type", original_type);
+    return tc;
+  }
+
+  /**
+   * Create a TypeCode for a wide string
+   */
+  export function create_wstring_tc(bound: number): TypeCode {
+    const tc = new TypeCode(Kind.tk_wstring);
+    tc.set_param("length", bound);
+    return tc;
+  }
+
+  /**
+   * Create a TypeCode for a fixed type
+   */
+  export function create_fixed_tc(digits: number, scale: number): TypeCode {
+    const tc = new TypeCode(Kind.tk_fixed);
+    tc.set_param("digits", digits);
+    tc.set_param("scale", scale);
+    return tc;
+  }
+
+  /**
+   * Create a TypeCode for a value box
+   */
+  export function create_value_box_tc(id: string, name: string, boxed_type: TypeCode): TypeCode {
+    const tc = new TypeCode(Kind.tk_value_box);
+    tc.set_param("id", id);
+    tc.set_param("name", name);
+    tc.set_param("content_type", boxed_type);
+    return tc;
+  }
+
+  /**
+   * Create a TypeCode for a value type
+   */
+  export function create_value_tc(
+    id: string,
+    name: string,
+    type_modifier: number,
+    concrete_base: TypeCode | null,
+    members: Array<{ name: string; type: TypeCode; visibility?: number }>,
+  ): TypeCode {
+    const tc = new TypeCode(Kind.tk_value);
+    tc.set_param("id", id);
+    tc.set_param("name", name);
+    tc.set_param("typeModifier", type_modifier);
+    if (concrete_base) {
+      tc.set_param("concreteBase", concrete_base);
+    }
     tc.set_param("members", members);
     return tc;
   }

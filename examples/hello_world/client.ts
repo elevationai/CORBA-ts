@@ -38,7 +38,8 @@ async function main() {
   try {
     const result = await hello.sayHello("CORBA World");
     console.log("Result:", result);
-  } catch (e) {
+  }
+  catch (e) {
     console.error("Error:", e);
   }
 

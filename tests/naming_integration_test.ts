@@ -56,7 +56,8 @@ Deno.test({
       // Stop server
       await server.stop();
       assertEquals(server.isRunning(), false);
-    } catch (error) {
+    }
+    catch (error) {
       // Cleanup in case of error
       if (server.isRunning()) {
         await server.stop();
@@ -218,7 +219,8 @@ Deno.test({
       console.log(`   Generated URL: ${url}`);
 
       console.log("5. Workflow completed successfully");
-    } finally {
+    }
+    finally {
       await server.stop();
     }
   },
@@ -246,7 +248,8 @@ Deno.test({
       try {
         await rootContext.to_name("");
         assert(false, "Should have thrown InvalidName");
-      } catch (_error) {
+      }
+      catch (_error) {
         console.log("   ✓ Empty string name correctly rejected");
       }
 
@@ -254,7 +257,8 @@ Deno.test({
       try {
         await rootContext.resolve_str("NonExistent/Service");
         assert(false, "Should have thrown NotFound");
-      } catch (_error) {
+      }
+      catch (_error) {
         console.log("   ✓ Non-existent name resolution correctly rejected");
       }
 
@@ -267,7 +271,8 @@ Deno.test({
       try {
         await rootContext.bind(testName, testService);
         assert(false, "Should have thrown AlreadyBound");
-      } catch (_error) {
+      }
+      catch (_error) {
         console.log("   ✓ Double binding correctly rejected");
       }
 
@@ -275,12 +280,14 @@ Deno.test({
       try {
         await rootContext.unbind(NameUtil.createSimpleName("NonExistent"));
         assert(false, "Should have thrown NotFound");
-      } catch (_error) {
+      }
+      catch (_error) {
         console.log("   ✓ Unbinding non-existent name correctly rejected");
       }
 
       console.log("All error conditions handled correctly");
-    } finally {
+    }
+    finally {
       await server.stop();
     }
   },
@@ -328,9 +335,7 @@ Deno.test({
 
       const resolveTime = Date.now() - resolveStart;
       console.log(
-        `   Resolved ${numBindings} objects in ${resolveTime}ms (${
-          (resolveTime / numBindings).toFixed(2)
-        }ms per resolution)`,
+        `   Resolved ${numBindings} objects in ${resolveTime}ms (${(resolveTime / numBindings).toFixed(2)}ms per resolution)`,
       );
 
       // Test 3: Listing performance
@@ -360,7 +365,8 @@ Deno.test({
       await Promise.all(promises);
       const concurrentTime = Date.now() - concurrentStart;
       console.log(`   Completed 100 concurrent bind+resolve operations in ${concurrentTime}ms`);
-    } finally {
+    }
+    finally {
       await server.stop();
     }
   },
@@ -415,11 +421,13 @@ Deno.test({
       console.log("Started new server instance with persistence");
 
       await server2.stop();
-    } finally {
+    }
+    finally {
       // Cleanup
       try {
         await Deno.remove(tempDir, { recursive: true });
-      } catch {
+      }
+      catch {
         // Ignore cleanup errors
       }
     }

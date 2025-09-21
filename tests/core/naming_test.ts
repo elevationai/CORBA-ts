@@ -97,7 +97,8 @@ Deno.test("Naming: Bind throws AlreadyBound for duplicate", async () => {
   try {
     await context.bind(name, objRef);
     throw new Error("Should have thrown AlreadyBound");
-  } catch (error) {
+  }
+  catch (error) {
     assertEquals((error as Error).constructor.name, "AlreadyBound");
   }
 });
@@ -109,7 +110,8 @@ Deno.test("Naming: Resolve throws NotFound for missing name", async () => {
   try {
     await context.resolve(name);
     throw new Error("Should have thrown NotFound");
-  } catch (error) {
+  }
+  catch (error) {
     assertEquals((error as Error).constructor.name, "NotFound");
   }
 });

@@ -74,7 +74,8 @@ export class GIOPTransport {
         disposition: 0, // KeyAddr
         objectKey: this._extractObjectKey(target),
       };
-    } else {
+    }
+    else {
       // GIOP 1.0/1.1 uses object key directly
       request.objectKey = this._extractObjectKey(target);
     }
@@ -110,7 +111,8 @@ export class GIOPTransport {
         disposition: 0, // KeyAddr
         objectKey: this._extractObjectKey(target),
       };
-    } else {
+    }
+    else {
       request.objectKey = this._extractObjectKey(target);
     }
 
@@ -155,7 +157,8 @@ export class GIOPTransport {
     for (let attempt = 0; attempt <= this._config.maxRetries; attempt++) {
       try {
         return await this._sendRequestOnce(connection, request);
-      } catch (error) {
+      }
+      catch (error) {
         lastError = error as Error;
 
         if (attempt < this._config.maxRetries && !this._closed) {
@@ -222,7 +225,8 @@ export class GIOPTransport {
             clearTimeout(context.timer);
             context.resolve(message);
           }
-        } else if (message instanceof GIOPCloseConnection) {
+        }
+        else if (message instanceof GIOPCloseConnection) {
           console.error("Server closed connection - rejecting all pending requests");
           // Reject all pending requests for this connection
           for (const [requestId, context] of this._pendingRequests) {
@@ -233,7 +237,8 @@ export class GIOPTransport {
           // Close the connection
           await connection.disconnect();
           break;
-        } else if (message instanceof GIOPMessageError) {
+        }
+        else if (message instanceof GIOPMessageError) {
           console.error("Received MessageError from server - protocol error");
           // Reject all pending requests due to protocol error
           for (const [requestId, context] of this._pendingRequests) {
@@ -246,7 +251,8 @@ export class GIOPTransport {
           break;
         }
       }
-    } catch (error) {
+    }
+    catch (error) {
       if (!this._closed) {
         console.error("Error processing replies:", error);
       }
@@ -391,12 +397,15 @@ export class GIOPServer {
           await this._processMessage(messageData, conn);
         }
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error handling connection:", error);
-    } finally {
+    }
+    finally {
       try {
         conn.close();
-      } catch {
+      }
+      catch {
         // Ignore close errors
       }
     }
@@ -463,7 +472,8 @@ export class GIOPServer {
         const replyData = reply.serialize();
         await conn.write(replyData);
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error processing message:", error);
     }
   }

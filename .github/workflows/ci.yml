@@ -14,11 +14,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: denoland/setup-deno@v2
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+
+      - name: Check for lint rule exclusions
+        run: |
+          # Check if lint.rules.exclude exists (excluding specific lint rules)
+          if jq -e '.lint.rules.exclude' deno.json > /dev/null 2>&1; then
+            echo "❌ Error: Lint rule exclusions (lint.rules.exclude) are not allowed in deno.json"
+            echo "Found exclude in lint.rules configuration:"
+            jq '.lint.rules' deno.json
+            exit 1
+          fi
+          echo "✅ No lint rule exclusions found"
 
       - name: Verify formatting
         run: deno fmt --check
@@ -31,22 +44,3 @@ jobs:
 
       - name: Run tests
         run: deno task test
-
-  publish:
-    runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-
-      - name: Publish to JSR (dry run)
-        run: deno publish --dry-run

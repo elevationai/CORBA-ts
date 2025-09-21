@@ -213,9 +213,10 @@ export class CDROutputStream {
     // CORBA spec: even empty strings must have a null terminator
     // Empty string is encoded as length=1 with just null byte
     if (bytes.length === 0) {
-      this.writeULong(1);  // Length 1 for null terminator
-      this.writeOctet(0);  // Write null terminator
-    } else {
+      this.writeULong(1); // Length 1 for null terminator
+      this.writeOctet(0); // Write null terminator
+    }
+    else {
       this.writeULong(bytes.length + 1); // Include null terminator in length
       this.writeOctetArray(bytes);
       this.writeOctet(0); // Null terminator
@@ -257,5 +258,14 @@ export class CDROutputStream {
     this.position = position;
     this.writeULong(value);
     this.position = savedPosition;
+  }
+
+  /**
+   * Write an encapsulation (length-prefixed CDR stream)
+   */
+  writeEncapsulation(encap: CDROutputStream): void {
+    const data = encap.getBuffer();
+    this.writeULong(data.length);
+    this.writeOctetArray(data);
   }
 }

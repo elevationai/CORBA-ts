@@ -43,7 +43,8 @@ export abstract class GIOPMessage {
   setLittleEndian(littleEndian: boolean): void {
     if (littleEndian) {
       this.header.flags |= GIOPFlags.BYTE_ORDER;
-    } else {
+    }
+    else {
       this.header.flags &= ~GIOPFlags.BYTE_ORDER;
     }
   }
@@ -170,7 +171,8 @@ export class GIOPRequest extends GIOPMessage {
     // Write request based on version
     if (this.header.version.minor <= 1) {
       this.serializeRequest_1_0(cdr);
-    } else {
+    }
+    else {
       this.serializeRequest_1_2(cdr);
     }
 
@@ -200,7 +202,8 @@ export class GIOPRequest extends GIOPMessage {
     if (this.objectKey) {
       cdr.writeULong(this.objectKey.length);
       cdr.writeOctetArray(this.objectKey);
-    } else {
+    }
+    else {
       cdr.writeULong(0);
     }
 
@@ -228,12 +231,14 @@ export class GIOPRequest extends GIOPMessage {
     // Target address
     if (this.target) {
       this.writeTargetAddress(cdr, this.target);
-    } else if (this.objectKey) {
+    }
+    else if (this.objectKey) {
       // Default to KeyAddr
       cdr.writeShort(AddressingDisposition.KeyAddr);
       cdr.writeULong(this.objectKey.length);
       cdr.writeOctetArray(this.objectKey);
-    } else {
+    }
+    else {
       throw new Error("No target address specified");
     }
 
@@ -296,7 +301,8 @@ export class GIOPRequest extends GIOPMessage {
 
     if (this.header.version.minor <= 1) {
       this.deserializeRequest_1_0(cdr);
-    } else {
+    }
+    else {
       this.deserializeRequest_1_2(cdr);
     }
   }
@@ -429,7 +435,8 @@ export class GIOPReply extends GIOPMessage {
     // Write reply based on version
     if (this.header.version.minor <= 1) {
       this.serializeReply_1_0(cdr);
-    } else {
+    }
+    else {
       this.serializeReply_1_2(cdr);
     }
 
@@ -496,7 +503,8 @@ export class GIOPReply extends GIOPMessage {
 
     if (this.header.version.minor <= 1) {
       this.deserializeReply_1_0(cdr);
-    } else {
+    }
+    else {
       this.deserializeReply_1_2(cdr);
     }
   }
@@ -543,7 +551,8 @@ export class GIOPReply extends GIOPMessage {
     // Read only the actual body bytes, not any trailing data
     if (bodySize > 0) {
       this.body = cdr.readOctetArray(bodySize);
-    } else {
+    }
+    else {
       this.body = new Uint8Array(0);
     }
   }

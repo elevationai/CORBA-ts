@@ -78,7 +78,8 @@ export class NamingClient {
       if (!isNamingContext) {
         throw new CORBA.BAD_PARAM("Object is not a NamingContextExt");
       }
-    } catch (error) {
+    }
+    catch (error) {
       throw new CORBA.COMM_FAILURE(`Failed to connect to naming service: ${error}`);
     }
   }
@@ -127,7 +128,8 @@ export class NamingClient {
 
     if (typeof name === "string") {
       return await this._rootContext!.resolve_str(name);
-    } else {
+    }
+    else {
       return await this._rootContext!.resolve(name);
     }
   }
@@ -195,7 +197,8 @@ export class NamingClient {
     try {
       await this.resolve(name);
       return true;
-    } catch (error) {
+    }
+    catch (error) {
       if (error instanceof CosNaming.NotFound) {
         return false;
       }
@@ -219,13 +222,15 @@ export class NamingClient {
       try {
         const resolved = await currentContext.resolve(componentName);
         currentContext = resolved as NamingContextExt;
-      } catch (error) {
+      }
+      catch (error) {
         if (error instanceof CosNaming.NotFound) {
           // Create the missing context
           const newContext = await currentContext.new_context();
           await currentContext.bind_context([nameObj[i]], newContext);
           currentContext = newContext as NamingContextExt;
-        } else {
+        }
+        else {
           throw error;
         }
       }
@@ -286,7 +291,8 @@ export class NamingClient {
     try {
       const nameService = await this._orb.resolve_initial_references("NameService");
       return await this._orb.object_to_string(nameService);
-    } catch {
+    }
+    catch {
       // Ignore error and continue
     }
 
@@ -300,7 +306,8 @@ export class NamingClient {
     try {
       const iorFile = Deno.env.get("CORBA_NAMESERVICE_IOR_FILE") || "/tmp/nameservice.ior";
       return await Deno.readTextFile(iorFile);
-    } catch {
+    }
+    catch {
       // Ignore error
     }
 
@@ -384,7 +391,8 @@ export class NamingUtils {
     try {
       // Basic IOR format validation
       return ior.startsWith("IOR:") && ior.length > 4;
-    } catch {
+    }
+    catch {
       return false;
     }
   }
@@ -437,7 +445,8 @@ export class NameBuilder {
       const lastDot = component.lastIndexOf(".");
       if (lastDot === -1) {
         builder.add(component);
-      } else {
+      }
+      else {
         builder.add(component.substring(0, lastDot), component.substring(lastDot + 1));
       }
     }

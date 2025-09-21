@@ -2,8 +2,8 @@
  * Tests for EventHandler
  */
 
-import { assertEquals, assertExists, assert } from "jsr:@std/assert@1";
-import { EventHandler, createEventHandler, type Event, type EventCallback } from "../src/event_handler.ts";
+import { assert, assertEquals, assertExists } from "jsr:@std/assert@1";
+import { createEventHandler, type Event, type EventCallback, EventHandler } from "../src/event_handler.ts";
 import { init } from "../src/orb.ts";
 import { getRootPOA } from "../src/poa.ts";
 import { Object } from "../src/object.ts";
@@ -55,14 +55,14 @@ Deno.test("EventHandler - callback invocation", async () => {
   const testEvent: Event = {
     eventCode: 100,
     timestamp: new Date().toISOString(),
-    data: "test data"
+    data: "test data",
   };
 
   // Get the servant directly to test callback
   const poa = getRootPOA();
   const servant = await poa.reference_to_servant(ref as unknown as Object);
 
-  if (servant && 'callback' in servant && typeof servant.callback === 'function') {
+  if (servant && "callback" in servant && typeof servant.callback === "function") {
     await servant.callback(testEvent);
     assertEquals(events.length, 1);
     assertEquals(events[0].eventCode, 100);
@@ -79,7 +79,7 @@ Deno.test("EventHandler - async callback support", async () => {
   let processed = false;
 
   const asyncCallback: EventCallback = async (_e: Event) => {
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 10));
     processed = true;
   };
 
@@ -91,7 +91,7 @@ Deno.test("EventHandler - async callback support", async () => {
   const poa = getRootPOA();
   const servant = await poa.reference_to_servant(ref as unknown as Object);
 
-  if (servant && 'callback' in servant && typeof servant.callback === 'function') {
+  if (servant && "callback" in servant && typeof servant.callback === "function") {
     await servant.callback({ eventCode: 200 });
     assert(processed, "Async callback should have been processed");
   }
@@ -116,14 +116,14 @@ Deno.test("EventHandler - typed events", async () => {
     eventCode: 300,
     timestamp: new Date().toISOString(),
     testData: "typed test",
-    count: 42
+    count: 42,
   };
 
   // Get the servant and invoke callback with typed event
   const poa = getRootPOA();
   const servant = await poa.reference_to_servant(ref as unknown as Object);
 
-  if (servant && 'callback' in servant && typeof servant.callback === 'function') {
+  if (servant && "callback" in servant && typeof servant.callback === "function") {
     await servant.callback(testEvent);
     assertEquals(receivedEvents.length, 1);
     assertEquals(receivedEvents[0].testData, "typed test");
@@ -142,7 +142,7 @@ Deno.test("EventHandler - custom repository ID", async () => {
   const handler = new EventHandler(
     appRef,
     (_e: Event) => {},
-    customRepoId
+    customRepoId,
   );
 
   assertEquals(handler.getRepositoryId(), customRepoId);
@@ -185,7 +185,7 @@ Deno.test("createEventHandler helper function", async () => {
   const poa = getRootPOA();
   const servant = await poa.reference_to_servant(listener as unknown as Object);
 
-  if (servant && 'callback' in servant && typeof servant.callback === 'function') {
+  if (servant && "callback" in servant && typeof servant.callback === "function") {
     await servant.callback({ eventCode: 400 });
     assert(eventReceived, "Event should have been received");
   }
@@ -213,11 +213,12 @@ Deno.test("EventHandler - error handling in callback", async () => {
   const poa = getRootPOA();
   const servant = await poa.reference_to_servant(ref as unknown as Object);
 
-  if (servant && 'callback' in servant && typeof servant.callback === 'function') {
+  if (servant && "callback" in servant && typeof servant.callback === "function") {
     try {
       await servant.callback({ eventCode: 500 });
       assert(false, "Should have thrown an error");
-    } catch (err) {
+    }
+    catch (err) {
       assert(err instanceof Error);
       assertEquals(err.message, "Test error in callback");
     }

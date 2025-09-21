@@ -2,7 +2,7 @@
  * CORBA Event Handler - Simplified event listener registration
  */
 
-import { Servant, getRootPOA } from "./poa.ts";
+import { getRootPOA, Servant } from "./poa.ts";
 import type { POA } from "./poa.ts";
 import type { CORBA } from "./types.ts";
 
@@ -52,7 +52,8 @@ class EventListenerServant extends Servant {
       if (result instanceof Promise) {
         await result;
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error("Error in event callback:", error);
       throw error;
     }
@@ -69,7 +70,7 @@ export class EventHandler<T extends Event = Event> {
   static create: <T extends Event = Event>(
     appRef: string,
     callback: EventCallback<T>,
-    repositoryId?: string
+    repositoryId?: string,
   ) => Promise<EventListener>;
   private servant: EventListenerServant;
   private reference: EventListener | null = null;
@@ -89,13 +90,13 @@ export class EventHandler<T extends Event = Event> {
   constructor(
     appRef: string,
     callback: EventCallback<T>,
-    repositoryId: string = "IDL:cuss.iata.org/types/evtListener:1.0"
+    repositoryId: string = "IDL:cuss.iata.org/types/evtListener:1.0",
   ) {
     this.appRef = appRef;
     this.callback = callback;
     this.repositoryId = repositoryId;
     this.poa = getRootPOA();
-    this.servant = new EventListenerServant(repositoryId, callback as EventCallback);
+    this.servant = new EventListenerServant(repositoryId, this.callback as EventCallback);
   }
 
   /**
@@ -166,7 +167,7 @@ export class EventHandler<T extends Event = Event> {
 export function createEventHandler<T extends Event = Event>(
   appRef: string,
   callback: EventCallback<T>,
-  repositoryId?: string
+  repositoryId?: string,
 ): Promise<EventListener> {
   const handler = new EventHandler(appRef, callback, repositoryId);
   return handler.activate();
@@ -176,10 +177,10 @@ export function createEventHandler<T extends Event = Event>(
  * Static factory method on EventHandler class for cleaner API
  * Creates and activates an event handler, returning just the CORBA reference
  */
-EventHandler.create = function<T extends Event = Event>(
+EventHandler.create = function <T extends Event = Event>(
   appRef: string,
   callback: EventCallback<T>,
-  repositoryId?: string
+  repositoryId?: string,
 ): Promise<EventListener> {
   const handler = new EventHandler(appRef, callback, repositoryId);
   return handler.activate();

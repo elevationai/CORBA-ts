@@ -8,10 +8,6 @@ import { ORBImpl } from "./orb.ts";
 import { GIOPTransport } from "./giop/transport.ts";
 import { GIOPReply, GIOPRequest } from "./giop/messages.ts";
 import { ReplyStatusType } from "./giop/types.ts";
-// deno-lint-ignore no-unused-vars
-import { CDRInputStream } from "./core/cdr/decoder.ts";
-// deno-lint-ignore no-unused-vars
-import { CDROutputStream } from "./core/cdr/encoder.ts";
 import { ConnectionEndpoint } from "./giop/connection.ts";
 import { IORUtil } from "./giop/ior.ts";
 import { NameUtil, NamingContextExt, NamingContextExtImpl } from "./naming.ts";
@@ -103,7 +99,8 @@ export class NamingServer {
         console.log(`Naming Service started on ${this._config.host}:${this._config.port}`);
         console.log(`Root context IOR: ${this._getIORString()}`);
       }
-    } catch (error) {
+    }
+    catch (error) {
       this._running = false;
       throw new CORBA.INTERNAL(`Failed to start naming server: ${error}`);
     }
@@ -136,7 +133,8 @@ export class NamingServer {
       if (this._config.enableLogging) {
         console.log("Naming Service stopped");
       }
-    } catch (error) {
+    }
+    catch (error) {
       if (this._config.enableLogging) {
         console.error(`Error stopping naming server: ${error}`);
       }
@@ -203,7 +201,8 @@ export class NamingServer {
         reply.replyStatus = ReplyStatusType.NO_EXCEPTION;
         reply.body = new TextEncoder().encode("OK");
         return reply;
-      } catch (error) {
+      }
+      catch (error) {
         const reply = new GIOPReply(request.version);
         reply.replyStatus = ReplyStatusType.USER_EXCEPTION;
         reply.body = new TextEncoder().encode(JSON.stringify({ error: String(error) }));
@@ -223,7 +222,8 @@ export class NamingServer {
         reply.replyStatus = ReplyStatusType.NO_EXCEPTION;
         reply.body = new TextEncoder().encode(JSON.stringify({ objRef }));
         return reply;
-      } catch (error) {
+      }
+      catch (error) {
         const reply = new GIOPReply(request.version);
         reply.replyStatus = ReplyStatusType.USER_EXCEPTION;
         reply.body = new TextEncoder().encode(JSON.stringify({ error: String(error) }));
@@ -243,7 +243,8 @@ export class NamingServer {
         reply.replyStatus = ReplyStatusType.NO_EXCEPTION;
         reply.body = new TextEncoder().encode(JSON.stringify(result));
         return reply;
-      } catch (error) {
+      }
+      catch (error) {
         const reply = new GIOPReply(request.version);
         reply.replyStatus = ReplyStatusType.USER_EXCEPTION;
         reply.body = new TextEncoder().encode(JSON.stringify({ error: String(error) }));
@@ -283,7 +284,8 @@ export class NamingServer {
           const name = NameUtil.createSimpleName(binding.name.id, binding.name.kind);
           // Would need to deserialize the object reference properly
           await this._rootContext.bind(name, binding.objRef);
-        } catch (error) {
+        }
+        catch (error) {
           if (this._config.enableLogging) {
             console.warn(`Failed to restore binding: ${error}`);
           }
@@ -293,7 +295,8 @@ export class NamingServer {
       if (this._config.enableLogging) {
         console.log(`Loaded ${bindings.length} persistent bindings`);
       }
-    } catch (error) {
+    }
+    catch (error) {
       if (this._config.enableLogging) {
         console.warn(`Failed to load persistent data: ${error}`);
       }
@@ -316,7 +319,8 @@ export class NamingServer {
       if (this._config.enableLogging) {
         console.log(`Saved ${bindings.length} persistent bindings`);
       }
-    } catch (error) {
+    }
+    catch (error) {
       if (this._config.enableLogging) {
         console.error(`Failed to save persistent data: ${error}`);
       }
@@ -355,7 +359,8 @@ export class NamingServerCLI {
       while (server.isRunning()) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
-    } catch (error) {
+    }
+    catch (error) {
       console.error(`Failed to start naming service: ${error}`);
       Deno.exit(1);
     }

@@ -546,7 +546,8 @@ export class NamingContextExtImpl extends NamingContextImpl implements NamingCon
         if (lastDotIndex === -1) {
           id = unescaped;
           kind = "";
-        } else {
+        }
+        else {
           id = unescaped.substring(0, lastDotIndex);
           kind = unescaped.substring(lastDotIndex + 1);
         }
@@ -555,7 +556,8 @@ export class NamingContextExtImpl extends NamingContextImpl implements NamingCon
       }
 
       return Promise.resolve(name);
-    } catch (_error) {
+    }
+    catch (_error) {
       return Promise.reject(new CosNaming.InvalidName());
     }
   }
@@ -575,7 +577,8 @@ export class NamingContextExtImpl extends NamingContextImpl implements NamingCon
       }).join("/");
 
       return Promise.resolve(stringified);
-    } catch (_error) {
+    }
+    catch (_error) {
       return Promise.reject(new CosNaming.InvalidName());
     }
   }
@@ -594,7 +597,8 @@ export class NamingContextExtImpl extends NamingContextImpl implements NamingCon
       // Format: corbaname:iiop:host:port#stringified_name
       const url = `corbaname:${addr}#${encodeURIComponent(sn)}`;
       return Promise.resolve(url);
-    } catch (_error) {
+    }
+    catch (_error) {
       return Promise.reject(new CORBA.BAD_PARAM("Failed to create URL"));
     }
   }

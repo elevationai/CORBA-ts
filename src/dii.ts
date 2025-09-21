@@ -206,6 +206,10 @@ export class RequestImpl implements Request {
     this._return_type = tc;
   }
 
+  get_return_type(): TypeCode | null {
+    return this._return_type;
+  }
+
   return_value(): unknown {
     return this._return_value;
   }
@@ -260,15 +264,19 @@ export class RequestImpl implements Request {
         if (param.mode === ParameterMode.PARAM_IN || param.mode === ParameterMode.PARAM_INOUT) {
           if (param.type) {
             encodeWithTypeCode(cdr, param.value, param.type);
-          } else {
+          }
+          else {
             // Fallback for parameters without TypeCode
             if (typeof param.value === "string") {
               cdr.writeString(param.value);
-            } else if (typeof param.value === "number") {
+            }
+            else if (typeof param.value === "number") {
               cdr.writeLong(Math.floor(param.value));
-            } else if (typeof param.value === "boolean") {
+            }
+            else if (typeof param.value === "boolean") {
               cdr.writeBoolean(param.value);
-            } else {
+            }
+            else {
               cdr.writeString(JSON.stringify(param.value));
             }
           }
@@ -304,7 +312,8 @@ export class RequestImpl implements Request {
       // Skip the return value (assuming it's a long for now)
       try {
         outCdr.readLong(); // Skip return value
-      } catch {
+      }
+      catch {
         // If can't read as long, reset position
       }
 
@@ -315,12 +324,14 @@ export class RequestImpl implements Request {
             try {
               // Decode the parameter value based on its TypeCode
               param.value = decodeWithTypeCode(outCdr, param.type);
-            } catch (error) {
+            }
+            catch (error) {
               // Log the error and throw - don't use dummy values
               console.error(`Failed to decode output parameter: ${error}`);
               throw new CORBA.MARSHAL(`Failed to decode output parameter: ${error}`);
             }
-          } else {
+          }
+          else {
             // No type info - this is a programming error
             throw new CORBA.BAD_PARAM("Output parameter has no TypeCode");
           }
@@ -328,7 +339,8 @@ export class RequestImpl implements Request {
       }
 
       this._response_received = true;
-    } catch (e) {
+    }
+    catch (e) {
       this._exception = e;
       this._response_received = true;
       throw e;

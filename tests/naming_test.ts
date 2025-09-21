@@ -329,7 +329,8 @@ Deno.test("Naming: Edge cases and error conditions", async () => {
   try {
     await context.bind(longName, mockObj);
     expectedBindings++; // Only increment if successful
-  } catch (error) {
+  }
+  catch (error) {
     // Expected - hierarchical resolution would fail without intermediate contexts
     assert(error instanceof CosNaming.NotFound || error instanceof CORBA.BAD_PARAM);
   }

@@ -1,407 +1,204 @@
 /**
- * TypeCode support for CDR encoding
+ * TypeCode wire format encoding/decoding for CDR
  * CORBA 3.4 Specification compliant
+ *
+ * This module ONLY handles encoding/decoding TypeCodes for transmission.
+ * It uses the main TypeCode class from ../../typecode.ts exclusively.
  */
 
 import { CDROutputStream } from "./encoder.ts";
 import { CDRInputStream } from "./decoder.ts";
-import { TypeCode as MainTypeCode } from "../../typecode.ts";
+import { TypeCode } from "../../typecode.ts";
 
 /**
- * TypeCode kinds as defined in CORBA specification
+ * Re-export TCKind as an alias to TypeCode.Kind for backward compatibility
+ * This will be removed after full refactoring
  */
-export enum TCKind {
-  tk_null = 0,
-  tk_void = 1,
-  tk_short = 2,
-  tk_long = 3,
-  tk_ushort = 4,
-  tk_ulong = 5,
-  tk_float = 6,
-  tk_double = 7,
-  tk_boolean = 8,
-  tk_char = 9,
-  tk_octet = 10,
-  tk_any = 11,
-  tk_TypeCode = 12,
-  tk_Principal = 13,
-  tk_objref = 14,
-  tk_struct = 15,
-  tk_union = 16,
-  tk_enum = 17,
-  tk_string = 18,
-  tk_sequence = 19,
-  tk_array = 20,
-  tk_alias = 21,
-  tk_except = 22,
-  tk_longlong = 23,
-  tk_ulonglong = 24,
-  tk_longdouble = 25,
-  tk_wchar = 26,
-  tk_wstring = 27,
-  tk_fixed = 28,
-  tk_value = 29,
-  tk_value_box = 30,
-  tk_native = 31,
-  tk_abstract_interface = 32,
-  tk_local_interface = 33,
-  tk_component = 34,
-  tk_home = 35,
-  tk_event = 36,
-}
+export const TCKind = TypeCode.Kind;
+export type TCKind = TypeCode.Kind;
 
 /**
- * TypeCode structure member
+ * Encode a TypeCode to CDR wire format
  */
-export interface StructMember {
-  name: string;
-  type: TypeCode;
-}
+export function encodeTypeCode(out: CDROutputStream, tc: TypeCode): void {
+  const kind = tc.kind();
 
-/**
- * TypeCode union member
- */
-export interface UnionMember {
-  name: string;
-  label: number | bigint | string | boolean;
-  type: TypeCode;
-}
-
-/**
- * TypeCode class
- */
-export class TypeCode {
-  constructor(
-    public readonly kind: TCKind,
-    public readonly id?: string,
-    public readonly name?: string,
-    public readonly members?: StructMember[],
-    public readonly discriminatorType?: TypeCode,
-    public readonly unionMembers?: UnionMember[],
-    public readonly defaultIndex?: number,
-    public readonly enumMembers?: string[],
-    public readonly contentType?: TypeCode,
-    public readonly length?: number,
-    public readonly digits?: number,
-    public readonly scale?: number,
-    public readonly typeModifier?: number,
-    public readonly concreteBase?: TypeCode,
-  ) {}
-
-  /**
-   * Create a struct TypeCode
-   */
-  static createStruct(id: string, name: string, members: StructMember[]): TypeCode {
-    return new TypeCode(TCKind.tk_struct, id, name, members);
-  }
-
-  /**
-   * Create a sequence TypeCode
-   */
-  static createSequence(elementType: TypeCode, bound: number = 0): TypeCode {
-    return new TypeCode(
-      TCKind.tk_sequence,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      elementType,
-      bound,
-    );
-  }
-
-  /**
-   * Create an array TypeCode
-   */
-  static createArray(elementType: TypeCode, length: number): TypeCode {
-    return new TypeCode(
-      TCKind.tk_array,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      elementType,
-      length,
-    );
-  }
-
-  /**
-   * Create a string TypeCode
-   */
-  static createString(bound: number = 0): TypeCode {
-    return new TypeCode(
-      TCKind.tk_string,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      bound,
-    );
-  }
-
-  /**
-   * Create an enum TypeCode
-   */
-  static createEnum(id: string, name: string, members: string[]): TypeCode {
-    return new TypeCode(
-      TCKind.tk_enum,
-      id,
-      name,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      members,
-    );
-  }
-
-  /**
-   * Create an alias TypeCode
-   */
-  static createAlias(id: string, name: string, originalType: TypeCode): TypeCode {
-    return new TypeCode(
-      TCKind.tk_alias,
-      id,
-      name,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      originalType,
-    );
-  }
-
-  /**
-   * Create a fixed TypeCode
-   */
-  static createFixed(digits: number, scale: number): TypeCode {
-    return new TypeCode(
-      TCKind.tk_fixed,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      digits,
-      scale,
-    );
-  }
-}
-
-/**
- * Encode a TypeCode to CDR
- */
-export function encodeTypeCode(out: CDROutputStream, tc: TypeCode | MainTypeCode): void {
-  // Handle both CDR TypeCode and main TypeCode
-  const kind = typeof tc.kind === 'function' ? tc.kind() : tc.kind;
-
-  // Write the kind
+  // Write the kind as ulong
   out.writeULong(kind);
 
-  // Write type-specific parameters
+  // Handle each kind according to CORBA spec
   switch (kind) {
-    // Simple types with no parameters
-    case TCKind.tk_null:
-    case TCKind.tk_void:
-    case TCKind.tk_short:
-    case TCKind.tk_long:
-    case TCKind.tk_ushort:
-    case TCKind.tk_ulong:
-    case TCKind.tk_float:
-    case TCKind.tk_double:
-    case TCKind.tk_boolean:
-    case TCKind.tk_char:
-    case TCKind.tk_octet:
-    case TCKind.tk_any:
-    case TCKind.tk_TypeCode:
-    case TCKind.tk_Principal:
-    case TCKind.tk_longlong:
-    case TCKind.tk_ulonglong:
-    case TCKind.tk_longdouble:
-    case TCKind.tk_wchar:
-      // No parameters to encode
+    case TypeCode.Kind.tk_null:
+    case TypeCode.Kind.tk_void:
+    case TypeCode.Kind.tk_short:
+    case TypeCode.Kind.tk_long:
+    case TypeCode.Kind.tk_ushort:
+    case TypeCode.Kind.tk_ulong:
+    case TypeCode.Kind.tk_float:
+    case TypeCode.Kind.tk_double:
+    case TypeCode.Kind.tk_boolean:
+    case TypeCode.Kind.tk_char:
+    case TypeCode.Kind.tk_octet:
+    case TypeCode.Kind.tk_any:
+    case TypeCode.Kind.tk_TypeCode:
+    case TypeCode.Kind.tk_Principal:
+    case TypeCode.Kind.tk_longlong:
+    case TypeCode.Kind.tk_ulonglong:
+    case TypeCode.Kind.tk_longdouble:
+    case TypeCode.Kind.tk_wchar:
+      // Simple types - no parameters
       break;
 
-    case TCKind.tk_string:
-    case TCKind.tk_wstring: {
+    case TypeCode.Kind.tk_string:
+    case TypeCode.Kind.tk_wstring: {
       // Write bound (0 for unbounded)
-      // Handle both CDR TypeCode (property) and main TypeCode (method)
       let bound = 0;
-      if (typeof tc.length === 'function') {
-        try {
-          bound = tc.length() || 0;
-        } catch {
-          bound = 0;  // If method throws, use 0 (unbounded)
-        }
-      } else {
-        bound = tc.length || 0;
+      try {
+        bound = tc.length() || 0;
+      }
+      catch {
+        // Method might not exist or throw for unbounded
       }
       out.writeULong(bound);
       break;
     }
 
-    case TCKind.tk_fixed: {
+    case TypeCode.Kind.tk_fixed: {
       // Write digits and scale
-      const cdrTc = tc as TypeCode;
-      out.writeUShort(cdrTc.digits || 0);
-      out.writeShort(cdrTc.scale || 0);
+      let digits = 0;
+      let scale = 0;
+      try {
+        // Fixed types would have fixed_digits() and fixed_scale() in full impl
+        // For now, use defaults
+        digits = tc.get_param("digits") as number || 0;
+        scale = tc.get_param("scale") as number || 0;
+      }
+      catch {
+        // Use defaults
+      }
+      out.writeUShort(digits);
+      out.writeShort(scale);
       break;
     }
 
-    case TCKind.tk_objref:
-    case TCKind.tk_abstract_interface:
-    case TCKind.tk_native:
-    case TCKind.tk_local_interface:
+    case TypeCode.Kind.tk_objref:
+    case TypeCode.Kind.tk_abstract_interface:
+    case TypeCode.Kind.tk_native:
+    case TypeCode.Kind.tk_local_interface:
       // Complex type: write encapsulation
-      encodeComplex(out, tc as TypeCode);
+      encodeComplex(out, tc);
       break;
 
-    case TCKind.tk_struct:
-    case TCKind.tk_except:
+    case TypeCode.Kind.tk_struct:
+    case TypeCode.Kind.tk_except:
       // Write struct/exception TypeCode
-      encodeStruct(out, tc as TypeCode);
+      encodeStruct(out, tc);
       break;
 
-    case TCKind.tk_union:
+    case TypeCode.Kind.tk_union:
       // Write union TypeCode
-      encodeUnion(out, tc as TypeCode);
+      encodeUnion(out, tc);
       break;
 
-    case TCKind.tk_enum:
+    case TypeCode.Kind.tk_enum:
       // Write enum TypeCode
-      encodeEnum(out, tc as TypeCode);
+      encodeEnum(out, tc);
       break;
 
-    case TCKind.tk_sequence:
-    case TCKind.tk_array:
+    case TypeCode.Kind.tk_sequence:
+    case TypeCode.Kind.tk_array:
       // Write sequence/array TypeCode
-      encodeSequence(out, tc as TypeCode);
+      encodeSequence(out, tc);
       break;
 
-    case TCKind.tk_alias:
-    case TCKind.tk_value_box:
+    case TypeCode.Kind.tk_alias:
+    case TypeCode.Kind.tk_value_box:
       // Write alias TypeCode
-      encodeAlias(out, tc as TypeCode);
+      encodeAlias(out, tc);
       break;
 
-    case TCKind.tk_value:
-    case TCKind.tk_event:
+    case TypeCode.Kind.tk_value:
+    case TypeCode.Kind.tk_event:
       // Write value TypeCode
-      encodeValue(out, tc as TypeCode);
+      encodeValue(out, tc);
       break;
 
     default:
-      throw new Error(`Unsupported TypeCode kind: ${typeof tc.kind === 'function' ? tc.kind() : tc.kind}`);
+      throw new Error(`Unsupported TypeCode kind: ${kind}`);
   }
 }
 
 /**
- * Decode a TypeCode from CDR
+ * Decode a TypeCode from CDR wire format
  */
 export function decodeTypeCode(inp: CDRInputStream): TypeCode {
-  // Read the kind
-  const kind = inp.readULong() as TCKind;
+  const kind = inp.readULong() as TypeCode.Kind;
 
-  // Read type-specific parameters
   switch (kind) {
-    // Simple types with no parameters
-    case TCKind.tk_null:
-    case TCKind.tk_void:
-    case TCKind.tk_short:
-    case TCKind.tk_long:
-    case TCKind.tk_ushort:
-    case TCKind.tk_ulong:
-    case TCKind.tk_float:
-    case TCKind.tk_double:
-    case TCKind.tk_boolean:
-    case TCKind.tk_char:
-    case TCKind.tk_octet:
-    case TCKind.tk_any:
-    case TCKind.tk_TypeCode:
-    case TCKind.tk_Principal:
-    case TCKind.tk_longlong:
-    case TCKind.tk_ulonglong:
-    case TCKind.tk_longdouble:
-    case TCKind.tk_wchar:
+    case TypeCode.Kind.tk_null:
+    case TypeCode.Kind.tk_void:
+    case TypeCode.Kind.tk_short:
+    case TypeCode.Kind.tk_long:
+    case TypeCode.Kind.tk_ushort:
+    case TypeCode.Kind.tk_ulong:
+    case TypeCode.Kind.tk_float:
+    case TypeCode.Kind.tk_double:
+    case TypeCode.Kind.tk_boolean:
+    case TypeCode.Kind.tk_char:
+    case TypeCode.Kind.tk_octet:
+    case TypeCode.Kind.tk_any:
+    case TypeCode.Kind.tk_TypeCode:
+    case TypeCode.Kind.tk_Principal:
+    case TypeCode.Kind.tk_longlong:
+    case TypeCode.Kind.tk_ulonglong:
+    case TypeCode.Kind.tk_longdouble:
+    case TypeCode.Kind.tk_wchar:
+      // Simple types
       return new TypeCode(kind);
 
-    case TCKind.tk_string:
-    case TCKind.tk_wstring: {
+    case TypeCode.Kind.tk_string:
+    case TypeCode.Kind.tk_wstring: {
       const bound = inp.readULong();
-      return new TypeCode(
-        kind,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        bound,
-      );
+      if (kind === TypeCode.Kind.tk_string) {
+        return TypeCode.create_string_tc(bound);
+      }
+      else {
+        return TypeCode.create_wstring_tc(bound);
+      }
     }
 
-    case TCKind.tk_fixed: {
+    case TypeCode.Kind.tk_fixed: {
       const digits = inp.readUShort();
       const scale = inp.readShort();
-      return new TypeCode(
-        kind,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        digits,
-        scale,
-      );
+      return TypeCode.create_fixed_tc(digits, scale);
     }
 
-    case TCKind.tk_objref:
-    case TCKind.tk_abstract_interface:
-    case TCKind.tk_native:
-    case TCKind.tk_local_interface:
+    case TypeCode.Kind.tk_objref:
+    case TypeCode.Kind.tk_abstract_interface:
+    case TypeCode.Kind.tk_native:
+    case TypeCode.Kind.tk_local_interface:
       return decodeComplex(inp, kind);
 
-    case TCKind.tk_struct:
-    case TCKind.tk_except:
+    case TypeCode.Kind.tk_struct:
+    case TypeCode.Kind.tk_except:
       return decodeStruct(inp, kind);
 
-    case TCKind.tk_union:
+    case TypeCode.Kind.tk_union:
       return decodeUnion(inp, kind);
 
-    case TCKind.tk_enum:
+    case TypeCode.Kind.tk_enum:
       return decodeEnum(inp, kind);
 
-    case TCKind.tk_sequence:
-    case TCKind.tk_array:
+    case TypeCode.Kind.tk_sequence:
+    case TypeCode.Kind.tk_array:
       return decodeSequence(inp, kind);
 
-    case TCKind.tk_alias:
-    case TCKind.tk_value_box:
+    case TypeCode.Kind.tk_alias:
+    case TypeCode.Kind.tk_value_box:
       return decodeAlias(inp, kind);
 
-    case TCKind.tk_value:
-    case TCKind.tk_event:
+    case TypeCode.Kind.tk_value:
+    case TypeCode.Kind.tk_event:
       return decodeValue(inp, kind);
 
     default:
@@ -409,346 +206,372 @@ export function decodeTypeCode(inp: CDRInputStream): TypeCode {
   }
 }
 
-// Helper functions for complex type encoding/decoding
+// Helper functions for complex type encoding
 
 function encodeComplex(out: CDROutputStream, tc: TypeCode): void {
-  // Use encapsulation for complex types
-  const encap = new CDROutputStream(256, out.isLittleEndian());
-  encap.writeString(tc.id || "");
-  encap.writeString(tc.name || "");
+  const encap = new CDROutputStream(512, out.isLittleEndian());
 
-  const encapBuffer = encap.getBuffer();
-  out.writeULong(encapBuffer.length);
-  out.writeOctetArray(encapBuffer);
-}
+  // Get repository ID and name from TypeCode
+  const id = tc.get_param("id") as string || "";
+  const name = tc.get_param("name") as string || "";
 
-function decodeComplex(inp: CDRInputStream, kind: TCKind): TypeCode {
-  const length = inp.readULong();
-  const encap = inp.createSubStream(length);
+  encap.writeString(id);
+  encap.writeString(name);
 
-  const id = encap.readString();
-  const name = encap.readString();
-
-  return new TypeCode(kind, id, name);
+  out.writeEncapsulation(encap);
 }
 
 function encodeStruct(out: CDROutputStream, tc: TypeCode): void {
-  const encap = new CDROutputStream(256, out.isLittleEndian());
+  const encap = new CDROutputStream(1024, out.isLittleEndian());
 
-  encap.writeString(tc.id || "");
-  encap.writeString(tc.name || "");
-  encap.writeULong(tc.members?.length || 0);
+  const id = tc.get_param("id") as string || "";
+  const name = tc.get_param("name") as string || "";
 
-  for (const member of tc.members || []) {
-    encap.writeString(member.name);
-    encodeTypeCode(encap, member.type);
-  }
+  encap.writeString(id);
+  encap.writeString(name);
 
-  const encapBuffer = encap.getBuffer();
-  out.writeULong(encapBuffer.length);
-  out.writeOctetArray(encapBuffer);
-}
+  // Write member count and members
+  const memberCount = tc.member_count();
+  encap.writeULong(memberCount);
 
-function decodeStruct(inp: CDRInputStream, kind: TCKind): TypeCode {
-  const length = inp.readULong();
-  const encap = inp.createSubStream(length);
-
-  const id = encap.readString();
-  const name = encap.readString();
-  const memberCount = encap.readULong();
-
-  const members: StructMember[] = [];
   for (let i = 0; i < memberCount; i++) {
-    const memberName = encap.readString();
-    const memberType = decodeTypeCode(encap);
-    members.push({ name: memberName, type: memberType });
+    encap.writeString(tc.member_name(i));
+    encodeTypeCode(encap, tc.member_type(i));
   }
 
-  return new TypeCode(kind, id, name, members);
+  out.writeEncapsulation(encap);
 }
 
 function encodeUnion(out: CDROutputStream, tc: TypeCode): void {
-  const encap = new CDROutputStream(256, out.isLittleEndian());
+  const encap = new CDROutputStream(1024, out.isLittleEndian());
 
-  encap.writeString(tc.id || "");
-  encap.writeString(tc.name || "");
-  encodeTypeCode(encap, tc.discriminatorType!);
-  encap.writeLong(tc.defaultIndex ?? -1);
-  encap.writeULong(tc.unionMembers?.length || 0);
+  const id = tc.get_param("id") as string || "";
+  const name = tc.get_param("name") as string || "";
 
-  for (const member of tc.unionMembers || []) {
-    // Encode label based on discriminator type
-    encodeUnionLabel(encap, member.label, tc.discriminatorType!);
-    encap.writeString(member.name);
-    encodeTypeCode(encap, member.type);
+  encap.writeString(id);
+  encap.writeString(name);
+
+  // Encode discriminator type
+  const discriminatorType = tc.discriminator_type();
+  encodeTypeCode(encap, discriminatorType);
+
+  // Encode default index
+  const defaultIndex = tc.default_index();
+  encap.writeLong(defaultIndex);
+
+  // Encode member count and members
+  const memberCount = tc.member_count();
+  encap.writeULong(memberCount);
+
+  for (let i = 0; i < memberCount; i++) {
+    // Encode label
+    const label = tc.member_label(i);
+    encodeUnionLabel(encap, label, discriminatorType);
+
+    // Encode member name and type
+    encap.writeString(tc.member_name(i));
+    encodeTypeCode(encap, tc.member_type(i));
   }
 
-  const encapBuffer = encap.getBuffer();
-  out.writeULong(encapBuffer.length);
-  out.writeOctetArray(encapBuffer);
+  out.writeEncapsulation(encap);
 }
 
-function decodeUnion(inp: CDRInputStream, kind: TCKind): TypeCode {
-  const length = inp.readULong();
-  const encap = inp.createSubStream(length);
+function encodeUnionLabel(out: CDROutputStream, label: unknown, discriminatorType: TypeCode): void {
+  const discrKind = discriminatorType.kind();
 
-  const id = encap.readString();
-  const name = encap.readString();
-  const discriminatorType = decodeTypeCode(encap);
-  const defaultIndex = encap.readLong();
-  const memberCount = encap.readULong();
-
-  const unionMembers: UnionMember[] = [];
-  for (let i = 0; i < memberCount; i++) {
-    const label = decodeUnionLabel(encap, discriminatorType);
-    const memberName = encap.readString();
-    const memberType = decodeTypeCode(encap);
-    unionMembers.push({ name: memberName, label, type: memberType });
+  switch (discrKind) {
+    case TypeCode.Kind.tk_short:
+      out.writeShort(label as number);
+      break;
+    case TypeCode.Kind.tk_long:
+      out.writeLong(label as number);
+      break;
+    case TypeCode.Kind.tk_ushort:
+      out.writeUShort(label as number);
+      break;
+    case TypeCode.Kind.tk_ulong:
+    case TypeCode.Kind.tk_enum:
+      out.writeULong(label as number);
+      break;
+    case TypeCode.Kind.tk_boolean:
+      out.writeBoolean(label as boolean);
+      break;
+    case TypeCode.Kind.tk_char:
+      out.writeChar(label as string);
+      break;
+    case TypeCode.Kind.tk_longlong:
+      out.writeLongLong(label as bigint);
+      break;
+    case TypeCode.Kind.tk_ulonglong:
+      out.writeULongLong(label as bigint);
+      break;
+    default:
+      // Default case or octet label
+      if (typeof label === "number") {
+        out.writeOctet(label);
+      }
+      else {
+        out.writeLong(0);
+      }
   }
-
-  return new TypeCode(
-    kind,
-    id,
-    name,
-    undefined,
-    discriminatorType,
-    unionMembers,
-    defaultIndex >= 0 ? defaultIndex : undefined,
-  );
 }
 
 function encodeEnum(out: CDROutputStream, tc: TypeCode): void {
-  const encap = new CDROutputStream(256, out.isLittleEndian());
+  const encap = new CDROutputStream(512, out.isLittleEndian());
 
-  encap.writeString(tc.id || "");
-  encap.writeString(tc.name || "");
-  encap.writeULong(tc.enumMembers?.length || 0);
+  const id = tc.get_param("id") as string || "";
+  const name = tc.get_param("name") as string || "";
 
-  for (const member of tc.enumMembers || []) {
-    encap.writeString(member);
-  }
+  encap.writeString(id);
+  encap.writeString(name);
 
-  const encapBuffer = encap.getBuffer();
-  out.writeULong(encapBuffer.length);
-  out.writeOctetArray(encapBuffer);
-}
+  // Write member count and names
+  const memberCount = tc.member_count();
+  encap.writeULong(memberCount);
 
-function decodeEnum(inp: CDRInputStream, kind: TCKind): TypeCode {
-  const length = inp.readULong();
-  const encap = inp.createSubStream(length);
-
-  const id = encap.readString();
-  const name = encap.readString();
-  const memberCount = encap.readULong();
-
-  const enumMembers: string[] = [];
   for (let i = 0; i < memberCount; i++) {
-    enumMembers.push(encap.readString());
+    encap.writeString(tc.member_name(i));
   }
 
-  return new TypeCode(kind, id, name, undefined, undefined, undefined, undefined, enumMembers);
+  out.writeEncapsulation(encap);
 }
 
 function encodeSequence(out: CDROutputStream, tc: TypeCode): void {
   const encap = new CDROutputStream(256, out.isLittleEndian());
 
-  // Handle both CDR TypeCode (property) and main TypeCode (method)
-  const contentType = tc.contentType || (typeof (tc as any).content_type === 'function' ? (tc as any).content_type() : undefined);
-  if (contentType) {
-    encodeTypeCode(encap, contentType);
-  } else {
-    // Default to tk_any if no content type
-    encodeTypeCode(encap, new TypeCode(TCKind.tk_any));
-  }
+  // Get content type and length
+  const contentType = tc.content_type();
+  const length = tc.length() || 0;
 
-  const length = tc.length || (typeof (tc as any).length === 'function' ? (tc as any).length() : 0);
-  encap.writeULong(length || 0);
+  encodeTypeCode(encap, contentType);
+  encap.writeULong(length);
 
-  const encapBuffer = encap.getBuffer();
-  out.writeULong(encapBuffer.length);
-  out.writeOctetArray(encapBuffer);
+  out.writeEncapsulation(encap);
 }
 
-function decodeSequence(inp: CDRInputStream, kind: TCKind): TypeCode {
+function encodeAlias(out: CDROutputStream, tc: TypeCode): void {
+  const encap = new CDROutputStream(512, out.isLittleEndian());
+
+  const id = tc.get_param("id") as string || "";
+  const name = tc.get_param("name") as string || "";
+
+  encap.writeString(id);
+  encap.writeString(name);
+
+  // Encode aliased type
+  const contentType = tc.content_type();
+  if (contentType) {
+    encodeTypeCode(encap, contentType);
+  }
+  else {
+    // Default to null if no content type
+    encodeTypeCode(encap, new TypeCode(TypeCode.Kind.tk_null));
+  }
+
+  out.writeEncapsulation(encap);
+}
+
+function encodeValue(out: CDROutputStream, tc: TypeCode): void {
+  const encap = new CDROutputStream(512, out.isLittleEndian());
+
+  const id = tc.get_param("id") as string || "";
+  const name = tc.get_param("name") as string || "";
+  const typeModifier = tc.get_param("typeModifier") as number || 0;
+
+  encap.writeString(id);
+  encap.writeString(name);
+  encap.writeShort(typeModifier);
+
+  // Encode concrete base type if present
+  const concreteBase = tc.get_param("concreteBase") as TypeCode;
+  if (concreteBase) {
+    encodeTypeCode(encap, concreteBase);
+  }
+  else {
+    encodeTypeCode(encap, new TypeCode(TypeCode.Kind.tk_null));
+  }
+
+  // Encode member count and members
+  const memberCount = tc.member_count();
+  encap.writeULong(memberCount);
+
+  for (let i = 0; i < memberCount; i++) {
+    encap.writeString(tc.member_name(i));
+    encodeTypeCode(encap, tc.member_type(i));
+    encap.writeShort(tc.get_param(`member_visibility_${i}`) as number || 0);
+  }
+
+  out.writeEncapsulation(encap);
+}
+
+// Helper functions for complex type decoding
+
+function decodeComplex(inp: CDRInputStream, kind: TypeCode.Kind): TypeCode {
   const length = inp.readULong();
-  const encap = inp.createSubStream(length);
+  const encapData = inp.readOctetArray(length);
+  const encap = new CDRInputStream(encapData);
+
+  const id = encap.readString();
+  const name = encap.readString();
+
+  const tc = new TypeCode(kind);
+  tc.set_param("id", id);
+  tc.set_param("name", name);
+
+  return tc;
+}
+
+function decodeStruct(inp: CDRInputStream, kind: TypeCode.Kind): TypeCode {
+  const length = inp.readULong();
+  const encapData = inp.readOctetArray(length);
+  const encap = new CDRInputStream(encapData);
+
+  const id = encap.readString();
+  const name = encap.readString();
+
+  const memberCount = encap.readULong();
+  const members = [];
+
+  for (let i = 0; i < memberCount; i++) {
+    const memberName = encap.readString();
+    const memberType = decodeTypeCode(encap);
+    members.push({ name: memberName, type: memberType });
+  }
+
+  // Create the struct TypeCode
+  if (kind === TypeCode.Kind.tk_struct) {
+    return TypeCode.create_struct_tc(id, name, members);
+  }
+  else {
+    return TypeCode.create_exception_tc(id, name, members);
+  }
+}
+
+function decodeUnion(inp: CDRInputStream, _kind: TypeCode.Kind): TypeCode {
+  const length = inp.readULong();
+  const encapData = inp.readOctetArray(length);
+  const encap = new CDRInputStream(encapData);
+
+  const id = encap.readString();
+  const name = encap.readString();
+
+  const discriminatorType = decodeTypeCode(encap);
+  const defaultIndex = encap.readLong();
+
+  const memberCount = encap.readULong();
+  const members = [];
+
+  for (let i = 0; i < memberCount; i++) {
+    const label = decodeUnionLabel(encap, discriminatorType);
+    const memberName = encap.readString();
+    const memberType = decodeTypeCode(encap);
+    members.push({ label, name: memberName, type: memberType });
+  }
+
+  const tc = TypeCode.create_union_tc(id, name, discriminatorType, members);
+  if (defaultIndex >= 0) {
+    tc.set_param("default_index", defaultIndex);
+  }
+  return tc;
+}
+
+function decodeUnionLabel(inp: CDRInputStream, discriminatorType: TypeCode): unknown {
+  const discrKind = discriminatorType.kind();
+
+  switch (discrKind) {
+    case TypeCode.Kind.tk_short:
+      return inp.readShort();
+    case TypeCode.Kind.tk_long:
+      return inp.readLong();
+    case TypeCode.Kind.tk_ushort:
+      return inp.readUShort();
+    case TypeCode.Kind.tk_ulong:
+    case TypeCode.Kind.tk_enum:
+      return inp.readULong();
+    case TypeCode.Kind.tk_boolean:
+      return inp.readBoolean();
+    case TypeCode.Kind.tk_char:
+      return inp.readChar();
+    case TypeCode.Kind.tk_longlong:
+      return inp.readLongLong();
+    case TypeCode.Kind.tk_ulonglong:
+      return inp.readULongLong();
+    default:
+      return inp.readOctet();
+  }
+}
+
+function decodeEnum(inp: CDRInputStream, _kind: TypeCode.Kind): TypeCode {
+  const length = inp.readULong();
+  const encapData = inp.readOctetArray(length);
+  const encap = new CDRInputStream(encapData);
+
+  const id = encap.readString();
+  const name = encap.readString();
+
+  const memberCount = encap.readULong();
+  const members = [];
+
+  for (let i = 0; i < memberCount; i++) {
+    members.push(encap.readString());
+  }
+
+  return TypeCode.create_enum_tc(id, name, members);
+}
+
+function decodeSequence(inp: CDRInputStream, kind: TypeCode.Kind): TypeCode {
+  const length = inp.readULong();
+  const encapData = inp.readOctetArray(length);
+  const encap = new CDRInputStream(encapData);
 
   const contentType = decodeTypeCode(encap);
   const bound = encap.readULong();
 
-  return new TypeCode(
-    kind,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    contentType,
-    bound,
-  );
+  if (kind === TypeCode.Kind.tk_sequence) {
+    return TypeCode.create_sequence_tc(bound, contentType);
+  }
+  else {
+    return TypeCode.create_array_tc(bound, contentType);
+  }
 }
 
-function encodeAlias(out: CDROutputStream, tc: TypeCode): void {
-  const encap = new CDROutputStream(256, out.isLittleEndian());
-
-  encap.writeString(tc.id || "");
-  encap.writeString(tc.name || "");
-  encodeTypeCode(encap, tc.contentType!);
-
-  const encapBuffer = encap.getBuffer();
-  out.writeULong(encapBuffer.length);
-  out.writeOctetArray(encapBuffer);
-}
-
-function decodeAlias(inp: CDRInputStream, kind: TCKind): TypeCode {
+function decodeAlias(inp: CDRInputStream, kind: TypeCode.Kind): TypeCode {
   const length = inp.readULong();
-  const encap = inp.createSubStream(length);
+  const encapData = inp.readOctetArray(length);
+  const encap = new CDRInputStream(encapData);
 
   const id = encap.readString();
   const name = encap.readString();
   const contentType = decodeTypeCode(encap);
 
-  return new TypeCode(
-    kind,
-    id,
-    name,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    contentType,
-  );
+  if (kind === TypeCode.Kind.tk_alias) {
+    return TypeCode.create_alias_tc(id, name, contentType);
+  }
+  else {
+    // tk_value_box
+    return TypeCode.create_value_box_tc(id, name, contentType);
+  }
 }
 
-function encodeValue(out: CDROutputStream, tc: TypeCode): void {
-  const encap = new CDROutputStream(256, out.isLittleEndian());
-
-  encap.writeString(tc.id || "");
-  encap.writeString(tc.name || "");
-  encap.writeShort(tc.typeModifier || 0);
-
-  // Encode concrete base if present
-  if (tc.concreteBase) {
-    encodeTypeCode(encap, tc.concreteBase);
-  } else {
-    encodeTypeCode(encap, new TypeCode(TCKind.tk_null));
-  }
-
-  // Encode members
-  encap.writeULong(tc.members?.length || 0);
-  for (const member of tc.members || []) {
-    encap.writeString(member.name);
-    encodeTypeCode(encap, member.type);
-    encap.writeShort(0); // Visibility (PUBLIC = 0)
-  }
-
-  const encapBuffer = encap.getBuffer();
-  out.writeULong(encapBuffer.length);
-  out.writeOctetArray(encapBuffer);
-}
-
-function decodeValue(inp: CDRInputStream, kind: TCKind): TypeCode {
+function decodeValue(inp: CDRInputStream, _kind: TypeCode.Kind): TypeCode {
   const length = inp.readULong();
-  const encap = inp.createSubStream(length);
+  const encapData = inp.readOctetArray(length);
+  const encap = new CDRInputStream(encapData);
 
   const id = encap.readString();
   const name = encap.readString();
   const typeModifier = encap.readShort();
-
   const concreteBase = decodeTypeCode(encap);
-  const memberCount = encap.readULong();
 
-  const members: StructMember[] = [];
+  const memberCount = encap.readULong();
+  const members = [];
+
   for (let i = 0; i < memberCount; i++) {
     const memberName = encap.readString();
     const memberType = decodeTypeCode(encap);
-    encap.readShort(); // Skip visibility
-    members.push({ name: memberName, type: memberType });
+    const visibility = encap.readShort();
+    members.push({ name: memberName, type: memberType, visibility });
   }
 
-  return new TypeCode(
-    kind,
-    id,
-    name,
-    members,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    typeModifier,
-    concreteBase.kind !== TCKind.tk_null ? concreteBase : undefined,
-  );
-}
-
-function encodeUnionLabel(
-  out: CDROutputStream,
-  label: number | bigint | string | boolean,
-  discriminatorType: TypeCode,
-): void {
-  switch (discriminatorType.kind) {
-    case TCKind.tk_short:
-      out.writeShort(label as number);
-      break;
-    case TCKind.tk_long:
-      out.writeLong(label as number);
-      break;
-    case TCKind.tk_ushort:
-      out.writeUShort(label as number);
-      break;
-    case TCKind.tk_ulong:
-      out.writeULong(label as number);
-      break;
-    case TCKind.tk_boolean:
-      out.writeBoolean(label as boolean);
-      break;
-    case TCKind.tk_char:
-      out.writeChar(label as string);
-      break;
-    case TCKind.tk_enum:
-      out.writeULong(label as number);
-      break;
-    case TCKind.tk_longlong:
-      out.writeLongLong(BigInt(label));
-      break;
-    case TCKind.tk_ulonglong:
-      out.writeULongLong(BigInt(label));
-      break;
-    default:
-      throw new Error(`Unsupported discriminator type: ${discriminatorType.kind}`);
-  }
-}
-
-function decodeUnionLabel(
-  inp: CDRInputStream,
-  discriminatorType: TypeCode,
-): number | bigint | string | boolean {
-  switch (discriminatorType.kind) {
-    case TCKind.tk_short:
-      return inp.readShort();
-    case TCKind.tk_long:
-      return inp.readLong();
-    case TCKind.tk_ushort:
-      return inp.readUShort();
-    case TCKind.tk_ulong:
-      return inp.readULong();
-    case TCKind.tk_boolean:
-      return inp.readBoolean();
-    case TCKind.tk_char:
-      return inp.readChar();
-    case TCKind.tk_enum:
-      return inp.readULong();
-    case TCKind.tk_longlong:
-      return inp.readLongLong();
-    case TCKind.tk_ulonglong:
-      return inp.readULongLong();
-    default:
-      throw new Error(`Unsupported discriminator type: ${discriminatorType.kind}`);
-  }
+  return TypeCode.create_value_tc(id, name, typeModifier, concreteBase, members);
 }

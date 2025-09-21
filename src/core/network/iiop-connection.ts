@@ -33,7 +33,8 @@ export class IIOPConnection {
       });
 
       return new IIOPConnection(tcpConn, host, port);
-    } catch (error) {
+    }
+    catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to connect to ${host}:${port}: ${message}`);
     }
@@ -53,7 +54,8 @@ export class IIOPConnection {
         const n = await this.tcpConn.write(message.subarray(written));
         written += n;
       }
-    } catch (error) {
+    }
+    catch (error) {
       this.closed = true;
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to send message: ${message}`);
@@ -121,7 +123,8 @@ export class IIOPConnection {
       fullMessage.set(body, 12);
 
       return fullMessage;
-    } catch (error) {
+    }
+    catch (error) {
       this.closed = true;
       if (error instanceof Error && error.message.includes("GIOP")) {
         throw error; // Re-throw GIOP-specific errors
@@ -139,7 +142,8 @@ export class IIOPConnection {
       this.closed = true;
       try {
         this.tcpConn.close();
-      } catch {
+      }
+      catch {
         // Ignore close errors
       }
     }
@@ -199,7 +203,8 @@ export class IIOPListener {
       });
 
       return new IIOPListener(listener, port);
-    } catch (error) {
+    }
+    catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`Failed to listen on port ${port}: ${message}`);
     }
@@ -214,7 +219,8 @@ export class IIOPListener {
         const tcpConn = await this.listener.accept();
         const addr = tcpConn.remoteAddr as Deno.NetAddr;
         yield new IIOPConnection(tcpConn, addr.hostname, addr.port);
-      } catch (error) {
+      }
+      catch (error) {
         if (this.closed) {
           break;
         }
@@ -233,7 +239,8 @@ export class IIOPListener {
       this.closed = true;
       try {
         this.listener.close();
-      } catch {
+      }
+      catch {
         // Ignore close errors
       }
     }

@@ -75,7 +75,8 @@ Deno.test("Proxy: Handles oneway calls properly", async () => {
   try {
     await proxy.notify("test message");
     // Should complete without error for oneway
-  } catch (error) {
+  }
+  catch (error) {
     // Only non-COMM_FAILURE errors should propagate
     assertEquals((error as Error).constructor.name !== "COMM_FAILURE", true);
   }
@@ -169,7 +170,8 @@ Deno.test("Proxy: Handles missing transport gracefully", async () => {
   // Should use fallback without crashing
   try {
     await proxy.doSomething();
-  } catch (error) {
+  }
+  catch (error) {
     // Expected since we removed transport
     assertExists(error);
   }

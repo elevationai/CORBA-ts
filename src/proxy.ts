@@ -169,11 +169,13 @@ export class CORBAProxy {
         // Oneway call - no return value expected
         await this._invokeOneway(methodInfo.operation, args);
         return undefined;
-      } else {
+      }
+      else {
         // Regular call - wait for return value
         return await this._orb.invoke(this._objRef, methodInfo.operation, args);
       }
-    } catch (error) {
+    }
+    catch (error) {
       // Add method context to error
       if (error instanceof Error) {
         error.message = `Error invoking ${methodName}: ${error.message}`;
@@ -208,12 +210,14 @@ export class CORBAProxy {
     if (orbInternal._transport && typeof orbInternal._transport.sendOnewayRequest === "function") {
       // Use dedicated oneway method if available
       await orbInternal._transport.sendOnewayRequest(ior, operation, encodedArgs);
-    } else {
+    }
+    else {
       // Fallback: use regular invoke but don't wait for response
       // This works because oneway operations don't expect a reply
       try {
         await this._orb.invokeWithEncodedArgs(this._objRef, operation, encodedArgs);
-      } catch (error) {
+      }
+      catch (error) {
         // For oneway, we can ignore certain errors like connection closed after send
         if (!(error instanceof CORBA.COMM_FAILURE)) {
           throw error;

@@ -53,7 +53,7 @@ export type { NamingServerConfig } from "./naming_server.ts";
 export * from "./proxy.ts";
 
 // Export EventHandler
-export { EventHandler, createEventHandler, type Event, type EventCallback, type EventListener } from "./event_handler.ts";
+export { createEventHandler, type Event, type EventCallback, EventHandler, type EventListener } from "./event_handler.ts";
 
 // Main initialization function
 import { init as initORB } from "./orb.ts";

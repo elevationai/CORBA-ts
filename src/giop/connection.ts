@@ -130,7 +130,8 @@ export class IIOPConnectionImpl implements IIOPConnection {
 
       // Start background reading
       this._startReading();
-    } catch (error) {
+    }
+    catch (error) {
       // Clear the timeout timer on failure
       if (timeoutTimer !== undefined) {
         clearTimeout(timeoutTimer);
@@ -193,7 +194,8 @@ export class IIOPConnectionImpl implements IIOPConnection {
     if (this._conn) {
       try {
         this._conn.close();
-      } catch {
+      }
+      catch {
         // Ignore close errors
       }
       this._conn = null;
@@ -225,7 +227,8 @@ export class IIOPConnectionImpl implements IIOPConnection {
 
         // Try to parse complete messages
         this._parseMessages();
-      } catch (error) {
+      }
+      catch (error) {
         if (this._state === ConnectionState.CONNECTED) {
           console.error("Error reading from connection:", error);
           break;
@@ -300,10 +303,12 @@ export class IIOPConnectionImpl implements IIOPConnection {
         if (this._readers.length > 0) {
           const reader = this._readers.shift()!;
           reader(message);
-        } else {
+        }
+        else {
           this._pendingMessages.push(message);
         }
-      } catch (error) {
+      }
+      catch (error) {
         console.error("Error parsing GIOP message:", error);
         // Skip this message and continue
       }

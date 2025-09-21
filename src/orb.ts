@@ -196,9 +196,11 @@ export class ORBImpl implements ORB {
 
     if (str.startsWith("IOR:")) {
       ior = IORUtil.fromString(str);
-    } else if (str.startsWith("corbaloc:")) {
+    }
+    else if (str.startsWith("corbaloc:")) {
       ior = IORUtil.fromString(str);
-    } else {
+    }
+    else {
       throw new CORBA.BAD_PARAM(`Invalid object reference format: ${str}`);
     }
 
@@ -309,28 +311,36 @@ export class ORBImpl implements ORB {
 
       if (arg === null || arg === undefined) {
         tc = new TypeCode(TypeCode.Kind.tk_null);
-      } else if (typeof arg === "string") {
+      }
+      else if (typeof arg === "string") {
         tc = new TypeCode(TypeCode.Kind.tk_string);
-      } else if (typeof arg === "number") {
+      }
+      else if (typeof arg === "number") {
         if (Number.isInteger(arg)) {
           // Use long for integers
           tc = new TypeCode(TypeCode.Kind.tk_long);
-        } else {
+        }
+        else {
           // Use double for floating point
           tc = new TypeCode(TypeCode.Kind.tk_double);
         }
-      } else if (typeof arg === "boolean") {
+      }
+      else if (typeof arg === "boolean") {
         tc = new TypeCode(TypeCode.Kind.tk_boolean);
-      } else if (typeof arg === "bigint") {
+      }
+      else if (typeof arg === "bigint") {
         tc = new TypeCode(TypeCode.Kind.tk_longlong);
-      } else if (Array.isArray(arg)) {
+      }
+      else if (Array.isArray(arg)) {
         // Encode as sequence of Any
         tc = new TypeCode(TypeCode.Kind.tk_sequence);
         tc.content_type = () => new TypeCode(TypeCode.Kind.tk_any);
-      } else if (typeof arg === "object") {
+      }
+      else if (typeof arg === "object") {
         // Without TypeCode info, encode as Any (which falls back to JSON string)
         tc = new TypeCode(TypeCode.Kind.tk_any);
-      } else {
+      }
+      else {
         // Unknown type - use Any
         tc = new TypeCode(TypeCode.Kind.tk_any);
       }
@@ -371,7 +381,8 @@ export class ORBImpl implements ORB {
       let returnValue: unknown;
       try {
         returnValue = inCdr.readLong();
-      } catch {
+      }
+      catch {
         // If can't read as long, return 0
         returnValue = 0;
       }
@@ -382,13 +393,15 @@ export class ORBImpl implements ORB {
         outputBuffer: reply.body,
         isLittleEndian: reply.isLittleEndian(),
       };
-    } else if (reply.replyStatus === 2) { // SYSTEM_EXCEPTION
+    }
+    else if (reply.replyStatus === 2) { // SYSTEM_EXCEPTION
       const sysEx = reply.getSystemException();
       if (sysEx) {
         throw new CORBA.SystemException(sysEx.exceptionId, sysEx.minor, sysEx.completionStatus);
       }
       throw new CORBA.INTERNAL("System exception with no details");
-    } else {
+    }
+    else {
       throw new CORBA.INTERNAL(`Unhandled reply status: ${reply.replyStatus}`);
     }
   }

@@ -60,7 +60,8 @@ Deno.test("Network: Basic client-server communication", async () => {
     assertEquals(reply.body, testMessage);
 
     await server.stop();
-  } finally {
+  }
+  finally {
     await transport.close();
   }
 });
@@ -121,7 +122,8 @@ Deno.test("Network: Multiple concurrent requests", async () => {
     assertEquals(counter, numRequests);
 
     await server.stop();
-  } finally {
+  }
+  finally {
     await transport.close();
   }
 });
@@ -177,7 +179,8 @@ Deno.test("Network: Oneway requests", async () => {
     assertEquals(notifications[2], "message3");
 
     await server.stop();
-  } finally {
+  }
+  finally {
     await transport.close();
   }
 });
@@ -228,7 +231,8 @@ Deno.test("Network: ORB integration with proxies", async () => {
     // Test _is_a method
     const supportsInterface = await calculator._is_a("IDL:Test/Calculator:1.0");
     assertEquals(supportsInterface, true);
-  } finally {
+  }
+  finally {
     await orb.shutdown(false);
   }
 });
@@ -275,7 +279,8 @@ Deno.test("Network: Connection pooling and reuse", async () => {
     }
 
     await server.stop();
-  } finally {
+  }
+  finally {
     await transport.close();
   }
 });
@@ -296,13 +301,15 @@ Deno.test("Network: Error handling and timeouts", async () => {
     let errorThrown = false;
     try {
       await transport.sendRequest(ior, "test", new Uint8Array());
-    } catch (error) {
+    }
+    catch (error) {
       errorThrown = true;
       assertExists(error);
     }
 
     assertEquals(errorThrown, true, "Expected connection error");
-  } finally {
+  }
+  finally {
     await transport.close();
   }
 });

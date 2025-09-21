@@ -626,7 +626,8 @@ class POAImpl extends ObjectReference implements POA {
       }
 
       return Promise.resolve(objectKey);
-    } catch (error) {
+    }
+    catch (error) {
       return Promise.reject(new CORBA.MARSHAL("Failed to extract object ID from IOR: " + (error as Error).message));
     }
   }

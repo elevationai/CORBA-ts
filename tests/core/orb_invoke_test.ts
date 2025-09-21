@@ -84,7 +84,8 @@ Deno.test("ORB invoke: TypeCode-aware encoding for different types", async () =>
     const result = await orb.invoke(mockObjectRef, "testMethod", args);
     // Should return the mock value (42) without throwing
     assertEquals(result, 42);
-  } catch (_error) {
+  }
+  catch (_error) {
     // Expected since we're using mock transport
   }
 });
@@ -97,7 +98,8 @@ Deno.test("ORB invoke: Null and undefined handling", async () => {
 
   try {
     await orb.invoke(mockObjectRef, "testMethod", args);
-  } catch (_error) {
+  }
+  catch (_error) {
     // Expected - testing that null/undefined get proper TypeCodes without crashing
   }
 });
@@ -113,7 +115,8 @@ Deno.test("ORB invoke: Error handling for bad object reference", async () => {
   let errorThrown = false;
   try {
     await orb.invoke(badRef as CORBA.ObjectRef, "test", []);
-  } catch (error) {
+  }
+  catch (error) {
     errorThrown = true;
     assertEquals((error as Error).constructor.name, "BAD_PARAM");
   }
@@ -135,7 +138,8 @@ Deno.test("ORB invokeWithEncodedArgs: Returns structured result", async () => {
     assertEquals(typeof result.returnValue, "number");
     assertEquals(result.returnValue, 42);
     assertEquals(result.outputBuffer instanceof Uint8Array, true);
-  } catch (_error) {
+  }
+  catch (_error) {
     // Expected error with mock
   }
 });
@@ -154,7 +158,8 @@ Deno.test("ORB invoke: Uses invokeWithEncodedArgs internally", async () => {
 
   try {
     await orb.invoke(mockObjectRef, "test", ["hello"]);
-  } catch (_error) {
+  }
+  catch (_error) {
     // Expected with mock
   }
 
@@ -176,7 +181,8 @@ Deno.test("ORB invoke: Complex nested data structures", async () => {
   try {
     // Should handle complex objects by encoding as Any (JSON string fallback)
     await orb.invoke(mockObjectRef, "test", [complexArg]);
-  } catch (_error) {
+  }
+  catch (_error) {
     // Expected - verifying no crash during encoding
   }
 });
@@ -189,7 +195,8 @@ Deno.test("ORB invoke: BigInt handling", async () => {
 
   try {
     await orb.invoke(mockObjectRef, "test", [bigIntValue]);
-  } catch (_error) {
+  }
+  catch (_error) {
     // Expected - verifying BigInt gets proper tk_longlong TypeCode
   }
 });

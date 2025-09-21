@@ -149,8 +149,6 @@ export class GIOPRequestMessage extends GIOPMessage {
     const cdr = new CDROutputStream(256, false); // Big-endian by default
 
     // Write GIOP header placeholder (will be filled later)
-    // deno-lint-ignore no-unused-vars
-    const headerStart = cdr.getPosition();
     cdr.writeOctetArray(new TextEncoder().encode(this.header.magic));
     cdr.writeOctet(this.header.version.major);
     cdr.writeOctet(this.header.version.minor);
@@ -166,7 +164,8 @@ export class GIOPRequestMessage extends GIOPMessage {
     // Serialize body based on GIOP version
     if (this.header.version.minor <= 1) {
       this.serializeRequest_1_0(cdr);
-    } else {
+    }
+    else {
       this.serializeRequest_1_2(cdr);
     }
 
@@ -254,7 +253,8 @@ export class GIOPRequestMessage extends GIOPMessage {
     // Deserialize based on GIOP version
     if (this.header.version.minor <= 1) {
       this.deserializeRequest_1_0(cdr);
-    } else {
+    }
+    else {
       this.deserializeRequest_1_2(cdr);
     }
 
@@ -304,7 +304,8 @@ export class GIOPRequestMessage extends GIOPMessage {
     if (addressingDisposition === 0) { // KeyAddr
       const keyLength = cdr.readULong();
       this.object_key = cdr.readOctetArray(keyLength);
-    } else {
+    }
+    else {
       throw new Error(`Unsupported addressing disposition: ${addressingDisposition}`);
     }
 
@@ -368,7 +369,8 @@ export class GIOPReplyMessage extends GIOPMessage {
     // Serialize body based on GIOP version
     if (this.header.version.minor <= 1) {
       this.serializeReply_1_0(cdr);
-    } else {
+    }
+    else {
       this.serializeReply_1_2(cdr);
     }
 
@@ -431,7 +433,8 @@ export class GIOPReplyMessage extends GIOPMessage {
     // Deserialize based on GIOP version
     if (this.header.version.minor <= 1) {
       this.deserializeReply_1_0(cdr);
-    } else {
+    }
+    else {
       this.deserializeReply_1_2(cdr);
     }
 
@@ -570,7 +573,8 @@ export async function parseIOR(iorString: string): Promise<IIOPProfile | null> {
             const data = cdr.readOctetArray(dataLength);
             components.push({ tag, data });
           }
-        } catch {
+        }
+        catch {
           // No more components
         }
 
@@ -585,7 +589,8 @@ export async function parseIOR(iorString: string): Promise<IIOPProfile | null> {
     }
 
     return null;
-  } catch (error) {
+  }
+  catch (error) {
     console.error(`Failed to parse IOR: ${error}`);
     return null;
   }
@@ -625,7 +630,8 @@ export async function createIOR(profile: IIOPProfile): Promise<string> {
     };
 
     return IORUtil.toString(ior);
-  } catch (error) {
+  }
+  catch (error) {
     console.error(`Failed to create IOR: ${error}`);
     return "IOR:"; // Return minimal IOR on error
   }

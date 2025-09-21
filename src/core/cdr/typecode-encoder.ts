@@ -8,9 +8,6 @@ import { CDROutputStream } from "./encoder.ts";
 import { Any, encodeAny } from "./any.ts";
 import { IORUtil } from "../../giop/ior.ts";
 import type { IOR } from "../../giop/types.ts";
-// Import CDR TypeCode for handling internal CDR types
-// deno-lint-ignore no-unused-vars
-import { TCKind, TypeCode as CDRTypeCode } from "./typecode.ts";
 
 /**
  * Encode a value to CDR based on its TypeCode
@@ -69,7 +66,8 @@ export function encodeWithTypeCode(
     case TypeCode.Kind.tk_longlong:
       if (typeof value === "bigint") {
         cdr.writeLongLong(value);
-      } else {
+      }
+      else {
         cdr.writeLongLong(BigInt(value as number));
       }
       break;
@@ -77,7 +75,8 @@ export function encodeWithTypeCode(
     case TypeCode.Kind.tk_ulonglong:
       if (typeof value === "bigint") {
         cdr.writeULongLong(value);
-      } else {
+      }
+      else {
         cdr.writeULongLong(BigInt(value as number));
       }
       break;
@@ -104,7 +103,8 @@ export function encodeWithTypeCode(
       const contentType = tc.content_type();
       if (contentType) {
         encodeWithTypeCode(cdr, value, contentType);
-      } else {
+      }
+      else {
         // Fallback to string
         cdr.writeString(String(value));
       }
@@ -116,7 +116,8 @@ export function encodeWithTypeCode(
       if (value instanceof Any) {
         // Already an Any object
         encodeAny(cdr, value);
-      } else {
+      }
+      else {
         // Create Any from value and encode
         const any = Any.fromValue(value);
         encodeAny(cdr, any);
@@ -128,9 +129,10 @@ export function encodeWithTypeCode(
       // Encode object reference as IOR
       if (value === null || value === undefined) {
         // Null reference - encode as empty IOR
-        cdr.writeString("");  // Empty type_id
-        cdr.writeULong(0);    // Empty profiles sequence (length = 0)
-      } else if (typeof value === "object" && "_ior" in value) {
+        cdr.writeString(""); // Empty type_id
+        cdr.writeULong(0); // Empty profiles sequence (length = 0)
+      }
+      else if (typeof value === "object" && "_ior" in value) {
         // Has _ior property - need to encode the IOR structure
         const iorValue = (value as { _ior: string | IOR })._ior;
 
@@ -149,7 +151,8 @@ export function encodeWithTypeCode(
             cdr.writeULong(profileData.length);
             cdr.writeOctetArray(profileData);
           }
-        } else if (iorValue && typeof iorValue === "object") {
+        }
+        else if (iorValue && typeof iorValue === "object") {
           // IOR is an object with typeId and profiles
           // Encode type_id
           cdr.writeString(iorValue.typeId || "");
@@ -167,10 +170,12 @@ export function encodeWithTypeCode(
             cdr.writeULong(profileData.length);
             cdr.writeOctetArray(profileData);
           }
-        } else {
+        }
+        else {
           throw new Error("Invalid IOR structure in object reference");
         }
-      } else {
+      }
+      else {
         throw new Error("Invalid object reference: must be null or have _ior property");
       }
       break;
@@ -206,7 +211,8 @@ function encodeStruct(
 
     if (memberType) {
       encodeWithTypeCode(cdr, memberValue, memberType);
-    } else {
+    }
+    else {
       // If no member type info, try to encode based on value type
       encodeBasedOnValueType(cdr, memberValue);
     }
@@ -231,7 +237,8 @@ function encodeSequence(
   for (const element of value) {
     if (elementType) {
       encodeWithTypeCode(cdr, element, elementType);
-    } else {
+    }
+    else {
       encodeBasedOnValueType(cdr, element);
     }
   }
@@ -253,7 +260,8 @@ function encodeArray(
   for (const element of value) {
     if (elementType) {
       encodeWithTypeCode(cdr, element, elementType);
-    } else {
+    }
+    else {
       encodeBasedOnValueType(cdr, element);
     }
   }
@@ -289,7 +297,8 @@ function encodeUnion(
   // Encode the discriminator
   if (discriminatorType) {
     encodeWithTypeCode(cdr, discriminatorValue, discriminatorType);
-  } else {
+  }
+  else {
     // Default to encoding as ulong for discriminator
     cdr.writeULong(discriminatorValue as number);
   }
@@ -307,7 +316,8 @@ function encodeUnion(
     if (discriminatorType && discriminatorType.kind() === TypeCode.Kind.tk_enum) {
       // For enum discriminators, compare the label (which should be the string) with the original discriminator
       matches = label === value.discriminator;
-    } else {
+    }
+    else {
       // For other discriminators, compare directly
       matches = label === discriminatorValue;
     }
@@ -323,14 +333,14 @@ function encodeUnion(
       return;
     }
   }
-  
+
   // If no matching member found, check for default case
   const defaultIndex = tc.default_index();
   if (defaultIndex >= 0) {
     const memberName = tc.member_name(defaultIndex);
     const memberType = tc.member_type(defaultIndex);
     const memberValue = value[memberName];
-    
+
     if (memberType && memberValue !== undefined) {
       encodeWithTypeCode(cdr, memberValue, memberType);
     }
@@ -343,28 +353,36 @@ function encodeUnion(
 function encodeBasedOnValueType(cdr: CDROutputStream, value: unknown): void {
   if (value === null || value === undefined) {
     cdr.writeString("");
-  } else if (typeof value === "string") {
+  }
+  else if (typeof value === "string") {
     cdr.writeString(value);
-  } else if (typeof value === "number") {
+  }
+  else if (typeof value === "number") {
     if (Number.isInteger(value)) {
       cdr.writeLong(value);
-    } else {
+    }
+    else {
       cdr.writeDouble(value);
     }
-  } else if (typeof value === "boolean") {
+  }
+  else if (typeof value === "boolean") {
     cdr.writeBoolean(value);
-  } else if (typeof value === "bigint") {
+  }
+  else if (typeof value === "bigint") {
     cdr.writeLongLong(value);
-  } else if (Array.isArray(value)) {
+  }
+  else if (Array.isArray(value)) {
     // Encode as sequence
     cdr.writeULong(value.length);
     for (const elem of value) {
       encodeBasedOnValueType(cdr, elem);
     }
-  } else if (typeof value === "object") {
+  }
+  else if (typeof value === "object") {
     // For objects without TypeCode, encode as JSON string
     cdr.writeString(JSON.stringify(value));
-  } else {
+  }
+  else {
     cdr.writeString(String(value));
   }
 }

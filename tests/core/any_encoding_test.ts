@@ -143,7 +143,8 @@ Deno.test("Any encoding: Rejects generic objects", () => {
   try {
     encodeWithTypeCode(cdr, obj, tc);
     assertEquals(true, false, "Expected error for generic object in Any");
-  } catch (error) {
+  }
+  catch (error) {
     assertEquals((error as Error).message.includes("Cannot infer TypeCode"), true);
   }
 });
@@ -158,8 +159,8 @@ Deno.test("Object reference encoding: Handles IOR objects", () => {
       typeId: "IDL:Test/Service:1.0",
       profiles: [{
         profileId: 0, // TAG_INTERNET_IOP
-        profileData: new Uint8Array([0, 0, 0, 0])  // Minimal profile data
-      }]
+        profileData: new Uint8Array([0, 0, 0, 0]), // Minimal profile data
+      }],
     },
   };
 

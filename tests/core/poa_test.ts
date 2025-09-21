@@ -211,7 +211,8 @@ Deno.test("POA: reference_to_id handles invalid references", async () => {
   try {
     await poa.reference_to_id(invalidRef);
     throw new Error("Should have thrown BAD_PARAM");
-  } catch (error) {
+  }
+  catch (error) {
     assertEquals((error as Error).constructor.name, "BAD_PARAM");
     assertEquals((error as Error).message.includes("missing IOR"), true);
   }
@@ -236,7 +237,8 @@ Deno.test("POA: reference_to_id handles IOR without IIOP profile", async () => {
   try {
     await poa.reference_to_id(invalidRef);
     throw new Error("Should have thrown BAD_PARAM");
-  } catch (error) {
+  }
+  catch (error) {
     assertEquals((error as Error).constructor.name, "BAD_PARAM");
     assertEquals((error as Error).message.includes("No IIOP profile"), true);
   }
