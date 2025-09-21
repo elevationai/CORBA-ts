@@ -27,7 +27,7 @@ export enum CorbalocProtocol {
  * A single address in a corbaloc URL
  */
 export interface CorbalocAddress {
-  protocol: CorbalocProtocol | string;  // Allow string for custom protocols
+  protocol: CorbalocProtocol | string; // Allow string for custom protocols
   version?: GIOPVersion;
   host?: string;
   port?: number;
@@ -118,9 +118,11 @@ function splitAddresses(addressPart: string): string[] {
   for (const char of addressPart) {
     if (char === "[") {
       inBrackets++;
-    } else if (char === "]") {
+    }
+    else if (char === "]") {
       inBrackets--;
-    } else if (char === "," && inBrackets === 0) {
+    }
+    else if (char === "," && inBrackets === 0) {
       if (current) {
         parts.push(current);
         current = "";
@@ -154,7 +156,8 @@ function parseAddress(part: string): CorbalocAddress | null {
   if (protocolMatch) {
     protocol = protocolMatch[1].toLowerCase() as CorbalocProtocol;
     part = part.substring(protocolMatch[0].length);
-  } else if (part.startsWith(":")) {
+  }
+  else if (part.startsWith(":")) {
     // Implicit IIOP protocol
     part = part.substring(1);
   }
@@ -191,12 +194,14 @@ function parseAddress(part: string): CorbalocAddress | null {
         throw new CorbalocParseError("Invalid port number", part);
       }
     }
-  } else {
+  }
+  else {
     // IPv4 or hostname
     const colonIndex = part.lastIndexOf(":");
     if (colonIndex === -1) {
       host = part;
-    } else {
+    }
+    else {
       host = part.substring(0, colonIndex);
       const portStr = part.substring(colonIndex + 1);
       port = parseInt(portStr);
@@ -263,7 +268,8 @@ export function validateCorbaloc(url: string): { valid: boolean; error?: string 
   try {
     parseCorbaloc(url);
     return { valid: true };
-  } catch (error) {
+  }
+  catch (error) {
     return {
       valid: false,
       error: error instanceof Error ? error.message : "Unknown error",
@@ -278,7 +284,7 @@ export function buildCorbaloc(url: CorbalocURL): string {
   let result = "corbaloc:";
 
   // Build addresses
-  const addressStrings = url.addresses.map(addr => {
+  const addressStrings = url.addresses.map((addr) => {
     if (addr.protocol === CorbalocProtocol.RIR) {
       return "rir:";
     }
@@ -288,7 +294,8 @@ export function buildCorbaloc(url: CorbalocURL): string {
     // Protocol (can be omitted for IIOP)
     if (addr.protocol !== CorbalocProtocol.IIOP) {
       addrStr += addr.protocol + ":";
-    } else {
+    }
+    else {
       addrStr += ":"; // Implicit IIOP
     }
 
@@ -301,7 +308,8 @@ export function buildCorbaloc(url: CorbalocURL): string {
     if (addr.host) {
       if (addr.host.includes(":")) {
         addrStr += `[${addr.host}]`;
-      } else {
+      }
+      else {
         addrStr += addr.host;
       }
     }
@@ -336,7 +344,8 @@ function encodeCorbalocString(str: string): string {
     // Encode special characters
     if (char === "/" || char === "," || char === ":" || char === "@" || char === "%") {
       result += "%" + char.charCodeAt(0).toString(16).padStart(2, "0").toUpperCase();
-    } else {
+    }
+    else {
       result += char;
     }
   }

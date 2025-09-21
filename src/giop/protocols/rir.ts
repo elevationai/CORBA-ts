@@ -68,8 +68,10 @@ export class RIRProtocolHandler extends BaseProtocolHandler {
   override parseProfile(profile: TaggedProfile): CorbalocAddress | null {
     // RIR profiles are special and don't reverse-parse to addresses
     // They're resolved through the ORB's initial references
-    if (profile.profileId === ProfileId.TAG_MULTIPLE_COMPONENTS &&
-        profile.profileData.length > 0) {
+    if (
+      profile.profileId === ProfileId.TAG_MULTIPLE_COMPONENTS &&
+      profile.profileData.length > 0
+    ) {
       // Check if this looks like a RIR profile
       try {
         const keyString = new TextDecoder().decode(profile.profileData);
@@ -79,7 +81,8 @@ export class RIRProtocolHandler extends BaseProtocolHandler {
             protocol: CorbalocProtocol.RIR,
           };
         }
-      } catch {
+      }
+      catch {
         // Not a valid text key
       }
     }
@@ -90,7 +93,7 @@ export class RIRProtocolHandler extends BaseProtocolHandler {
     // This is a simplified check - in practice, RIR profiles
     // would need ORB-specific markers
     return profile.profileId === ProfileId.TAG_MULTIPLE_COMPONENTS &&
-           this.isRIRProfile(profile);
+      this.isRIRProfile(profile);
   }
 
   private isRIRProfile(profile: TaggedProfile): boolean {
@@ -98,7 +101,8 @@ export class RIRProtocolHandler extends BaseProtocolHandler {
     try {
       const keyString = new TextDecoder().decode(profile.profileData);
       return /^[A-Za-z][A-Za-z0-9_]*$/.test(keyString);
-    } catch {
+    }
+    catch {
       return false;
     }
   }

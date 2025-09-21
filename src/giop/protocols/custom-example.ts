@@ -95,7 +95,8 @@ export class UDSProtocolHandler extends BaseProtocolHandler {
           host: socketPath, // Store path in host field
         };
       }
-    } catch {
+    }
+    catch {
       // Invalid profile data
     }
 

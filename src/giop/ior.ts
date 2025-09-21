@@ -5,7 +5,7 @@
 
 import { CDRInputStream, CDROutputStream } from "../core/cdr/index.ts";
 import { ComponentId, IIOPProfileBody, IOR, ProfileId, TaggedComponent, TaggedProfile } from "./types.ts";
-import { parseCorbaloc as parseCorbalocURL, CorbalocProtocol } from "./corbaloc.ts";
+import { CorbalocProtocol, parseCorbaloc as parseCorbalocURL } from "./corbaloc.ts";
 
 /**
  * IOR utilities and operations
@@ -74,7 +74,8 @@ export class IORUtil {
           profileId: ProfileId.TAG_MULTIPLE_COMPONENTS,
           profileData: new Uint8Array([0]), // Placeholder for RIR
         });
-      } else if (addr.protocol === CorbalocProtocol.IIOP || addr.protocol === CorbalocProtocol.SSLIOP) {
+      }
+      else if (addr.protocol === CorbalocProtocol.IIOP || addr.protocol === CorbalocProtocol.SSLIOP) {
         // Create IIOP profile for this address
         if (!addr.host || !addr.port) {
           throw new Error(`Invalid address: missing host or port for ${addr.protocol}`);
@@ -85,10 +86,12 @@ export class IORUtil {
           host: addr.host,
           port: addr.port,
           object_key: parsed.rawObjectKey,
-          components: addr.protocol === CorbalocProtocol.SSLIOP ? [
-            // Add SSL component for SSLIOP
-            this.createSSLComponent(addr.port),
-          ] : [],
+          components: addr.protocol === CorbalocProtocol.SSLIOP
+            ? [
+              // Add SSL component for SSLIOP
+              this.createSSLComponent(addr.port),
+            ]
+            : [],
         });
         profiles.push(profile);
       }
@@ -112,7 +115,7 @@ export class IORUtil {
     // SSL component structure (simplified)
     cdr.writeUShort(0x0001); // Supports
     cdr.writeUShort(0x0001); // Requires
-    cdr.writeUShort(port);   // Port
+    cdr.writeUShort(port); // Port
 
     return {
       componentId: ComponentId.TAG_SSL_SEC_TRANS,

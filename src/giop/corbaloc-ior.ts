@@ -5,7 +5,7 @@
 import { IOR, TaggedProfile } from "./types.ts";
 import { CorbalocAddress, parseCorbaloc as parseCorbalocURL } from "./corbaloc.ts";
 import { ProtocolRegistry } from "./protocol.ts";
-import { initializeStandardProtocols, areStandardProtocolsInitialized } from "./protocols/index.ts";
+import { areStandardProtocolsInitialized, initializeStandardProtocols } from "./protocols/index.ts";
 
 /**
  * Convert a corbaloc URL to an IOR using registered protocol handlers
@@ -23,9 +23,7 @@ export function corbalocToIOR(url: string): IOR {
   const profiles: TaggedProfile[] = [];
 
   for (const address of parsed.addresses) {
-    const protocolName = typeof address.protocol === "string"
-      ? address.protocol
-      : address.protocol;
+    const protocolName = typeof address.protocol === "string" ? address.protocol : address.protocol;
 
     const handler = ProtocolRegistry.get(protocolName);
 
@@ -100,7 +98,8 @@ function buildSimpleCorbaloc(address: CorbalocAddress): string {
   if (address.host) {
     if (address.host.includes(":")) {
       result += `[${address.host}]`;
-    } else {
+    }
+    else {
       result += address.host;
     }
   }

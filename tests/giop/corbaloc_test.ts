@@ -3,7 +3,7 @@
  */
 
 import { assertEquals, assertThrows } from "@std/assert";
-import { parseCorbaloc, validateCorbaloc, buildCorbaloc, CorbalocProtocol, CorbalocParseError } from "../../src/giop/corbaloc.ts";
+import { buildCorbaloc, CorbalocParseError, CorbalocProtocol, parseCorbaloc, validateCorbaloc } from "../../src/giop/corbaloc.ts";
 
 Deno.test("parseCorbaloc - simple IIOP URL", () => {
   const result = parseCorbaloc("corbaloc::example.com/NameService");
@@ -115,7 +115,7 @@ Deno.test("parseCorbaloc - error on invalid URL", () => {
   assertThrows(
     () => parseCorbaloc("http://example.com"),
     CorbalocParseError,
-    "must start with 'corbaloc:'"
+    "must start with 'corbaloc:'",
   );
 });
 
@@ -123,7 +123,7 @@ Deno.test("parseCorbaloc - error on invalid port", () => {
   assertThrows(
     () => parseCorbaloc("corbaloc::example.com:99999"),
     CorbalocParseError,
-    "Invalid port"
+    "Invalid port",
   );
 });
 
@@ -131,7 +131,7 @@ Deno.test("parseCorbaloc - error on unclosed IPv6 bracket", () => {
   assertThrows(
     () => parseCorbaloc("corbaloc::[::1/test"),
     CorbalocParseError,
-    "Unclosed IPv6"
+    "Unclosed IPv6",
   );
 });
 

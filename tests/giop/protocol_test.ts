@@ -2,14 +2,14 @@
  * Tests for CORBA Protocol Handler System
  */
 
-import { assertEquals, assertThrows, assertExists } from "@std/assert";
-import { ProtocolRegistry, BaseProtocolHandler } from "../../src/giop/protocol.ts";
+import { assertEquals, assertExists, assertThrows } from "@std/assert";
+import { BaseProtocolHandler, ProtocolRegistry } from "../../src/giop/protocol.ts";
 import {
-  IIOPProtocolHandler,
-  SSLIOPProtocolHandler,
-  RIRProtocolHandler,
-  initializeStandardProtocols,
   areStandardProtocolsInitialized,
+  IIOPProtocolHandler,
+  initializeStandardProtocols,
+  RIRProtocolHandler,
+  SSLIOPProtocolHandler,
 } from "../../src/giop/protocols/index.ts";
 import { CorbalocAddress, CorbalocProtocol } from "../../src/giop/corbaloc.ts";
 import { ProfileId, TaggedProfile } from "../../src/giop/types.ts";
@@ -39,7 +39,7 @@ Deno.test("ProtocolRegistry - prevent duplicate registration", () => {
   assertThrows(
     () => ProtocolRegistry.register(handler2),
     Error,
-    "already registered"
+    "already registered",
   );
 });
 
@@ -89,28 +89,28 @@ Deno.test("IIOPProtocolHandler - validate address", () => {
   assertThrows(
     () => handler.validateAddress({ ...validAddress, protocol: CorbalocProtocol.RIR }),
     Error,
-    "Invalid protocol"
+    "Invalid protocol",
   );
 
   // Missing host
   assertThrows(
     () => handler.validateAddress({ ...validAddress, host: undefined }),
     Error,
-    "requires a host"
+    "requires a host",
   );
 
   // Invalid port
   assertThrows(
     () => handler.validateAddress({ ...validAddress, port: 99999 }),
     Error,
-    "Invalid port"
+    "Invalid port",
   );
 
   // Unsupported version
   assertThrows(
     () => handler.validateAddress({ ...validAddress, version: { major: 2, minor: 0 } }),
     Error,
-    "Unsupported IIOP version"
+    "Unsupported IIOP version",
   );
 });
 
@@ -154,7 +154,7 @@ Deno.test("SSLIOPProtocolHandler - validate address", () => {
   assertThrows(
     () => handler.validateAddress({ ...validAddress, protocol: CorbalocProtocol.IIOP }),
     Error,
-    "Invalid protocol"
+    "Invalid protocol",
   );
 });
 
@@ -196,21 +196,21 @@ Deno.test("RIRProtocolHandler - validate address", () => {
   assertThrows(
     () => handler.validateAddress({ ...validAddress, host: "localhost" }),
     Error,
-    "does not support host"
+    "does not support host",
   );
 
   // RIR should not have port
   assertThrows(
     () => handler.validateAddress({ ...validAddress, port: 2809 }),
     Error,
-    "does not support host or port"
+    "does not support host or port",
   );
 
   // RIR should not have version
   assertThrows(
     () => handler.validateAddress({ ...validAddress, version: { major: 1, minor: 2 } }),
     Error,
-    "does not support version"
+    "does not support version",
   );
 });
 

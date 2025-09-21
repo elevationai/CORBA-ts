@@ -33,8 +33,8 @@ export function initializeStandardProtocols(): void {
  */
 export function areStandardProtocolsInitialized(): boolean {
   return ProtocolRegistry.isSupported("iiop") &&
-         ProtocolRegistry.isSupported("ssliop") &&
-         ProtocolRegistry.isSupported("rir");
+    ProtocolRegistry.isSupported("ssliop") &&
+    ProtocolRegistry.isSupported("rir");
 }
 
 // Auto-initialize on module load

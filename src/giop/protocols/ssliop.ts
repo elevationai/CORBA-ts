@@ -37,7 +37,7 @@ export class SSLIOPProtocolHandler extends BaseProtocolHandler {
     private sslOptions: SSLSecurityOptions = {
       supports: 0x0001, // Default: supports integrity
       requires: 0x0001, // Default: requires integrity
-    }
+    },
   ) {
     super(CorbalocProtocol.SSLIOP, 2810);
   }
@@ -107,7 +107,7 @@ export class SSLIOPProtocolHandler extends BaseProtocolHandler {
 
     // Check for SSL component
     const hasSSL = iiop.components.some(
-      comp => comp.componentId === ComponentId.TAG_SSL_SEC_TRANS
+      (comp) => comp.componentId === ComponentId.TAG_SSL_SEC_TRANS,
     );
 
     if (!hasSSL) {
@@ -134,7 +134,7 @@ export class SSLIOPProtocolHandler extends BaseProtocolHandler {
 
     // Check for SSL component
     return iiop.components.some(
-      comp => comp.componentId === ComponentId.TAG_SSL_SEC_TRANS
+      (comp) => comp.componentId === ComponentId.TAG_SSL_SEC_TRANS,
     );
   }
 
