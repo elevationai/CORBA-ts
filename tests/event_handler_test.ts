@@ -3,13 +3,21 @@
  */
 
 import { assert, assertEquals, assertExists } from "@std/assert";
-import { createEventHandler, type Event, type EventCallback, EventHandler } from "../src/event_handler.ts";
+import { createEventHandler, type EventCallback, EventHandler } from "../src/event_handler.ts";
 import { init } from "../src/orb.ts";
 import { getRootPOA } from "../src/poa.ts";
 import { Object } from "../src/object.ts";
 
-// Test event type
-interface TestEvent extends Event {
+// Test event types
+interface CustomEvent {
+  eventCode?: number;
+  timestamp?: string | Date;
+  data?: unknown;
+}
+
+interface TestEvent {
+  eventCode?: number;
+  timestamp?: string | Date;
   testData: string;
   count: number;
 }
@@ -19,7 +27,7 @@ Deno.test("EventHandler - basic creation and activation", async () => {
 
   const appRef = "TEST_APP_001";
 
-  const handler = new EventHandler(appRef, (_e: Event) => {
+  const handler = new EventHandler(appRef, (_e: unknown) => {
     // Callback implementation
   });
 
@@ -42,17 +50,17 @@ Deno.test("EventHandler - callback invocation", async () => {
   await init();
 
   const appRef = "TEST_APP_002";
-  const events: Event[] = [];
+  const events: CustomEvent[] = [];
 
-  const handler = new EventHandler(appRef, (e: Event) => {
-    events.push(e);
+  const handler = new EventHandler(appRef, (e: unknown) => {
+    events.push(e as CustomEvent);
   });
 
   const ref = await handler.activate();
   assertExists(ref);
 
   // Simulate event callback
-  const testEvent: Event = {
+  const testEvent: CustomEvent = {
     eventCode: 100,
     timestamp: new Date().toISOString(),
     data: "test data",
@@ -78,7 +86,7 @@ Deno.test("EventHandler - async callback support", async () => {
   const appRef = "TEST_APP_003";
   let processed = false;
 
-  const asyncCallback: EventCallback = async (_e: Event) => {
+  const asyncCallback: EventCallback = async (_e: unknown) => {
     await new Promise((resolve) => setTimeout(resolve, 10));
     processed = true;
   };
@@ -141,7 +149,7 @@ Deno.test("EventHandler - custom repository ID", async () => {
 
   const handler = new EventHandler(
     appRef,
-    (_e: Event) => {},
+    (_e: unknown) => {},
     customRepoId,
   );
 
@@ -158,7 +166,7 @@ Deno.test("EventHandler - getReference auto-activates", async () => {
 
   const appRef = "TEST_APP_006";
 
-  const handler = new EventHandler(appRef, (_e: Event) => {});
+  const handler = new EventHandler(appRef, (_e: unknown) => {});
 
   assertEquals(handler.isActivated(), false);
 
@@ -175,7 +183,7 @@ Deno.test("createEventHandler helper function", async () => {
   const appRef = "TEST_APP_007";
   let eventReceived = false;
 
-  const listener = await createEventHandler(appRef, (_e: Event) => {
+  const listener = await createEventHandler(appRef, (_e: unknown) => {
     eventReceived = true;
   });
 
@@ -205,7 +213,7 @@ Deno.test("EventHandler - error handling in callback", async () => {
     }
   };
 
-  const handler = new EventHandler(appRef, (_e: Event) => {
+  const handler = new EventHandler(appRef, (_e: unknown) => {
     throw new Error("Test error in callback");
   });
 
@@ -237,15 +245,15 @@ Deno.test("EventHandler - multiple handlers for same app", async () => {
   await init();
 
   const appRef = "TEST_APP_009";
-  const events1: Event[] = [];
-  const events2: Event[] = [];
+  const events1: CustomEvent[] = [];
+  const events2: CustomEvent[] = [];
 
-  const handler1 = new EventHandler(appRef, (e: Event) => {
-    events1.push(e);
+  const handler1 = new EventHandler(appRef, (e: unknown) => {
+    events1.push(e as CustomEvent);
   });
 
-  const handler2 = new EventHandler(appRef, (e: Event) => {
-    events2.push(e);
+  const handler2 = new EventHandler(appRef, (e: unknown) => {
+    events2.push(e as CustomEvent);
   });
 
   const ref1 = await handler1.activate();

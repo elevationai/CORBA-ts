@@ -132,7 +132,7 @@ export class GIOPTransport {
   async close(): Promise<void> {
     this._closed = true;
 
-    // Cancel all pending requests
+    // Cancel all pending requests first
     for (const [_requestId, context] of this._pendingRequests) {
       clearTimeout(context.timer);
       context.reject(new Error("Transport closed"));
@@ -145,6 +145,10 @@ export class GIOPTransport {
     }
     this._retryTimers.clear();
 
+    // Send CloseConnection messages and close connections
+    await this._connectionManager.sendCloseMessages();
+
+    // Clean up any remaining connections that weren't active
     await this._connectionManager.closeAll();
   }
 

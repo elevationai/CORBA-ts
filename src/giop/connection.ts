@@ -380,6 +380,26 @@ export class ConnectionManager {
   }
 
   /**
+   * Send CloseConnection messages to all active connections
+   */
+  async sendCloseMessages(): Promise<void> {
+    const { GIOPCloseConnection } = await import("./messages.ts");
+
+    for (const connection of this._connections.values()) {
+      if (connection.isConnected) {
+        try {
+          const closeMsg = new GIOPCloseConnection({ major: 1, minor: 2 });
+          await connection.send(closeMsg);
+          // Close immediately after sending CloseConnection as per GIOP spec
+          await connection.close();
+        } catch (error) {
+          console.debug("Failed to send CloseConnection:", error);
+        }
+      }
+    }
+  }
+
+  /**
    * Close all connections
    */
   async closeAll(): Promise<void> {

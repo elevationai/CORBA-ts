@@ -7,36 +7,26 @@ import type { POA } from "./poa.ts";
 import type { CORBA } from "./types.ts";
 
 /**
- * Generic event type that can be extended
+ * Event callback function type - fully generic
  */
-export interface Event {
-  eventCode?: number;
-  timestamp?: Date | string;
-  data?: unknown;
-  source?: string;
-  [key: string]: unknown;
-}
-
-/**
- * Event callback function type
- */
-export type EventCallback<T extends Event = Event> = (event: T) => void | Promise<void>;
+export type EventCallback<T = unknown> = (event: T) => void | Promise<void>;
 
 /**
  * Event listener interface that servants must implement
  */
 export interface EventListener extends CORBA.ObjectRef {
-  callback(e: Event): Promise<void>;
+  callback(e: unknown): Promise<void>;
+  dispose(): Promise<void>;
 }
 
 /**
  * Internal servant implementation for event handling
  */
-class EventListenerServant extends Servant {
+class EventListenerServant<T = unknown> extends Servant {
   private readonly repositoryId: string;
-  private readonly callbackFn: EventCallback;
+  private readonly callbackFn: EventCallback<T>;
 
-  constructor(repositoryId: string, callback: EventCallback) {
+  constructor(repositoryId: string, callback: EventCallback<T>) {
     super();
     this.repositoryId = repositoryId;
     this.callbackFn = callback;
@@ -46,7 +36,7 @@ class EventListenerServant extends Servant {
     return this.repositoryId;
   }
 
-  async callback(e: Event): Promise<void> {
+  async callback(e: T): Promise<void> {
     try {
       const result = this.callbackFn(e);
       if (result instanceof Promise) {
@@ -63,16 +53,16 @@ class EventListenerServant extends Servant {
 /**
  * EventHandler - Simplified event listener registration for CORBA
  */
-export class EventHandler<T extends Event = Event> {
+export class EventHandler<T = unknown> {
   /**
    * Create and activate an event handler, returning just the CORBA reference
    */
-  static create: <T extends Event = Event>(
+  static create: <T = unknown>(
     appRef: string,
     callback: EventCallback<T>,
     repositoryId?: string,
   ) => Promise<EventListener>;
-  private servant: EventListenerServant;
+  private servant: EventListenerServant<T>;
   private reference: EventListener | null = null;
   private objectId: Uint8Array | null = null;
   private poa: POA;
@@ -96,7 +86,7 @@ export class EventHandler<T extends Event = Event> {
     this.callback = callback;
     this.repositoryId = repositoryId;
     this.poa = getRootPOA();
-    this.servant = new EventListenerServant(repositoryId, this.callback as EventCallback);
+    this.servant = new EventListenerServant(repositoryId, this.callback);
   }
 
   /**
@@ -105,9 +95,14 @@ export class EventHandler<T extends Event = Event> {
    */
   async activate(): Promise<EventListener> {
     if (!this.activated) {
-      // Activate the servant with the POA
       this.objectId = await this.poa.activate_object(this.servant);
-      this.reference = await this.poa.servant_to_reference(this.servant) as unknown as EventListener;
+      const ref = await this.poa.servant_to_reference(this.servant) as unknown as EventListener;
+      this.reference = {
+        ...ref,
+        dispose: async () => {
+          await this.deactivate();
+        }
+      };
       this.activated = true;
     }
 
@@ -164,7 +159,7 @@ export class EventHandler<T extends Event = Event> {
 /**
  * Helper function to create and activate an event handler in one step
  */
-export function createEventHandler<T extends Event = Event>(
+export function createEventHandler<T = unknown>(
   appRef: string,
   callback: EventCallback<T>,
   repositoryId?: string,
@@ -175,9 +170,9 @@ export function createEventHandler<T extends Event = Event>(
 
 /**
  * Static factory method on EventHandler class for cleaner API
- * Creates and activates an event handler, returning just the CORBA reference
+ * Creates and activates an event handler, returning a wrapper with both CORBA reference and dispose method
  */
-EventHandler.create = function <T extends Event = Event>(
+EventHandler.create = function <T = unknown>(
   appRef: string,
   callback: EventCallback<T>,
   repositoryId?: string,
