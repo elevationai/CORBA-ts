@@ -198,6 +198,20 @@ export namespace CORBA {
     }
   }
 
+  export class OBJECT_NOT_EXIST extends SystemException {
+    constructor(
+      minor: number | string = 0,
+      completed: CompletionStatus = CompletionStatus.COMPLETED_NO,
+    ) {
+      super(
+        typeof minor === "string" ? `CORBA.OBJECT_NOT_EXIST: ${minor}` : "CORBA.OBJECT_NOT_EXIST",
+        minor,
+        completed,
+      );
+      this.name = "CORBA.OBJECT_NOT_EXIST";
+    }
+  }
+
   /**
    * Base class for CORBA User Exceptions
    */

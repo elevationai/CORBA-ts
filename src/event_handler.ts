@@ -36,6 +36,12 @@ class EventListenerServant<T = unknown> extends Servant {
     return this.repositoryId;
   }
 
+  override _is_a(repositoryId: string): boolean {
+    return repositoryId === this.repositoryId ||
+           repositoryId === "IDL:omg.org/CORBA/Object:1.0" ||
+           super._is_a(repositoryId);
+  }
+
   async callback(e: T): Promise<void> {
     try {
       const result = this.callbackFn(e);

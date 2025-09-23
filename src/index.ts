@@ -18,8 +18,12 @@ export * from "./stub.ts";
 // Export TypeCode
 export * from "./typecode.ts";
 
-// Export Any class
-export { Any } from "./core/cdr/any.ts";
+// Export Any class and related functions
+export { Any, decodeAny, encodeAny } from "./core/cdr/any.ts";
+
+// Export CDR streams for skeleton marshaling
+export { CDRInputStream } from "./core/cdr/decoder.ts";
+export { CDROutputStream } from "./core/cdr/encoder.ts";
 
 // Export Policy interfaces
 export * from "./policy.ts";
@@ -33,7 +37,7 @@ export * from "./valuetype.ts";
 // Export Exceptions
 export * from "./core/exceptions/system.ts";
 
-// Export POA
+// Export POA (including ResponseHandler for skeletons)
 export * from "./poa.ts";
 
 // Export GIOP/IIOP

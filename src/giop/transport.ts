@@ -379,6 +379,7 @@ export class GIOPServer {
         const bytesRead = await conn.read(buffer);
         if (bytesRead === null) break;
 
+
         // Append to read buffer
         const newBuffer = new Uint8Array(readBuffer.length + bytesRead);
         newBuffer.set(readBuffer);
@@ -387,9 +388,12 @@ export class GIOPServer {
 
         // Process complete messages
         while (readBuffer.length >= 12) {
+
           // Parse GIOP header to get message size
+          // Check endianness flag (bit 0 of flags byte at position 6)
+          const isLittleEndian = (readBuffer[6] & 0x01) !== 0;
           const view = new DataView(readBuffer.buffer, readBuffer.byteOffset + 8, 4);
-          const messageSize = view.getUint32(0, false);
+          const messageSize = view.getUint32(0, isLittleEndian);
           const totalSize = 12 + messageSize;
 
           if (readBuffer.length < totalSize) break;
@@ -439,10 +443,24 @@ export class GIOPServer {
       const request = new GIOPRequest();
       request.deserialize(messageData);
 
-      // Find handler
-      const handler = this._handlers.get(request.operation);
+      // DEBUG: Log when a request is received with operation name and request ID
+      console.debug(`[GIOP DEBUG] Request received - Operation: ${request.operation}, RequestID: ${request.requestId}`);
+
+      // DEBUG: Log the raw bytes of the request
+      console.debug(`[GIOP DEBUG] Raw request bytes (RequestID: ${request.requestId}):`,
+        Array.from(messageData.slice(0, Math.min(messageData.length, 100)))
+          .map(b => b.toString(16).padStart(2, '0')).join(' ') +
+        (messageData.length > 100 ? '...' : ''));
+      console.debug(`[GIOP DEBUG] Request body size (RequestID: ${request.requestId}):`, request.body?.length || 0);
+
+      // Find handler - check for specific operation first, then wildcard
+      let handler = this._handlers.get(request.operation);
       if (!handler) {
-        console.warn(`No handler for operation: ${request.operation}`);
+        handler = this._handlers.get("*"); // Check for wildcard handler
+      }
+
+      if (!handler) {
+        console.warn(`[GIOP DEBUG] No handler for operation: ${request.operation} (RequestID: ${request.requestId})`);
         // Send exception reply
         const errorReply = new GIOPReply(request.version);
         errorReply.requestId = request.requestId;
@@ -451,6 +469,10 @@ export class GIOPServer {
         await conn.write(replyData);
         return;
       }
+
+      // DEBUG: Log when the handler is called
+      console.debug(`[GIOP DEBUG] Calling handler for operation: ${request.operation} (RequestID: ${request.requestId})`);
+      console.debug(`[GIOP DEBUG] Handler type: ${handler === this._handlers.get("*") ? "wildcard" : "specific"} (RequestID: ${request.requestId})`);
 
       // Create a basic connection wrapper for the handler
       const connectionWrapper = {
@@ -470,11 +492,28 @@ export class GIOPServer {
       // Call handler
       const reply = await handler(request, connectionWrapper);
 
+      // DEBUG: Log when the reply is created
+      console.debug(`[GIOP DEBUG] Reply created for operation: ${request.operation} (RequestID: ${request.requestId})`);
+      console.debug(`[GIOP DEBUG] Reply status: ${reply.replyStatus} (RequestID: ${request.requestId})`);
+      console.debug(`[GIOP DEBUG] Reply body size: ${reply.body?.length || 0} (RequestID: ${request.requestId})`);
+
       // Send reply if expected
       if (request.responseExpected) {
         reply.requestId = request.requestId;
         const replyData = reply.serialize();
+
+        // DEBUG: Log the reply data before sending
+        console.debug(`[GIOP DEBUG] Sending reply for operation: ${request.operation} (RequestID: ${request.requestId})`);
+        console.debug(`[GIOP DEBUG] Reply data size: ${replyData.length} (RequestID: ${request.requestId})`);
+        console.debug(`[GIOP DEBUG] Reply bytes (RequestID: ${request.requestId}):`,
+          Array.from(replyData.slice(0, Math.min(replyData.length, 100)))
+            .map(b => b.toString(16).padStart(2, '0')).join(' ') +
+          (replyData.length > 100 ? '...' : ''));
+
         await conn.write(replyData);
+        console.debug(`[GIOP DEBUG] Reply sent successfully (RequestID: ${request.requestId})`);
+      } else {
+        console.debug(`[GIOP DEBUG] No response expected for operation: ${request.operation} (RequestID: ${request.requestId})`);
       }
     }
     catch (error) {

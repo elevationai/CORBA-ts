@@ -8,6 +8,12 @@ import { Object, ObjectReference } from "./object.ts";
 import { Policy } from "./policy.ts";
 import { IORUtil } from "./giop/ior.ts";
 import type { IOR } from "./giop/types.ts";
+import { GIOPServer } from "./giop/transport.ts";
+import { ConnectionManager } from "./giop/connection.ts";
+import { GIOPRequest, GIOPReply } from "./giop/messages.ts";
+import { CDRInputStream } from "./core/cdr/decoder.ts";
+import { CDROutputStream } from "./core/cdr/encoder.ts";
+import type { IIOPConnection } from "./giop/connection.ts";
 
 /**
  * AdapterActivator interface
@@ -71,6 +77,15 @@ export interface ServantLocator extends ServantManager {
     cookie: unknown,
     servant: Servant,
   ): Promise<void>;
+}
+
+/**
+ * ResponseHandler interface for CORBA static skeleton _invoke method
+ * Based on CORBA 3.4 specification
+ */
+export interface ResponseHandler {
+  createReply(): CDROutputStream;
+  createExceptionReply(): CDROutputStream;
 }
 
 /**
@@ -293,18 +308,32 @@ export interface POAManager extends CORBA.ObjectRef {
 class POAManagerImpl extends ObjectReference implements POAManager {
   [key: string]: unknown;
   private _state: POAManagerState;
+  private _poas: Set<POAImpl> = new Set();
 
   constructor() {
     super("IDL:omg.org/PortableServer/POAManager:1.0");
     this._state = POAManagerState.HOLDING;
   }
 
-  activate(): Promise<void> {
+  _registerPOA(poa: POAImpl): void {
+    this._poas.add(poa);
+  }
+
+  _unregisterPOA(poa: POAImpl): void {
+    this._poas.delete(poa);
+  }
+
+  async activate(): Promise<void> {
     if (this._state === POAManagerState.INACTIVE) {
       throw new CORBA.BAD_PARAM("POAManager is in INACTIVE state");
     }
+
+    // Start the GIOP server for each POA
+    for (const poa of this._poas) {
+      await poa._startServer();
+    }
+
     this._state = POAManagerState.ACTIVE;
-    return Promise.resolve();
   }
 
   hold_requests(_wait_for_completion: boolean): Promise<void> {
@@ -333,22 +362,26 @@ class POAManagerImpl extends ObjectReference implements POAManager {
     return Promise.resolve();
   }
 
-  deactivate(
+  async deactivate(
     _etherealize_objects: boolean,
     _wait_for_completion: boolean,
   ): Promise<void> {
     if (this._state === POAManagerState.INACTIVE) {
-      return Promise.resolve();
+      return;
     }
 
     this._state = POAManagerState.INACTIVE;
+
+    // Stop all GIOP servers
+    for (const poa of this._poas) {
+      await poa._stopServer();
+    }
 
     // In a complete implementation, we would etherealize objects
     // and wait for in-progress requests
     // if (_wait_for_completion) {
     // Wait for in-progress requests to complete
     // }
-    return Promise.resolve();
   }
 
   get_state(): POAManagerState {
@@ -372,12 +405,20 @@ class POAImpl extends ObjectReference implements POA {
   private _host: string = "localhost";
   private _port: number = 9000;
   private _object_references: Map<string, CORBA.ObjectRef> = new Map();
+  private _server: GIOPServer | null = null;
+  private _connectionManager: ConnectionManager;
 
   constructor(name: string, parent: POA | null = null, manager: POAManager | null = null) {
     super("IDL:omg.org/PortableServer/POA:1.0");
     this._name = name;
     this._parent = parent;
     this._manager = manager || new POAManagerImpl();
+    this._connectionManager = new ConnectionManager();
+
+    // Register this POA with its manager
+    if (this._manager instanceof POAManagerImpl) {
+      this._manager._registerPOA(this);
+    }
   }
 
   create_POA(
@@ -644,6 +685,207 @@ class POAImpl extends ObjectReference implements POA {
   async id_to_reference(oid: Uint8Array): Promise<Object> {
     const servant = await this.id_to_servant(oid);
     return this.create_reference_with_id(oid, servant._repository_id());
+  }
+
+  /**
+   * Start the GIOP server for this POA
+   * Called by POAManager when activated
+   */
+  async _startServer(): Promise<void> {
+    if (this._server) {
+      return; // Server already started
+    }
+
+    // Create and start the GIOP server
+    this._server = new GIOPServer(
+      { host: this._host, port: this._port },
+      this._connectionManager
+    );
+
+    // Register a generic handler that dispatches to servants
+    this._server.registerHandler("*", async (request: GIOPRequest, connection: IIOPConnection) => {
+      return this._dispatchRequest(request, connection);
+    });
+
+    await this._server.start();
+  }
+
+  /**
+   * Dispatch a GIOP request to the appropriate servant
+   */
+  private async _dispatchRequest(request: GIOPRequest, _connection: IIOPConnection): Promise<GIOPReply> {
+    try {
+      console.debug(`[POA DEBUG] Dispatching request - Operation: ${request.operation}, RequestID: ${request.requestId}`);
+
+      // Extract the object ID from the request
+      let objectId = request.objectKey;
+
+      // For GIOP 1.2+, the object key might be in the target address
+      if (!objectId && request.target && request.target.disposition === 0) { // KeyAddr
+        const keyAddrTarget = request.target as { disposition: 0; objectKey: Uint8Array };
+        objectId = keyAddrTarget.objectKey;
+      }
+
+      if (!objectId) {
+        console.debug(`[POA DEBUG] No object key in request (RequestID: ${request.requestId})`);
+        throw new CORBA.OBJECT_NOT_EXIST("No object key in request");
+      }
+
+      console.debug(`[POA DEBUG] Object key found, length: ${objectId.length} (RequestID: ${request.requestId})`);
+
+      // Look up the servant
+      const servant = await this.id_to_servant(objectId);
+      console.debug(`[POA DEBUG] Servant found: ${servant.constructor.name} (RequestID: ${request.requestId})`);
+
+      // Get the operation name
+      const operation = request.operation;
+      console.debug(`[POA DEBUG] Operation to execute: ${operation} (RequestID: ${request.requestId})`);
+
+      // Create CDR streams for decoding request and encoding reply
+      const inputCDR = new CDRInputStream(request.body, request.isLittleEndian());
+
+      // Handle standard CORBA operations specially
+      if (operation === "_is_a") {
+        console.debug(`[POA DEBUG] Handling _is_a operation (RequestID: ${request.requestId})`);
+        const repositoryId = inputCDR.readString();
+        console.debug(`[POA DEBUG] _is_a called with repositoryId: ${repositoryId} (RequestID: ${request.requestId})`);
+
+        const result = servant._is_a(repositoryId);
+        console.debug(`[POA DEBUG] _is_a result: ${result} (RequestID: ${request.requestId})`);
+
+        const outputCDR = new CDROutputStream();
+        outputCDR.writeBoolean(result);
+
+        const reply = new GIOPReply(request.version);
+        reply.requestId = request.requestId;
+        reply.replyStatus = 0; // NO_EXCEPTION
+        reply.body = outputCDR.getBuffer();
+        console.debug(`[POA DEBUG] _is_a reply created, body size: ${reply.body.length} (RequestID: ${request.requestId})`);
+        return reply;
+      }
+
+      // Check if servant has _invoke method (CORBA static skeleton standard)
+      if (typeof (servant as any)._invoke === "function") {
+        console.debug(`[POA DEBUG] Servant has _invoke method, calling for operation: ${operation} (RequestID: ${request.requestId})`);
+
+        // Create ResponseHandler for managing the response
+        const responseHandler = {
+          createReply(): CDROutputStream {
+            return new CDROutputStream();
+          }
+        };
+
+        // Call the standard CORBA _invoke method
+        console.debug(`[POA DEBUG] Calling _invoke for callback operation: ${operation} (RequestID: ${request.requestId})`);
+        const outputCDR = await (servant as any)._invoke(operation, inputCDR, responseHandler);
+        console.debug(`[POA DEBUG] _invoke completed for operation: ${operation} (RequestID: ${request.requestId})`);
+
+        const reply = new GIOPReply(request.version);
+        reply.requestId = request.requestId;
+        reply.replyStatus = 0; // NO_EXCEPTION
+        reply.body = outputCDR.getBuffer();
+        console.debug(`[POA DEBUG] _invoke reply created, body size: ${reply.body.length} (RequestID: ${request.requestId})`);
+        return reply;
+      }
+
+      // Otherwise fall back to direct method invocation (for non-generated servants)
+      // Check if servant has the operation
+      if (typeof (servant as any)[operation] !== "function") {
+        console.debug(`[POA DEBUG] Operation ${operation} not found on servant (RequestID: ${request.requestId})`);
+        throw new CORBA.BAD_OPERATION(`Operation ${operation} not found on servant`);
+      }
+
+      console.debug(`[POA DEBUG] Calling direct method ${operation} on servant (RequestID: ${request.requestId})`);
+
+      // Call the operation on the servant
+      // This is a simplified dispatch - real implementation would need to handle
+      // parameter marshalling based on the interface definition
+      const method = (servant as any)[operation];
+
+      // For now, we assume the method takes CDRInputStream and returns Promise
+      // Real implementation would unmarshal parameters based on IDL
+      const result = await method.call(servant, inputCDR);
+      console.debug(`[POA DEBUG] Direct method ${operation} completed (RequestID: ${request.requestId})`);
+      console.debug(`[POA DEBUG] Result type: ${typeof result} (RequestID: ${request.requestId})`);
+
+      // Create the reply
+      const reply = new GIOPReply(request.version);
+      reply.requestId = request.requestId;
+      reply.replyStatus = 0; // NO_EXCEPTION
+
+      // Marshal the result
+      const outputCDR = new CDROutputStream();
+
+      // This is simplified - real implementation would marshal based on IDL return type
+      if (result !== undefined && result !== null) {
+        // Try to marshal the result based on its type
+        if (typeof result === "string") {
+          outputCDR.writeString(result);
+        } else if (typeof result === "number") {
+          outputCDR.writeLong(result);
+        } else if (typeof result === "boolean") {
+          outputCDR.writeBoolean(result);
+        } else if (result instanceof Uint8Array) {
+          outputCDR.writeOctetArray(result);
+        } else {
+          // For complex types, assume they have a marshal method
+          if (typeof (result as any).marshal === "function") {
+            (result as any).marshal(outputCDR);
+          }
+        }
+      }
+
+      reply.body = outputCDR.getBuffer();
+      console.debug(`[POA DEBUG] Direct method reply created, body size: ${reply.body.length} (RequestID: ${request.requestId})`);
+      return reply;
+
+    } catch (error) {
+      // DEBUG: Log any exceptions that occur
+      console.debug(`[POA DEBUG] Exception occurred during dispatch (RequestID: ${request.requestId}):`, error);
+      console.debug(`[POA DEBUG] Exception type: ${error instanceof Error ? error.constructor.name : typeof error} (RequestID: ${request.requestId})`);
+      console.debug(`[POA DEBUG] Exception message: ${error instanceof Error ? error.message : String(error)} (RequestID: ${request.requestId})`);
+
+      // Create an exception reply
+      const reply = new GIOPReply(request.version);
+      reply.requestId = request.requestId;
+      reply.replyStatus = 2; // SYSTEM_EXCEPTION
+
+      // Marshal the exception
+      // Format: RepositoryId, MinorCode, CompletionStatus
+      const outputCDR = new CDROutputStream();
+
+      // Get exception name
+      let exceptionName = "UNKNOWN";
+      if (error instanceof CORBA.SystemException) {
+        exceptionName = error.name || "UNKNOWN";
+      } else if (error instanceof Error) {
+        exceptionName = error.name || "UNKNOWN";
+      }
+
+      // Write repository ID for the exception
+      outputCDR.writeString(`IDL:omg.org/CORBA/${exceptionName}:1.0`);
+
+      // Write minor code
+      outputCDR.writeULong(0);
+
+      // Write completion status (0 = COMPLETED_YES, 1 = COMPLETED_NO, 2 = COMPLETED_MAYBE)
+      outputCDR.writeULong(0);
+
+      reply.body = outputCDR.getBuffer();
+      console.debug(`[POA DEBUG] Exception reply created, body size: ${reply.body.length} (RequestID: ${request.requestId})`);
+      console.debug(`[POA DEBUG] Exception name: ${exceptionName} (RequestID: ${request.requestId})`);
+      return reply;
+    }
+  }
+
+  /**
+   * Stop the GIOP server
+   */
+  async _stopServer(): Promise<void> {
+    if (this._server) {
+      await this._server.stop();
+      this._server = null;
+    }
   }
 }
 
