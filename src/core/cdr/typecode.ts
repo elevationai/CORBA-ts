@@ -208,8 +208,19 @@ export function decodeTypeCode(inp: CDRInputStream): TypeCode {
 
 // Helper functions for complex type encoding
 
+/**
+ * Write standard CORBA encapsulation header
+ */
+function writeEncapsulationHeader(encap: CDROutputStream, littleEndian: boolean): void {
+  encap.writeOctet(littleEndian ? 1 : 0); // Byte order
+  encap.writeOctet(0); // Padding
+  encap.writeOctet(0); // Padding
+  encap.writeOctet(0); // Padding
+}
+
 function encodeComplex(out: CDROutputStream, tc: TypeCode): void {
   const encap = new CDROutputStream(512, out.isLittleEndian());
+  writeEncapsulationHeader(encap, out.isLittleEndian());
 
   // Get repository ID and name from TypeCode
   const id = tc.get_param("id") as string || "";
@@ -223,6 +234,7 @@ function encodeComplex(out: CDROutputStream, tc: TypeCode): void {
 
 function encodeStruct(out: CDROutputStream, tc: TypeCode): void {
   const encap = new CDROutputStream(1024, out.isLittleEndian());
+  writeEncapsulationHeader(encap, out.isLittleEndian());
 
   const id = tc.get_param("id") as string || "";
   const name = tc.get_param("name") as string || "";
@@ -244,6 +256,7 @@ function encodeStruct(out: CDROutputStream, tc: TypeCode): void {
 
 function encodeUnion(out: CDROutputStream, tc: TypeCode): void {
   const encap = new CDROutputStream(1024, out.isLittleEndian());
+  writeEncapsulationHeader(encap, out.isLittleEndian());
 
   const id = tc.get_param("id") as string || "";
   const name = tc.get_param("name") as string || "";
@@ -318,6 +331,7 @@ function encodeUnionLabel(out: CDROutputStream, label: unknown, discriminatorTyp
 
 function encodeEnum(out: CDROutputStream, tc: TypeCode): void {
   const encap = new CDROutputStream(512, out.isLittleEndian());
+  writeEncapsulationHeader(encap, out.isLittleEndian());
 
   const id = tc.get_param("id") as string || "";
   const name = tc.get_param("name") as string || "";
@@ -338,6 +352,7 @@ function encodeEnum(out: CDROutputStream, tc: TypeCode): void {
 
 function encodeSequence(out: CDROutputStream, tc: TypeCode): void {
   const encap = new CDROutputStream(256, out.isLittleEndian());
+  writeEncapsulationHeader(encap, out.isLittleEndian());
 
   // Get content type and length
   const contentType = tc.content_type();
@@ -351,6 +366,7 @@ function encodeSequence(out: CDROutputStream, tc: TypeCode): void {
 
 function encodeAlias(out: CDROutputStream, tc: TypeCode): void {
   const encap = new CDROutputStream(512, out.isLittleEndian());
+  writeEncapsulationHeader(encap, out.isLittleEndian());
 
   const id = tc.get_param("id") as string || "";
   const name = tc.get_param("name") as string || "";
@@ -373,6 +389,7 @@ function encodeAlias(out: CDROutputStream, tc: TypeCode): void {
 
 function encodeValue(out: CDROutputStream, tc: TypeCode): void {
   const encap = new CDROutputStream(512, out.isLittleEndian());
+  writeEncapsulationHeader(encap, out.isLittleEndian());
 
   const id = tc.get_param("id") as string || "";
   const name = tc.get_param("name") as string || "";

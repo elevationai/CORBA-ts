@@ -185,7 +185,8 @@ export class IIOPConnectionImpl implements IIOPConnection {
   }
 
   close(): Promise<void> {
-    if (this._state === ConnectionState.CLOSED) {
+    if (this._state === ConnectionState.CLOSED || this._state === ConnectionState.CLOSING) {
+      // Already closing, wait for it to complete
       return Promise.resolve();
     }
 
@@ -377,6 +378,19 @@ export class ConnectionManager {
       throw new Error("No IIOP endpoint found in IOR");
     }
     return this.getConnection(endpoint);
+  }
+
+  /**
+   * Remove a connection from the manager
+   */
+  removeConnection(connection: IIOPConnection): void {
+    // Find and remove the connection by comparing endpoints
+    for (const [key, conn] of this._connections.entries()) {
+      if (conn === connection) {
+        this._connections.delete(key);
+        break;
+      }
+    }
   }
 
   /**

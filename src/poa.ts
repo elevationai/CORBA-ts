@@ -89,6 +89,34 @@ export interface ResponseHandler {
 }
 
 /**
+ * Type for CORBA static skeleton _invoke method
+ */
+type InvokeMethod = (
+  operation: string,
+  input: CDRInputStream,
+  handler: ResponseHandler
+) => Promise<CDROutputStream> | CDROutputStream;
+
+/**
+ * Type for servant operation methods
+ */
+type ServantMethod = (input: CDRInputStream) => Promise<unknown> | unknown;
+
+/**
+ * Interface for servants with _invoke method
+ */
+interface InvokableServant {
+  _invoke: InvokeMethod;
+}
+
+/**
+ * Interface for servants with marshal method
+ */
+interface MarshalableResult {
+  marshal(output: CDROutputStream): void;
+}
+
+/**
  * Servant base class
  */
 export abstract class Servant {
@@ -703,7 +731,7 @@ class POAImpl extends ObjectReference implements POA {
     );
 
     // Register a generic handler that dispatches to servants
-    this._server.registerHandler("*", async (request: GIOPRequest, connection: IIOPConnection) => {
+    this._server.registerHandler("*", (request: GIOPRequest, connection: IIOPConnection) => {
       return this._dispatchRequest(request, connection);
     });
 
@@ -756,17 +784,21 @@ class POAImpl extends ObjectReference implements POA {
       }
 
       // Check if servant has _invoke method (CORBA static skeleton standard)
-      if (typeof (servant as any)._invoke === "function") {
+      const invokableServant = servant as unknown as Partial<InvokableServant>;
+      if (typeof invokableServant._invoke === "function") {
 
         // Create ResponseHandler for managing the response
-        const responseHandler = {
+        const responseHandler: ResponseHandler = {
           createReply(): CDROutputStream {
+            return new CDROutputStream();
+          },
+          createExceptionReply(): CDROutputStream {
             return new CDROutputStream();
           }
         };
 
         // Call the standard CORBA _invoke method
-        const outputCDR = await (servant as any)._invoke(operation, inputCDR, responseHandler);
+        const outputCDR = await (invokableServant as InvokableServant)._invoke(operation, inputCDR, responseHandler);
 
         const reply = new GIOPReply(request.version);
         reply.requestId = request.requestId;
@@ -777,7 +809,8 @@ class POAImpl extends ObjectReference implements POA {
 
       // Otherwise fall back to direct method invocation (for non-generated servants)
       // Check if servant has the operation
-      if (typeof (servant as any)[operation] !== "function") {
+      const servantWithMethods = servant as unknown as Record<string, unknown>;
+      if (typeof servantWithMethods[operation] !== "function") {
         throw new CORBA.BAD_OPERATION(`Operation ${operation} not found on servant`);
       }
 
@@ -785,7 +818,7 @@ class POAImpl extends ObjectReference implements POA {
       // Call the operation on the servant
       // This is a simplified dispatch - real implementation would need to handle
       // parameter marshalling based on the interface definition
-      const method = (servant as any)[operation];
+      const method = (servant as unknown as Record<string, ServantMethod>)[operation];
 
       // For now, we assume the method takes CDRInputStream and returns Promise
       // Real implementation would unmarshal parameters based on IDL
@@ -812,8 +845,9 @@ class POAImpl extends ObjectReference implements POA {
           outputCDR.writeOctetArray(result);
         } else {
           // For complex types, assume they have a marshal method
-          if (typeof (result as any).marshal === "function") {
-            (result as any).marshal(outputCDR);
+          const marshalable = result as Partial<MarshalableResult>;
+          if (typeof marshalable.marshal === "function") {
+            marshalable.marshal(outputCDR);
           }
         }
       }

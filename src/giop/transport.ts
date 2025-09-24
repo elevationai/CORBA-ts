@@ -231,7 +231,6 @@ export class GIOPTransport {
           }
         }
         else if (message instanceof GIOPCloseConnection) {
-          console.error("Server closed connection - rejecting all pending requests");
           // Reject all pending requests for this connection
           for (const [requestId, context] of this._pendingRequests) {
             this._pendingRequests.delete(requestId);
@@ -239,7 +238,9 @@ export class GIOPTransport {
             context.reject(new Error("Connection closed by server"));
           }
           // Close the connection
-          await connection.disconnect();
+          await connection.close();
+          // Remove the closed connection from the manager so it won't be recreated
+          this._connectionManager.removeConnection(connection);
           break;
         }
         else if (message instanceof GIOPMessageError) {
@@ -251,7 +252,7 @@ export class GIOPTransport {
             context.reject(new Error("GIOP protocol error"));
           }
           // Close the connection after protocol error
-          await connection.disconnect();
+          await connection.close();
           break;
         }
       }
@@ -402,7 +403,17 @@ export class GIOPServer {
           const messageData = readBuffer.subarray(0, totalSize);
           readBuffer = readBuffer.subarray(totalSize);
 
-          await this._processMessage(messageData, conn);
+          try {
+            await this._processMessage(messageData, conn);
+          }
+          catch (error) {
+            if (error instanceof Error && error.message === "GIOP_CLOSE_CONNECTION") {
+              // Server requested connection close - this is expected
+              break;
+            }
+            // Re-throw other errors
+            throw error;
+          }
         }
       }
     }
@@ -432,7 +443,13 @@ export class GIOPServer {
     // Check message type (byte 7)
     const messageType = messageData[7];
 
-    // Only handle Request messages
+    // Handle different message types
+    if (messageType === GIOPMessageType.CloseConnection) {
+      // Throw a specific error to signal connection should be closed
+      throw new Error("GIOP_CLOSE_CONNECTION");
+    }
+
+    // Only handle Request messages for normal processing
     if (messageType !== GIOPMessageType.Request) {
       console.warn(`Unexpected message type on server: ${messageType}`);
       return;
