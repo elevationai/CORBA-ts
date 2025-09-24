@@ -480,12 +480,12 @@ export class GIOPServer {
 
 
     // Send reply if expected
+    // Per CORBA spec: oneway operations (responseExpected=false) must NOT send replies
     if (request.responseExpected) {
       reply.requestId = request.requestId;
       const replyData = reply.serialize();
 
       await conn.write(replyData);
     }
-    //CLAUDE: What if no reply expected? What does the CORBA spec say?
   }
 }
