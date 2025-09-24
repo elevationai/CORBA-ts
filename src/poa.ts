@@ -715,7 +715,6 @@ class POAImpl extends ObjectReference implements POA {
    */
   private async _dispatchRequest(request: GIOPRequest, _connection: IIOPConnection): Promise<GIOPReply> {
     try {
-      console.debug(`[POA DEBUG] Dispatching request - Operation: ${request.operation}, RequestID: ${request.requestId}`);
 
       // Extract the object ID from the request
       let objectId = request.objectKey;
@@ -727,31 +726,24 @@ class POAImpl extends ObjectReference implements POA {
       }
 
       if (!objectId) {
-        console.debug(`[POA DEBUG] No object key in request (RequestID: ${request.requestId})`);
         throw new CORBA.OBJECT_NOT_EXIST("No object key in request");
       }
 
-      console.debug(`[POA DEBUG] Object key found, length: ${objectId.length} (RequestID: ${request.requestId})`);
 
       // Look up the servant
       const servant = await this.id_to_servant(objectId);
-      console.debug(`[POA DEBUG] Servant found: ${servant.constructor.name} (RequestID: ${request.requestId})`);
 
       // Get the operation name
       const operation = request.operation;
-      console.debug(`[POA DEBUG] Operation to execute: ${operation} (RequestID: ${request.requestId})`);
 
       // Create CDR streams for decoding request and encoding reply
       const inputCDR = new CDRInputStream(request.body, request.isLittleEndian());
 
       // Handle standard CORBA operations specially
       if (operation === "_is_a") {
-        console.debug(`[POA DEBUG] Handling _is_a operation (RequestID: ${request.requestId})`);
         const repositoryId = inputCDR.readString();
-        console.debug(`[POA DEBUG] _is_a called with repositoryId: ${repositoryId} (RequestID: ${request.requestId})`);
 
         const result = servant._is_a(repositoryId);
-        console.debug(`[POA DEBUG] _is_a result: ${result} (RequestID: ${request.requestId})`);
 
         const outputCDR = new CDROutputStream();
         outputCDR.writeBoolean(result);
@@ -760,13 +752,11 @@ class POAImpl extends ObjectReference implements POA {
         reply.requestId = request.requestId;
         reply.replyStatus = 0; // NO_EXCEPTION
         reply.body = outputCDR.getBuffer();
-        console.debug(`[POA DEBUG] _is_a reply created, body size: ${reply.body.length} (RequestID: ${request.requestId})`);
         return reply;
       }
 
       // Check if servant has _invoke method (CORBA static skeleton standard)
       if (typeof (servant as any)._invoke === "function") {
-        console.debug(`[POA DEBUG] Servant has _invoke method, calling for operation: ${operation} (RequestID: ${request.requestId})`);
 
         // Create ResponseHandler for managing the response
         const responseHandler = {
@@ -776,26 +766,21 @@ class POAImpl extends ObjectReference implements POA {
         };
 
         // Call the standard CORBA _invoke method
-        console.debug(`[POA DEBUG] Calling _invoke for callback operation: ${operation} (RequestID: ${request.requestId})`);
         const outputCDR = await (servant as any)._invoke(operation, inputCDR, responseHandler);
-        console.debug(`[POA DEBUG] _invoke completed for operation: ${operation} (RequestID: ${request.requestId})`);
 
         const reply = new GIOPReply(request.version);
         reply.requestId = request.requestId;
         reply.replyStatus = 0; // NO_EXCEPTION
         reply.body = outputCDR.getBuffer();
-        console.debug(`[POA DEBUG] _invoke reply created, body size: ${reply.body.length} (RequestID: ${request.requestId})`);
         return reply;
       }
 
       // Otherwise fall back to direct method invocation (for non-generated servants)
       // Check if servant has the operation
       if (typeof (servant as any)[operation] !== "function") {
-        console.debug(`[POA DEBUG] Operation ${operation} not found on servant (RequestID: ${request.requestId})`);
         throw new CORBA.BAD_OPERATION(`Operation ${operation} not found on servant`);
       }
 
-      console.debug(`[POA DEBUG] Calling direct method ${operation} on servant (RequestID: ${request.requestId})`);
 
       // Call the operation on the servant
       // This is a simplified dispatch - real implementation would need to handle
@@ -805,8 +790,6 @@ class POAImpl extends ObjectReference implements POA {
       // For now, we assume the method takes CDRInputStream and returns Promise
       // Real implementation would unmarshal parameters based on IDL
       const result = await method.call(servant, inputCDR);
-      console.debug(`[POA DEBUG] Direct method ${operation} completed (RequestID: ${request.requestId})`);
-      console.debug(`[POA DEBUG] Result type: ${typeof result} (RequestID: ${request.requestId})`);
 
       // Create the reply
       const reply = new GIOPReply(request.version);
@@ -836,14 +819,10 @@ class POAImpl extends ObjectReference implements POA {
       }
 
       reply.body = outputCDR.getBuffer();
-      console.debug(`[POA DEBUG] Direct method reply created, body size: ${reply.body.length} (RequestID: ${request.requestId})`);
       return reply;
 
     } catch (error) {
       // DEBUG: Log any exceptions that occur
-      console.debug(`[POA DEBUG] Exception occurred during dispatch (RequestID: ${request.requestId}):`, error);
-      console.debug(`[POA DEBUG] Exception type: ${error instanceof Error ? error.constructor.name : typeof error} (RequestID: ${request.requestId})`);
-      console.debug(`[POA DEBUG] Exception message: ${error instanceof Error ? error.message : String(error)} (RequestID: ${request.requestId})`);
 
       // Create an exception reply
       const reply = new GIOPReply(request.version);
@@ -872,8 +851,6 @@ class POAImpl extends ObjectReference implements POA {
       outputCDR.writeULong(0);
 
       reply.body = outputCDR.getBuffer();
-      console.debug(`[POA DEBUG] Exception reply created, body size: ${reply.body.length} (RequestID: ${request.requestId})`);
-      console.debug(`[POA DEBUG] Exception name: ${exceptionName} (RequestID: ${request.requestId})`);
       return reply;
     }
   }

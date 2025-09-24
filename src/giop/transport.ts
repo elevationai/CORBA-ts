@@ -420,104 +420,72 @@ export class GIOPServer {
   }
 
   private async _processMessage(messageData: Uint8Array, conn: Deno.TcpConn): Promise<void> {
-    try {
-      // Check GIOP magic bytes
-      if (
-        messageData[0] !== 0x47 || messageData[1] !== 0x49 ||
-        messageData[2] !== 0x4F || messageData[3] !== 0x50
-      ) {
-        console.error("Invalid GIOP magic bytes");
-        return;
-      }
-
-      // Check message type (byte 7)
-      const messageType = messageData[7];
-
-      // Only handle Request messages
-      if (messageType !== GIOPMessageType.Request) {
-        console.warn(`Unexpected message type on server: ${messageType}`);
-        return;
-      }
-
-      // Parse as request
-      const request = new GIOPRequest();
-      request.deserialize(messageData);
-
-      // DEBUG: Log when a request is received with operation name and request ID
-      console.debug(`[GIOP DEBUG] Request received - Operation: ${request.operation}, RequestID: ${request.requestId}`);
-
-      // DEBUG: Log the raw bytes of the request
-      console.debug(`[GIOP DEBUG] Raw request bytes (RequestID: ${request.requestId}):`,
-        Array.from(messageData.slice(0, Math.min(messageData.length, 100)))
-          .map(b => b.toString(16).padStart(2, '0')).join(' ') +
-        (messageData.length > 100 ? '...' : ''));
-      console.debug(`[GIOP DEBUG] Request body size (RequestID: ${request.requestId}):`, request.body?.length || 0);
-
-      // Find handler - check for specific operation first, then wildcard
-      let handler = this._handlers.get(request.operation);
-      if (!handler) {
-        handler = this._handlers.get("*"); // Check for wildcard handler
-      }
-
-      if (!handler) {
-        console.warn(`[GIOP DEBUG] No handler for operation: ${request.operation} (RequestID: ${request.requestId})`);
-        // Send exception reply
-        const errorReply = new GIOPReply(request.version);
-        errorReply.requestId = request.requestId;
-        errorReply.replyStatus = ReplyStatusType.SYSTEM_EXCEPTION;
-        const replyData = errorReply.serialize();
-        await conn.write(replyData);
-        return;
-      }
-
-      // DEBUG: Log when the handler is called
-      console.debug(`[GIOP DEBUG] Calling handler for operation: ${request.operation} (RequestID: ${request.requestId})`);
-      console.debug(`[GIOP DEBUG] Handler type: ${handler === this._handlers.get("*") ? "wildcard" : "specific"} (RequestID: ${request.requestId})`);
-
-      // Create a basic connection wrapper for the handler
-      const connectionWrapper = {
-        endpoint: this._endpoint,
-        state: "connected",
-        isConnected: true,
-        connect: async () => {},
-        disconnect: async () => {},
-        send: async (message: GIOPMessage) => {
-          const data = message.serialize();
-          await conn.write(data);
-        },
-        receive: () => Promise.resolve(request),
-        close: async () => {},
-      } as IIOPConnection;
-
-      // Call handler
-      const reply = await handler(request, connectionWrapper);
-
-      // DEBUG: Log when the reply is created
-      console.debug(`[GIOP DEBUG] Reply created for operation: ${request.operation} (RequestID: ${request.requestId})`);
-      console.debug(`[GIOP DEBUG] Reply status: ${reply.replyStatus} (RequestID: ${request.requestId})`);
-      console.debug(`[GIOP DEBUG] Reply body size: ${reply.body?.length || 0} (RequestID: ${request.requestId})`);
-
-      // Send reply if expected
-      if (request.responseExpected) {
-        reply.requestId = request.requestId;
-        const replyData = reply.serialize();
-
-        // DEBUG: Log the reply data before sending
-        console.debug(`[GIOP DEBUG] Sending reply for operation: ${request.operation} (RequestID: ${request.requestId})`);
-        console.debug(`[GIOP DEBUG] Reply data size: ${replyData.length} (RequestID: ${request.requestId})`);
-        console.debug(`[GIOP DEBUG] Reply bytes (RequestID: ${request.requestId}):`,
-          Array.from(replyData.slice(0, Math.min(replyData.length, 100)))
-            .map(b => b.toString(16).padStart(2, '0')).join(' ') +
-          (replyData.length > 100 ? '...' : ''));
-
-        await conn.write(replyData);
-        console.debug(`[GIOP DEBUG] Reply sent successfully (RequestID: ${request.requestId})`);
-      } else {
-        console.debug(`[GIOP DEBUG] No response expected for operation: ${request.operation} (RequestID: ${request.requestId})`);
-      }
+    // Check GIOP magic bytes
+    if (
+      messageData[0] !== 0x47 || messageData[1] !== 0x49 ||
+      messageData[2] !== 0x4F || messageData[3] !== 0x50
+    ) {
+      console.error("Invalid GIOP magic bytes");
+      return;
     }
-    catch (error) {
-      console.error("Error processing message:", error);
+
+    // Check message type (byte 7)
+    const messageType = messageData[7];
+
+    // Only handle Request messages
+    if (messageType !== GIOPMessageType.Request) {
+      console.warn(`Unexpected message type on server: ${messageType}`);
+      return;
     }
+
+    // Parse as request
+    const request = new GIOPRequest();
+    request.deserialize(messageData);
+
+    // Find handler - check for specific operation first, then wildcard
+    let handler = this._handlers.get(request.operation);
+    if (!handler) {
+      handler = this._handlers.get("*"); // Check for wildcard handler
+    }
+
+    if (!handler) {
+      console.warn(`[GIOP DEBUG] No handler for operation: ${request.operation} (RequestID: ${request.requestId})`);
+      // Send exception reply
+      const errorReply = new GIOPReply(request.version);
+      errorReply.requestId = request.requestId;
+      errorReply.replyStatus = ReplyStatusType.SYSTEM_EXCEPTION;
+      const replyData = errorReply.serialize();
+      await conn.write(replyData);
+      return;
+    }
+
+
+    // Create a basic connection wrapper for the handler
+    const connectionWrapper = {
+      endpoint: this._endpoint,
+      state: "connected",
+      isConnected: true,
+      connect: async () => {},
+      disconnect: async () => {},
+      send: async (message: GIOPMessage) => {
+        const data = message.serialize();
+        await conn.write(data);
+      },
+      receive: () => Promise.resolve(request),
+      close: async () => {},
+    } as IIOPConnection;
+
+    // Call handler
+    const reply = await handler(request, connectionWrapper);
+
+
+    // Send reply if expected
+    if (request.responseExpected) {
+      reply.requestId = request.requestId;
+      const replyData = reply.serialize();
+
+      await conn.write(replyData);
+    }
+    //CLAUDE: What if no reply expected? What does the CORBA spec say?
   }
 }

@@ -409,7 +409,11 @@ function encodeValue(out: CDROutputStream, tc: TypeCode): void {
 function decodeComplex(inp: CDRInputStream, kind: TypeCode.Kind): TypeCode {
   const length = inp.readULong();
   const encapData = inp.readOctetArray(length);
-  const encap = new CDRInputStream(encapData);
+
+  // CORBA encapsulations start with byte order + padding to 4-byte boundary
+  const byteOrder = encapData[0];
+  const littleEndian = byteOrder === 1;
+  const encap = new CDRInputStream(encapData.slice(4), littleEndian);
 
   const id = encap.readString();
   const name = encap.readString();
@@ -424,7 +428,14 @@ function decodeComplex(inp: CDRInputStream, kind: TypeCode.Kind): TypeCode {
 function decodeStruct(inp: CDRInputStream, kind: TypeCode.Kind): TypeCode {
   const length = inp.readULong();
   const encapData = inp.readOctetArray(length);
-  const encap = new CDRInputStream(encapData);
+
+  // CORBA encapsulations start with a byte order flag
+  const byteOrder = encapData[0];
+  const littleEndian = byteOrder === 1;
+
+  // Create stream starting at position 4 (after byte order + padding)
+  // Encapsulations are aligned to 4-byte boundaries
+  const encap = new CDRInputStream(encapData.slice(4), littleEndian);
 
   const id = encap.readString();
   const name = encap.readString();
@@ -450,7 +461,11 @@ function decodeStruct(inp: CDRInputStream, kind: TypeCode.Kind): TypeCode {
 function decodeUnion(inp: CDRInputStream, _kind: TypeCode.Kind): TypeCode {
   const length = inp.readULong();
   const encapData = inp.readOctetArray(length);
-  const encap = new CDRInputStream(encapData);
+
+  // CORBA encapsulations start with byte order + padding to 4-byte boundary
+  const byteOrder = encapData[0];
+  const littleEndian = byteOrder === 1;
+  const encap = new CDRInputStream(encapData.slice(4), littleEndian);
 
   const id = encap.readString();
   const name = encap.readString();
@@ -504,7 +519,11 @@ function decodeUnionLabel(inp: CDRInputStream, discriminatorType: TypeCode): unk
 function decodeEnum(inp: CDRInputStream, _kind: TypeCode.Kind): TypeCode {
   const length = inp.readULong();
   const encapData = inp.readOctetArray(length);
-  const encap = new CDRInputStream(encapData);
+
+  // CORBA encapsulations start with byte order + padding to 4-byte boundary
+  const byteOrder = encapData[0];
+  const littleEndian = byteOrder === 1;
+  const encap = new CDRInputStream(encapData.slice(4), littleEndian);
 
   const id = encap.readString();
   const name = encap.readString();
@@ -522,7 +541,11 @@ function decodeEnum(inp: CDRInputStream, _kind: TypeCode.Kind): TypeCode {
 function decodeSequence(inp: CDRInputStream, kind: TypeCode.Kind): TypeCode {
   const length = inp.readULong();
   const encapData = inp.readOctetArray(length);
-  const encap = new CDRInputStream(encapData);
+
+  // CORBA encapsulations start with byte order + padding to 4-byte boundary
+  const byteOrder = encapData[0];
+  const littleEndian = byteOrder === 1;
+  const encap = new CDRInputStream(encapData.slice(4), littleEndian);
 
   const contentType = decodeTypeCode(encap);
   const bound = encap.readULong();
@@ -538,7 +561,11 @@ function decodeSequence(inp: CDRInputStream, kind: TypeCode.Kind): TypeCode {
 function decodeAlias(inp: CDRInputStream, kind: TypeCode.Kind): TypeCode {
   const length = inp.readULong();
   const encapData = inp.readOctetArray(length);
-  const encap = new CDRInputStream(encapData);
+
+  // CORBA encapsulations start with byte order + padding to 4-byte boundary
+  const byteOrder = encapData[0];
+  const littleEndian = byteOrder === 1;
+  const encap = new CDRInputStream(encapData.slice(4), littleEndian);
 
   const id = encap.readString();
   const name = encap.readString();
