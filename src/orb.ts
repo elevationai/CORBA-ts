@@ -169,7 +169,7 @@ export class ORBImpl implements ORB {
         for (const [id, promise] of this._pendingRequests.entries()) {
           const result = await Promise.race([
             promise.then(() => ({ completed: true })).catch(() => ({ completed: true })),
-            Promise.resolve({ completed: false })
+            Promise.resolve({ completed: false }),
           ]);
 
           if (result.completed) {
@@ -184,7 +184,7 @@ export class ORBImpl implements ORB {
 
         // If still have pending requests, wait a bit and check again
         if (this._pendingRequests.size > 0) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         }
       }
     }
@@ -238,7 +238,7 @@ export class ORBImpl implements ORB {
       // Check if promise is settled using Promise.race with immediate resolution
       const result = await Promise.race([
         promise.then(() => ({ completed: true })).catch(() => ({ completed: true })),
-        Promise.resolve({ completed: false })
+        Promise.resolve({ completed: false }),
       ]);
 
       if (result.completed) {
@@ -277,7 +277,8 @@ export class ORBImpl implements ORB {
       if (server) {
         try {
           await server.stop();
-        } catch {
+        }
+        catch {
           // Ignore errors during cleanup
         }
       }

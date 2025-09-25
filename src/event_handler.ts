@@ -38,8 +38,8 @@ class EventListenerServant<T = unknown> extends Servant {
 
   override _is_a(repositoryId: string): boolean {
     return repositoryId === this.repositoryId ||
-           repositoryId === "IDL:omg.org/CORBA/Object:1.0" ||
-           super._is_a(repositoryId);
+      repositoryId === "IDL:omg.org/CORBA/Object:1.0" ||
+      super._is_a(repositoryId);
   }
 
   async callback(e: T): Promise<void> {
@@ -107,7 +107,7 @@ export class EventHandler<T = unknown> {
         ...ref,
         dispose: async () => {
           await this.deactivate();
-        }
+        },
       };
       this.activated = true;
     }

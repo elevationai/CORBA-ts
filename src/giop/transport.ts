@@ -428,7 +428,7 @@ export class GIOPServer {
       if (this._acceptReadyResolve) {
         // Yield to event loop to ensure OS has fully initialized the socket
         // This is critical - without this, the socket may not be ready to accept connections
-        await new Promise(resolve => queueMicrotask(() => resolve(undefined)));
+        await new Promise((resolve) => queueMicrotask(() => resolve(undefined)));
 
         this._acceptReadyResolve();
         this._acceptReadyResolve = null;
@@ -449,7 +449,8 @@ export class GIOPServer {
         const conn = result.value;
         this._handleConnection(conn);
       }
-    } catch (_e) {
+    }
+    catch (_e) {
       // Accept loop error - server stopping
     }
   }
@@ -467,7 +468,6 @@ export class GIOPServer {
         const bytesRead = await conn.read(buffer);
         if (bytesRead === null) break;
 
-
         // Append to read buffer
         const newBuffer = new Uint8Array(readBuffer.length + bytesRead);
         newBuffer.set(readBuffer);
@@ -476,7 +476,6 @@ export class GIOPServer {
 
         // Process complete messages
         while (readBuffer.length >= 12) {
-
           // Parse GIOP header to get message size
           // Check endianness flag (bit 0 of flags byte at position 6)
           const isLittleEndian = (readBuffer[6] & 0x01) !== 0;
@@ -562,7 +561,6 @@ export class GIOPServer {
       return;
     }
 
-
     // Create a basic connection wrapper for the handler
     const connectionWrapper = {
       endpoint: this._endpoint,
@@ -580,7 +578,6 @@ export class GIOPServer {
 
     // Call handler
     const reply = await handler(request, connectionWrapper);
-
 
     // Send reply if expected
     // Per CORBA spec: oneway operations (responseExpected=false) must NOT send replies

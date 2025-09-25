@@ -35,7 +35,7 @@ export enum PolicyType {
   BIDIRECTIONAL_POLICY_TYPE = 23,
   SECURE_INVOCATION_POLICY_TYPE = 24,
   // Implementation-specific policies
-  ENDPOINT_POLICY_TYPE = 1000,  // Custom policy for POA endpoint configuration
+  ENDPOINT_POLICY_TYPE = 1000, // Custom policy for POA endpoint configuration
 }
 
 /**

@@ -406,7 +406,8 @@ export class ConnectionManager {
           await connection.send(closeMsg);
           // Close immediately after sending CloseConnection as per GIOP spec
           await connection.close();
-        } catch (error) {
+        }
+        catch (error) {
           console.debug("Failed to send CloseConnection:", error);
         }
       }

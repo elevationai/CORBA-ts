@@ -5,12 +5,12 @@
 
 import { CORBA } from "./types.ts";
 import { Object, ObjectReference } from "./object.ts";
-import { Policy, PolicyType, EndpointPolicy } from "./policy.ts";
+import { EndpointPolicy, Policy, PolicyType } from "./policy.ts";
 import { IORUtil } from "./giop/ior.ts";
 import type { IOR } from "./giop/types.ts";
 import { GIOPServer } from "./giop/transport.ts";
 import { ConnectionManager } from "./giop/connection.ts";
-import { GIOPRequest, GIOPReply } from "./giop/messages.ts";
+import { GIOPReply, GIOPRequest } from "./giop/messages.ts";
 import { CDRInputStream } from "./core/cdr/decoder.ts";
 import { CDROutputStream } from "./core/cdr/encoder.ts";
 import type { IIOPConnection } from "./giop/connection.ts";
@@ -94,7 +94,7 @@ export interface ResponseHandler {
 type InvokeMethod = (
   operation: string,
   input: CDRInputStream,
-  handler: ResponseHandler
+  handler: ResponseHandler,
 ) => Promise<CDROutputStream> | CDROutputStream;
 
 /**
@@ -430,8 +430,8 @@ class POAImpl extends ObjectReference implements POA {
   private _children: Map<string, POA> = new Map();
   private _servant_manager: ServantManager | null = null;
   private _default_servant: Servant | null = null;
-  private _host: string = "127.0.0.1";  // Default host
-  private _port: number = 9000;           // Default port
+  private _host: string = "127.0.0.1"; // Default host
+  private _port: number = 9000; // Default port
   private _poa_policies: Policy[] = [];
   private _object_references: Map<string, CORBA.ObjectRef> = new Map();
   private _server: GIOPServer | null = null;
@@ -747,7 +747,7 @@ class POAImpl extends ObjectReference implements POA {
     // Create and start the GIOP server
     this._server = new GIOPServer(
       { host: this._host, port: this._port },
-      this._connectionManager
+      this._connectionManager,
     );
 
     // Register a generic handler that dispatches to servants
@@ -765,7 +765,8 @@ class POAImpl extends ObjectReference implements POA {
         const serverId = `${this._name}:${this._host}:${this._port}`;
         orb._registerServer(serverId, this._server);
       }
-    } catch {
+    }
+    catch {
       // ORB might not be initialized yet, that's okay
     }
   }
@@ -775,7 +776,6 @@ class POAImpl extends ObjectReference implements POA {
    */
   private async _dispatchRequest(request: GIOPRequest, _connection: IIOPConnection): Promise<GIOPReply> {
     try {
-
       // Extract the object ID from the request
       let objectId = request.objectKey;
 
@@ -788,7 +788,6 @@ class POAImpl extends ObjectReference implements POA {
       if (!objectId) {
         throw new CORBA.OBJECT_NOT_EXIST("No object key in request");
       }
-
 
       // Look up the servant
       const servant = await this.id_to_servant(objectId);
@@ -818,7 +817,6 @@ class POAImpl extends ObjectReference implements POA {
       // Check if servant has _invoke method (CORBA static skeleton standard)
       const invokableServant = servant as unknown as Partial<InvokableServant>;
       if (typeof invokableServant._invoke === "function") {
-
         // Create ResponseHandler for managing the response
         const responseHandler: ResponseHandler = {
           createReply(): CDROutputStream {
@@ -826,7 +824,7 @@ class POAImpl extends ObjectReference implements POA {
           },
           createExceptionReply(): CDROutputStream {
             return new CDROutputStream();
-          }
+          },
         };
 
         // Call the standard CORBA _invoke method
@@ -845,7 +843,6 @@ class POAImpl extends ObjectReference implements POA {
       if (typeof servantWithMethods[operation] !== "function") {
         throw new CORBA.BAD_OPERATION(`Operation ${operation} not found on servant`);
       }
-
 
       // Call the operation on the servant
       // This is a simplified dispatch - real implementation would need to handle
@@ -869,13 +866,17 @@ class POAImpl extends ObjectReference implements POA {
         // Try to marshal the result based on its type
         if (typeof result === "string") {
           outputCDR.writeString(result);
-        } else if (typeof result === "number") {
+        }
+        else if (typeof result === "number") {
           outputCDR.writeLong(result);
-        } else if (typeof result === "boolean") {
+        }
+        else if (typeof result === "boolean") {
           outputCDR.writeBoolean(result);
-        } else if (result instanceof Uint8Array) {
+        }
+        else if (result instanceof Uint8Array) {
           outputCDR.writeOctetArray(result);
-        } else {
+        }
+        else {
           // For complex types, assume they have a marshal method
           const marshalable = result as Partial<MarshalableResult>;
           if (typeof marshalable.marshal === "function") {
@@ -886,8 +887,8 @@ class POAImpl extends ObjectReference implements POA {
 
       reply.body = outputCDR.getBuffer();
       return reply;
-
-    } catch (error) {
+    }
+    catch (error) {
       // DEBUG: Log any exceptions that occur
 
       // Create an exception reply
@@ -903,7 +904,8 @@ class POAImpl extends ObjectReference implements POA {
       let exceptionName = "UNKNOWN";
       if (error instanceof CORBA.SystemException) {
         exceptionName = error.name || "UNKNOWN";
-      } else if (error instanceof Error) {
+      }
+      else if (error instanceof Error) {
         exceptionName = error.name || "UNKNOWN";
       }
 
@@ -934,7 +936,8 @@ class POAImpl extends ObjectReference implements POA {
           const serverId = `${this._name}:${this._host}:${this._port}`;
           orb._unregisterServer(serverId);
         }
-      } catch {
+      }
+      catch {
         // ORB might not be initialized, that's okay
       }
 

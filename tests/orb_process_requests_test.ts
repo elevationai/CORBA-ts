@@ -19,7 +19,7 @@ Deno.test("ORB processRequests manages server lifecycle", async () => {
   const runPromise = orb.run();
 
   // Let it run briefly
-  await new Promise(resolve => setTimeout(resolve, 50));
+  await new Promise((resolve) => setTimeout(resolve, 50));
 
   // Verify the ORB is running
   assertEquals(orb.is_running(), true);
