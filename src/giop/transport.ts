@@ -296,6 +296,8 @@ export class GIOPServer {
   private _endpoint: ConnectionEndpoint;
   private _listener: Deno.TcpListener | null = null;
   private _running: boolean = false;
+  private _acceptReady: Promise<void> | null = null;
+  private _acceptReadyResolve: (() => void) | null = null;
   private _handlers: Map<
     string,
     (request: GIOPRequest, connection: IIOPConnection) => Promise<GIOPReply>
@@ -318,7 +320,7 @@ export class GIOPServer {
   /**
    * Start the server
    */
-  start(): Promise<void> {
+  async start(): Promise<void> {
     if (this._running) {
       return Promise.reject(new Error("Server already running"));
     }
@@ -331,9 +333,18 @@ export class GIOPServer {
 
     this._running = true;
 
-    // Accept connections in background
+    // Set up the ready promise
+    this._acceptReady = new Promise((resolve) => {
+      this._acceptReadyResolve = resolve;
+    });
+
+    // Start accepting connections
     this._acceptConnections();
-    return Promise.resolve();
+
+    // Wait for accept loop to be ready
+    await this._acceptReady;
+
+    return;
   }
 
   /**
@@ -359,11 +370,41 @@ export class GIOPServer {
   private async _acceptConnections(): Promise<void> {
     if (!this._listener) return;
 
-    for await (const conn of this._listener) {
-      if (!this._running) break;
+    try {
+      // Create async iterator and start waiting for connections
+      const iterator = this._listener[Symbol.asyncIterator]();
 
-      // Handle connection in background
-      this._handleConnection(conn);
+      // Set up the first iteration promise - this ensures we're actively waiting
+      const firstPromise = iterator.next();
+
+      // Now that we're waiting for connections, signal ready
+      // The key is we're IN the accept state before signaling
+      if (this._acceptReadyResolve) {
+        // Yield to event loop to ensure OS has fully initialized the socket
+        // This is critical - without this, the socket may not be ready to accept connections
+        await new Promise(resolve => queueMicrotask(() => resolve(undefined)));
+
+        this._acceptReadyResolve();
+        this._acceptReadyResolve = null;
+      }
+
+      // Handle the first connection when it arrives
+      const firstResult = await firstPromise;
+      if (!firstResult.done && this._running) {
+        const conn = firstResult.value;
+        this._handleConnection(conn);
+      }
+
+      // Continue with remaining connections
+      while (this._running) {
+        const result = await iterator.next();
+        if (result.done) break;
+
+        const conn = result.value;
+        this._handleConnection(conn);
+      }
+    } catch (_e) {
+      // Accept loop error - server stopping
     }
   }
 
@@ -417,8 +458,8 @@ export class GIOPServer {
         }
       }
     }
-    catch (error) {
-      console.error("Error handling connection:", error);
+    catch (_error) {
+      // Connection error handled - connection closed
     }
     finally {
       try {
@@ -466,7 +507,6 @@ export class GIOPServer {
     }
 
     if (!handler) {
-      console.warn(`[GIOP DEBUG] No handler for operation: ${request.operation} (RequestID: ${request.requestId})`);
       // Send exception reply
       const errorReply = new GIOPReply(request.version);
       errorReply.requestId = request.requestId;
@@ -501,7 +541,6 @@ export class GIOPServer {
     if (request.responseExpected) {
       reply.requestId = request.requestId;
       const replyData = reply.serialize();
-
       await conn.write(replyData);
     }
   }
