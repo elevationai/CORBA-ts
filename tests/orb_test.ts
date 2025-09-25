@@ -105,6 +105,9 @@ Deno.test("DII decodes little-endian output parameters", async () => {
   const target = {} as CORBA.ObjectRef;
   const request = new RequestImpl(target, "testOp");
 
+  // Set return type to long to match the mock data
+  request.set_return_type(new TypeCode(TypeCode.Kind.tk_long));
+
   const tc = new TypeCode(TypeCode.Kind.tk_string);
   request.add_out_arg(tc);
 

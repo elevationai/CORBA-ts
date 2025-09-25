@@ -60,6 +60,7 @@ export interface ORB {
     target: CORBA.ObjectRef,
     operation: string,
     encodedArgs: Uint8Array,
+    returnTypeCode?: TypeCode,
   ): Promise<{ returnValue: unknown; outputBuffer: Uint8Array; isLittleEndian: boolean }>;
 
   /**
@@ -351,7 +352,7 @@ export class ORBImpl implements ORB {
     const requestBody = cdr.getBuffer();
 
     // Use invokeWithEncodedArgs to handle the actual invocation
-    const result = await this.invokeWithEncodedArgs(target, operation, requestBody);
+    const result = await this.invokeWithEncodedArgs(target, operation, requestBody, undefined);
 
     // Return just the return value (ignore output parameters since we don't have TypeCodes for them)
     return result.returnValue;
@@ -361,6 +362,7 @@ export class ORBImpl implements ORB {
     target: CORBA.ObjectRef,
     operation: string,
     encodedArgs: Uint8Array,
+    returnTypeCode?: TypeCode,
   ): Promise<{ returnValue: unknown; outputBuffer: Uint8Array; isLittleEndian: boolean }> {
     const ior = (target as { _ior: IOR })._ior;
     if (!ior) {
@@ -377,14 +379,21 @@ export class ORBImpl implements ORB {
       // Use the endianness from the GIOP reply message
       const inCdr = new CDRInputStream(reply.body, reply.isLittleEndian());
 
-      // Read the return value (assuming long for now)
+      // Read the return value based on TypeCode or default to void
       let returnValue: unknown;
-      try {
-        returnValue = inCdr.readLong();
+      if (returnTypeCode) {
+        const { decodeWithTypeCode } = await import("./core/cdr/typecode-decoder.ts");
+        try {
+          returnValue = decodeWithTypeCode(inCdr, returnTypeCode);
+        }
+        catch {
+          // If decoding fails, try to read as void
+          returnValue = undefined;
+        }
       }
-      catch {
-        // If can't read as long, return 0
-        returnValue = 0;
+      else {
+        // No TypeCode provided - assume void return
+        returnValue = undefined;
       }
 
       // Return both the return value and the remaining buffer for output parameters

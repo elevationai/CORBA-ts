@@ -290,11 +290,12 @@ export class RequestImpl implements Request {
       const { ORB_instance } = await import("./orb.ts");
       const orb = ORB_instance();
 
-      // Invoke through the ORB with pre-encoded buffer
+      // Invoke through the ORB with pre-encoded buffer, passing the return TypeCode
       const result = await orb.invokeWithEncodedArgs(
         this._target as CORBA.ObjectRef,
         this._operation,
         requestBody,
+        this._return_type || undefined,
       );
 
       // Set the return value
@@ -309,12 +310,15 @@ export class RequestImpl implements Request {
       // Use the endianness from the reply (passed through the result)
       const outCdr = new CDRInputStream(result.outputBuffer, result.isLittleEndian);
 
-      // Skip the return value (assuming it's a long for now)
-      try {
-        outCdr.readLong(); // Skip return value
-      }
-      catch {
-        // If can't read as long, reset position
+      // Skip the return value based on its TypeCode
+      if (this._return_type && this._return_type.kind() !== TypeCode.Kind.tk_void) {
+        try {
+          // Decode and discard the return value to advance the stream position
+          decodeWithTypeCode(outCdr, this._return_type);
+        }
+        catch {
+          // If we can't decode, the position remains at the start
+        }
       }
 
       // Decode output parameters in order
