@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CORBA-ts - Event Handler API Reference</title>
+  <meta name="description" content="API documentation for event handler module">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <!-- Prism.js CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body class="api-page">
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <a href="../" class="logo">
+      CORBA-ts
+    </a>
+    <ul class="nav-links">
+      <li><a href="../">Home</a></li>
+<li><a href="../api">API Reference</a></li>
+<li><a href="https://github.com/elevationai/CORBA.ts" target="_blank">Github</a></li>
+    </ul>
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+  </nav>
+
+  <!-- Layout Container -->
+  <div class="layout-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="api-sidebar-header">
+        <a href="./" class="api-back-link">
+          <span>←</span> Back to API Reference
+        </a>
+        <h2 class="api-page-title">Event Handler</h2>
+      </div>
+      
+      
+    <nav class="on-page-nav">
+      <ul>
+        
+      <li>
+        <a href="#createeventhandler">createEventHandler</a>
+        <ul><li><a href="#createeventhandler-createeventhandler">createEventHandler()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#eventhandler">EventHandler</a>
+        <ul><li><a href="#eventhandler-activate">activate()</a></li>
+<li><a href="#eventhandler-getreference">getReference()</a></li>
+<li><a href="#eventhandler-deactivate">deactivate()</a></li>
+<li><a href="#eventhandler-isactivated">isActivated()</a></li>
+<li><a href="#eventhandler-getappref">getAppRef()</a></li>
+<li><a href="#eventhandler-getrepositoryid">getRepositoryId()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#eventlistener">EventListener</a>
+        <ul><li><a href="#eventlistener-callback">callback()</a></li>
+<li><a href="#eventlistener-dispose">dispose()</a></li></ul>
+      </li>
+    
+      </ul>
+    </nav>
+  
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <article class="content-wrapper">
+        <div class="page-header">
+          <h1>Event Handler API Reference</h1>
+          <p>API documentation for event handler module</p>
+        </div>
+
+        
+    <section id="createeventhandler" class="api-section">
+      <h2>createEventHandler</h2>
+      
+      <p>Helper function to create and activate an event handler in one step</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="createeventhandler-createeventhandler">
+      <pre><code class="language-typescript">// Helper function to create and activate an event handler in one step
+createEventHandler(
+  appRef: string,
+  callback: EventCallback&lt;T&gt;,
+  repositoryId?: string
+): Promise&lt;EventListener&gt;</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="eventhandler" class="api-section">
+      <h2>EventHandler</h2>
+      <pre><code class="language-typescript">class EventHandler&lt;T = unknown&gt;</code></pre>
+      <p>EventHandler - Simplified event listener registration for CORBA</p>
+      
+      <h3>Properties</h3>
+    <section class="properties-block">
+      <pre><code class="language-typescript">  static create: (appRef: string, callback: EventCallback&lt;T&gt;, repositoryId: string) =&gt; Promise&lt;EventListener&gt;; // Create and activate an event handler, returning just the CORBA reference</code></pre>
+    </section>
+      <h3>Methods</h3>
+
+    <section class="method" id="eventhandler-activate">
+      <pre><code class="language-typescript">// Activate the event handler and get its CORBA reference
+// This method is idempotent - calling it multiple times returns the same reference
+async activate(): Promise&lt;EventListener&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="eventhandler-getreference">
+      <pre><code class="language-typescript">// Get the CORBA object reference for this event handler
+// Automatically activates if not already activated
+getReference(): Promise&lt;EventListener&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="eventhandler-deactivate">
+      <pre><code class="language-typescript">// Deactivate the event handler
+// After calling this, the handler cannot receive events
+async deactivate(): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="eventhandler-isactivated">
+      <pre><code class="language-typescript">// Check if the handler is currently activated
+isActivated(): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="eventhandler-getappref">
+      <pre><code class="language-typescript">// Get the application reference this handler was created with
+getAppRef(): string</code></pre>
+    </section>
+  
+
+    <section class="method" id="eventhandler-getrepositoryid">
+      <pre><code class="language-typescript">// Get the repository ID for this handler
+getRepositoryId(): string</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="eventlistener" class="api-section">
+      <h2>EventListener</h2>
+      <pre><code class="language-typescript">interface EventListener extends [CORBA.ObjectRef]</code></pre>
+      <p>Event listener interface that servants must implement</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="eventlistener-callback">
+      <pre><code class="language-typescript">callback(e: unknown): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="eventlistener-dispose">
+      <pre><code class="language-typescript">dispose(): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+    </section>
+  
+
+      </article>
+    </main>
+  </div>
+  <!-- End layout-container -->
+
+  <!-- Footer -->
+  <footer class="api-footer">
+    <div class="footer-content">
+      <p>
+        &copy; 2025 Elevation AI. All rights reserved.
+         • <a href="https://github.com/elevationai/CORBA.ts" target="_blank">Github</a>
+      </p>
+    </div>
+  </footer>
+
+  <!-- Prism.js JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  
+  <!-- API Documentation JavaScript -->
+  <script src="../assets/js/api-docs.js"></script>
+</body>
+</html>

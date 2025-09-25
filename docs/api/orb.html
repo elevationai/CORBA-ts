@@ -75,6 +75,10 @@
 <li><a href="#orbimpl-shutdown">shutdown()</a></li>
 <li><a href="#orbimpl-is_running">is_running()</a></li>
 <li><a href="#orbimpl-run">run()</a></li>
+<li><a href="#orbimpl-_trackrequest">_trackRequest()</a></li>
+<li><a href="#orbimpl-_untrackrequest">_untrackRequest()</a></li>
+<li><a href="#orbimpl-_registerserver">_registerServer()</a></li>
+<li><a href="#orbimpl-_unregisterserver">_unregisterServer()</a></li>
 <li><a href="#orbimpl-string_to_object">string_to_object()</a></li>
 <li><a href="#orbimpl-object_to_string">object_to_string()</a></li>
 <li><a href="#orbimpl-resolve_initial_references">resolve_initial_references()</a></li>
@@ -176,7 +180,8 @@ invoke(
 invokeWithEncodedArgs(
   target: CORBA.ObjectRef,
   operation: string,
-  encodedArgs: Uint8Array
+  encodedArgs: Uint8Array,
+  returnTypeCode?: TypeCode
 ): Promise&lt;object&gt;</code></pre>
     </section>
   
@@ -276,6 +281,30 @@ create_policy(type: number, value: unknown): Policy</code></pre>
     </section>
   
 
+    <section class="method" id="orbimpl-_trackrequest">
+      <pre><code class="language-typescript">// Track a pending request
+_trackRequest(promise: Promise&lt;void&gt;): number</code></pre>
+    </section>
+  
+
+    <section class="method" id="orbimpl-_untrackrequest">
+      <pre><code class="language-typescript">// Untrack a completed request
+_untrackRequest(id: number): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="orbimpl-_registerserver">
+      <pre><code class="language-typescript">// Register a server with the ORB for lifecycle management
+_registerServer(id: string, server: GIOPServer): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="orbimpl-_unregisterserver">
+      <pre><code class="language-typescript">// Unregister a server from the ORB
+_unregisterServer(id: string): void</code></pre>
+    </section>
+  
+
     <section class="method" id="orbimpl-string_to_object">
       <pre><code class="language-typescript">string_to_object(str: string): Promise&lt;CORBA.ObjectRef&gt;</code></pre>
     </section>
@@ -339,7 +368,8 @@ create_policy(type: number, value: unknown): Policy</code></pre>
       <pre><code class="language-typescript">async invokeWithEncodedArgs(
   target: CORBA.ObjectRef,
   operation: string,
-  encodedArgs: Uint8Array
+  encodedArgs: Uint8Array,
+  returnTypeCode?: TypeCode
 ): Promise&lt;object&gt;</code></pre>
     </section>
   

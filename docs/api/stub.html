@@ -110,37 +110,37 @@ static async narrowAsync(
   
 
     <section class="method" id="corbastub-get_interface">
-      <pre><code class="language-typescript">get_interface(): void</code></pre>
+      <pre><code class="language-typescript">get_interface(): Promise&lt;InterfaceDef&gt;</code></pre>
     </section>
   
 
     <section class="method" id="corbastub-is_nil">
-      <pre><code class="language-typescript">is_nil(): void</code></pre>
+      <pre><code class="language-typescript">is_nil(): boolean</code></pre>
     </section>
   
 
     <section class="method" id="corbastub-is_equivalent">
-      <pre><code class="language-typescript">is_equivalent(other_object: Object): void</code></pre>
+      <pre><code class="language-typescript">is_equivalent(other_object: Object): boolean</code></pre>
     </section>
   
 
     <section class="method" id="corbastub-is_a">
-      <pre><code class="language-typescript">is_a(repository_id: string): void</code></pre>
+      <pre><code class="language-typescript">is_a(repository_id: string): Promise&lt;boolean&gt;</code></pre>
     </section>
   
 
     <section class="method" id="corbastub-non_existent">
-      <pre><code class="language-typescript">non_existent(): void</code></pre>
+      <pre><code class="language-typescript">non_existent(): Promise&lt;boolean&gt;</code></pre>
     </section>
   
 
     <section class="method" id="corbastub-hash">
-      <pre><code class="language-typescript">hash(maximum: number): void</code></pre>
+      <pre><code class="language-typescript">hash(maximum: number): number</code></pre>
     </section>
   
 
     <section class="method" id="corbastub-duplicate">
-      <pre><code class="language-typescript">duplicate(): void</code></pre>
+      <pre><code class="language-typescript">duplicate(): Object</code></pre>
     </section>
   
 
@@ -150,47 +150,47 @@ static async narrowAsync(
   
 
     <section class="method" id="corbastub-get_domain_managers">
-      <pre><code class="language-typescript">get_domain_managers(): void</code></pre>
+      <pre><code class="language-typescript">get_domain_managers(): Promise&lt;Object[]&gt;</code></pre>
     </section>
   
 
     <section class="method" id="corbastub-set_policy_overrides">
-      <pre><code class="language-typescript">set_policy_overrides(policies: unknown[], set_add: unknown): void</code></pre>
+      <pre><code class="language-typescript">set_policy_overrides(policies: unknown[], set_add: unknown): Object</code></pre>
     </section>
   
 
     <section class="method" id="corbastub-get_policy">
-      <pre><code class="language-typescript">get_policy(policy_type: number): void</code></pre>
+      <pre><code class="language-typescript">get_policy(policy_type: number): unknown</code></pre>
     </section>
   
 
     <section class="method" id="corbastub-get_client_policy">
-      <pre><code class="language-typescript">get_client_policy(type: number): void</code></pre>
+      <pre><code class="language-typescript">get_client_policy(type: number): unknown</code></pre>
     </section>
   
 
     <section class="method" id="corbastub-get_policy_overrides">
-      <pre><code class="language-typescript">get_policy_overrides(types: number[]): void</code></pre>
+      <pre><code class="language-typescript">get_policy_overrides(types: number[]): unknown[]</code></pre>
     </section>
   
 
     <section class="method" id="corbastub-validate_connection">
-      <pre><code class="language-typescript">validate_connection(inconsistent_policies: unknown[]): void</code></pre>
+      <pre><code class="language-typescript">validate_connection(inconsistent_policies: unknown[]): boolean</code></pre>
     </section>
   
 
     <section class="method" id="corbastub-get_component">
-      <pre><code class="language-typescript">get_component(): void</code></pre>
+      <pre><code class="language-typescript">get_component(): Object</code></pre>
     </section>
   
 
     <section class="method" id="corbastub-get_type_id">
-      <pre><code class="language-typescript">get_type_id(): void</code></pre>
+      <pre><code class="language-typescript">get_type_id(): Promise&lt;string&gt;</code></pre>
     </section>
   
 
     <section class="method" id="corbastub-_get_interface_id">
-      <pre><code class="language-typescript">_get_interface_id(): void</code></pre>
+      <pre><code class="language-typescript">_get_interface_id(): string</code></pre>
     </section>
   
     </section>

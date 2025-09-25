@@ -41,6 +41,83 @@
       <ul>
         
       <li>
+        <a href="#any">Any</a>
+        <ul><li><a href="#any-fromvalue">fromValue()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#decodeany">decodeAny</a>
+        <ul><li><a href="#decodeany-decodeany">decodeAny()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#encodeany">encodeAny</a>
+        <ul><li><a href="#encodeany-encodeany">encodeAny()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#cdrinputstream">CDRInputStream</a>
+        <ul><li><a href="#cdrinputstream-getposition">getPosition()</a></li>
+<li><a href="#cdrinputstream-setposition">setPosition()</a></li>
+<li><a href="#cdrinputstream-islittleendian">isLittleEndian()</a></li>
+<li><a href="#cdrinputstream-align">align()</a></li>
+<li><a href="#cdrinputstream-hasmore">hasMore()</a></li>
+<li><a href="#cdrinputstream-remaining">remaining()</a></li>
+<li><a href="#cdrinputstream-readremainder">readRemainder()</a></li>
+<li><a href="#cdrinputstream-readoctet">readOctet()</a></li>
+<li><a href="#cdrinputstream-readboolean">readBoolean()</a></li>
+<li><a href="#cdrinputstream-readchar">readChar()</a></li>
+<li><a href="#cdrinputstream-readwchar">readWChar()</a></li>
+<li><a href="#cdrinputstream-readshort">readShort()</a></li>
+<li><a href="#cdrinputstream-readushort">readUShort()</a></li>
+<li><a href="#cdrinputstream-readlong">readLong()</a></li>
+<li><a href="#cdrinputstream-readulong">readULong()</a></li>
+<li><a href="#cdrinputstream-readlonglong">readLongLong()</a></li>
+<li><a href="#cdrinputstream-readulonglong">readULongLong()</a></li>
+<li><a href="#cdrinputstream-readfloat">readFloat()</a></li>
+<li><a href="#cdrinputstream-readdouble">readDouble()</a></li>
+<li><a href="#cdrinputstream-readstring">readString()</a></li>
+<li><a href="#cdrinputstream-readwstring">readWString()</a></li>
+<li><a href="#cdrinputstream-readoctetarray">readOctetArray()</a></li>
+<li><a href="#cdrinputstream-readoctetsequence">readOctetSequence()</a></li>
+<li><a href="#cdrinputstream-skip">skip()</a></li>
+<li><a href="#cdrinputstream-createsubstream">createSubStream()</a></li>
+<li><a href="#cdrinputstream-readremaining">readRemaining()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#cdroutputstream">CDROutputStream</a>
+        <ul><li><a href="#cdroutputstream-getposition">getPosition()</a></li>
+<li><a href="#cdroutputstream-islittleendian">isLittleEndian()</a></li>
+<li><a href="#cdroutputstream-align">align()</a></li>
+<li><a href="#cdroutputstream-getbuffer">getBuffer()</a></li>
+<li><a href="#cdroutputstream-reset">reset()</a></li>
+<li><a href="#cdroutputstream-writeoctet">writeOctet()</a></li>
+<li><a href="#cdroutputstream-writeboolean">writeBoolean()</a></li>
+<li><a href="#cdroutputstream-writechar">writeChar()</a></li>
+<li><a href="#cdroutputstream-writewchar">writeWChar()</a></li>
+<li><a href="#cdroutputstream-writeshort">writeShort()</a></li>
+<li><a href="#cdroutputstream-writeushort">writeUShort()</a></li>
+<li><a href="#cdroutputstream-writelong">writeLong()</a></li>
+<li><a href="#cdroutputstream-writeulong">writeULong()</a></li>
+<li><a href="#cdroutputstream-writelonglong">writeLongLong()</a></li>
+<li><a href="#cdroutputstream-writeulonglong">writeULongLong()</a></li>
+<li><a href="#cdroutputstream-writefloat">writeFloat()</a></li>
+<li><a href="#cdroutputstream-writedouble">writeDouble()</a></li>
+<li><a href="#cdroutputstream-writestring">writeString()</a></li>
+<li><a href="#cdroutputstream-writewstring">writeWString()</a></li>
+<li><a href="#cdroutputstream-writeoctetarray">writeOctetArray()</a></li>
+<li><a href="#cdroutputstream-writeoctetsequence">writeOctetSequence()</a></li>
+<li><a href="#cdroutputstream-writeulongat">writeULongAt()</a></li>
+<li><a href="#cdroutputstream-writeencapsulation">writeEncapsulation()</a></li></ul>
+      </li>
+    
+
+      <li>
         <a href="#systemexception">SystemException</a>
         <ul><li><a href="#systemexception-tostring">toString()</a></li></ul>
       </li>
@@ -287,6 +364,374 @@
         </div>
 
         
+    <section id="any" class="api-section">
+      <h2>Any</h2>
+      <pre><code class="language-typescript">class Any</code></pre>
+      <p>CORBA Any type</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="any-fromvalue">
+      <pre><code class="language-typescript">// Create an Any from a value with automatic type detection
+static fromValue(value: CORBAValue): Any</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="decodeany" class="api-section">
+      <h2>decodeAny</h2>
+      
+      <p>Decode an Any from CDR</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="decodeany-decodeany">
+      <pre><code class="language-typescript">// Decode an Any from CDR
+decodeAny(inp: CDRInputStream): Any</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="encodeany" class="api-section">
+      <h2>encodeAny</h2>
+      
+      <p>Encode an Any to CDR</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="encodeany-encodeany">
+      <pre><code class="language-typescript">// Encode an Any to CDR
+encodeAny(out: CDROutputStream, any: Any): void</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="cdrinputstream" class="api-section">
+      <h2>CDRInputStream</h2>
+      <pre><code class="language-typescript">class CDRInputStream</code></pre>
+      <p>CDR (Common Data Representation) Decoder
+CORBA 3.4 Specification compliant implementation</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="cdrinputstream-getposition">
+      <pre><code class="language-typescript">// Get the current position in the buffer
+getPosition(): number</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-setposition">
+      <pre><code class="language-typescript">// Set the current position in the buffer
+setPosition(position: number): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-islittleendian">
+      <pre><code class="language-typescript">// Get the byte order
+isLittleEndian(): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-align">
+      <pre><code class="language-typescript">// Align to specified boundary (2, 4, or 8 bytes)
+align(boundary: number): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-hasmore">
+      <pre><code class="language-typescript">// Check if more data is available
+hasMore(): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-remaining">
+      <pre><code class="language-typescript">// Get remaining bytes count
+remaining(): number</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readremainder">
+      <pre><code class="language-typescript">// Get remaining bytes as Uint8Array
+readRemainder(): Uint8Array</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readoctet">
+      <pre><code class="language-typescript">// Read an octet (8-bit unsigned)
+readOctet(): number</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readboolean">
+      <pre><code class="language-typescript">// Read a boolean
+readBoolean(): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readchar">
+      <pre><code class="language-typescript">// Read a char (8-bit)
+readChar(): string</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readwchar">
+      <pre><code class="language-typescript">// Read a wchar (wide character, 16-bit)
+// GIOP 1.2+ uses UTF-16
+readWChar(): string</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readshort">
+      <pre><code class="language-typescript">// Read a short (16-bit signed)
+readShort(): number</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readushort">
+      <pre><code class="language-typescript">// Read an unsigned short (16-bit unsigned)
+readUShort(): number</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readlong">
+      <pre><code class="language-typescript">// Read a long (32-bit signed)
+readLong(): number</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readulong">
+      <pre><code class="language-typescript">// Read an unsigned long (32-bit unsigned)
+readULong(): number</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readlonglong">
+      <pre><code class="language-typescript">// Read a long long (64-bit signed)
+readLongLong(): bigint</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readulonglong">
+      <pre><code class="language-typescript">// Read an unsigned long long (64-bit unsigned)
+readULongLong(): bigint</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readfloat">
+      <pre><code class="language-typescript">// Read a float (32-bit IEEE 754)
+readFloat(): number</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readdouble">
+      <pre><code class="language-typescript">// Read a double (64-bit IEEE 754)
+readDouble(): number</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readstring">
+      <pre><code class="language-typescript">// Read a string (null-terminated)
+readString(): string</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readwstring">
+      <pre><code class="language-typescript">// Read a wide string
+// GIOP 1.2+ uses UTF-8 encoding with length prefix
+readWString(): string</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readoctetarray">
+      <pre><code class="language-typescript">// Read an octet array (no length prefix)
+readOctetArray(length: number): Uint8Array</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readoctetsequence">
+      <pre><code class="language-typescript">// Read an octet sequence (with length prefix)
+readOctetSequence(): Uint8Array</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-skip">
+      <pre><code class="language-typescript">// Skip bytes
+skip(bytes: number): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-createsubstream">
+      <pre><code class="language-typescript">// Create a sub-stream from current position
+createSubStream(length: number): CDRInputStream</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdrinputstream-readremaining">
+      <pre><code class="language-typescript">// Read all remaining bytes
+readRemaining(): Uint8Array</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="cdroutputstream" class="api-section">
+      <h2>CDROutputStream</h2>
+      <pre><code class="language-typescript">class CDROutputStream</code></pre>
+      <p>CDR (Common Data Representation) Encoder
+CORBA 3.4 Specification compliant implementation</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="cdroutputstream-getposition">
+      <pre><code class="language-typescript">// Get the current position in the buffer
+getPosition(): number</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-islittleendian">
+      <pre><code class="language-typescript">// Get the byte order
+isLittleEndian(): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-align">
+      <pre><code class="language-typescript">// Align to specified boundary (2, 4, or 8 bytes)
+align(boundary: number): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-getbuffer">
+      <pre><code class="language-typescript">// Get the encoded buffer (trimmed to actual size)
+getBuffer(): Uint8Array</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-reset">
+      <pre><code class="language-typescript">// Reset the stream
+reset(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writeoctet">
+      <pre><code class="language-typescript">// Write an octet (8-bit unsigned)
+writeOctet(value: number): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writeboolean">
+      <pre><code class="language-typescript">// Write a boolean
+writeBoolean(value: boolean): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writechar">
+      <pre><code class="language-typescript">// Write a char (8-bit)
+writeChar(value: string): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writewchar">
+      <pre><code class="language-typescript">// Write a wchar (wide character, 16-bit)
+// GIOP 1.2+ uses UTF-16
+writeWChar(value: string): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writeshort">
+      <pre><code class="language-typescript">// Write a short (16-bit signed)
+writeShort(value: number): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writeushort">
+      <pre><code class="language-typescript">// Write an unsigned short (16-bit unsigned)
+writeUShort(value: number): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writelong">
+      <pre><code class="language-typescript">// Write a long (32-bit signed)
+writeLong(value: number): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writeulong">
+      <pre><code class="language-typescript">// Write an unsigned long (32-bit unsigned)
+writeULong(value: number): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writelonglong">
+      <pre><code class="language-typescript">// Write a long long (64-bit signed)
+writeLongLong(value: bigint): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writeulonglong">
+      <pre><code class="language-typescript">// Write an unsigned long long (64-bit unsigned)
+writeULongLong(value: bigint): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writefloat">
+      <pre><code class="language-typescript">// Write a float (32-bit IEEE 754)
+writeFloat(value: number): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writedouble">
+      <pre><code class="language-typescript">// Write a double (64-bit IEEE 754)
+writeDouble(value: number): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writestring">
+      <pre><code class="language-typescript">// Write a string (null-terminated)
+writeString(value: string): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writewstring">
+      <pre><code class="language-typescript">// Write a wide string
+// GIOP 1.2+ uses UTF-8 encoding with length prefix
+writeWString(value: string): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writeoctetarray">
+      <pre><code class="language-typescript">// Write an octet array (no length prefix)
+writeOctetArray(value: Uint8Array): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writeoctetsequence">
+      <pre><code class="language-typescript">// Write an octet sequence (with length prefix)
+writeOctetSequence(value: Uint8Array): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writeulongat">
+      <pre><code class="language-typescript">// Write at a specific position (for patching values)
+writeULongAt(position: number, value: number): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="cdroutputstream-writeencapsulation">
+      <pre><code class="language-typescript">// Write an encapsulation (length-prefixed CDR stream)
+writeEncapsulation(encap: CDROutputStream): void</code></pre>
+    </section>
+  
+    </section>
+  
+
     <section id="systemexception" class="api-section">
       <h2>SystemException</h2>
       <pre><code class="language-typescript">class SystemException extends Error</code></pre>

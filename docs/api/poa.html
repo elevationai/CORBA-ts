@@ -67,6 +67,13 @@
     
 
       <li>
+        <a href="#responsehandler">ResponseHandler</a>
+        <ul><li><a href="#responsehandler-createreply">createReply()</a></li>
+<li><a href="#responsehandler-createexceptionreply">createExceptionReply()</a></li></ul>
+      </li>
+    
+
+      <li>
         <a href="#servant">Servant</a>
         <ul><li><a href="#servant-_default_poa">_default_POA()</a></li>
 <li><a href="#servant-_is_a">_is_a()</a></li>
@@ -146,7 +153,9 @@
 <li><a href="#rootpoa-reference_to_servant">reference_to_servant()</a></li>
 <li><a href="#rootpoa-reference_to_id">reference_to_id()</a></li>
 <li><a href="#rootpoa-id_to_servant">id_to_servant()</a></li>
-<li><a href="#rootpoa-id_to_reference">id_to_reference()</a></li></ul>
+<li><a href="#rootpoa-id_to_reference">id_to_reference()</a></li>
+<li><a href="#rootpoa-_startserver">_startServer()</a></li>
+<li><a href="#rootpoa-_stopserver">_stopServer()</a></li></ul>
       </li>
     
 
@@ -253,6 +262,27 @@ postinvoke(
   cookie: unknown,
   servant: Servant
 ): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="responsehandler" class="api-section">
+      <h2>ResponseHandler</h2>
+      <pre><code class="language-typescript">interface ResponseHandler</code></pre>
+      <p>ResponseHandler interface for CORBA static skeleton _invoke method
+Based on CORBA 3.4 specification</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="responsehandler-createreply">
+      <pre><code class="language-typescript">createReply(): CDROutputStream</code></pre>
+    </section>
+  
+
+    <section class="method" id="responsehandler-createexceptionreply">
+      <pre><code class="language-typescript">createExceptionReply(): CDROutputStream</code></pre>
     </section>
   
     </section>
@@ -512,7 +542,7 @@ get_state(): POAManagerState</code></pre>
 
     <section class="method" id="getrootpoa-getrootpoa">
       <pre><code class="language-typescript">// Get the root POA
-getRootPOA(): POA</code></pre>
+getRootPOA(policies?: Policy[]): POA</code></pre>
     </section>
   
     </section>
@@ -530,7 +560,7 @@ getRootPOA(): POA</code></pre>
       <pre><code class="language-typescript">create_POA(
   adapter_name: string,
   a_POAManager: POAManager | null,
-  _policies: Policy[]
+  policies: Policy[]
 ): Promise&lt;POA&gt;</code></pre>
     </section>
   
@@ -650,6 +680,19 @@ getRootPOA(): POA</code></pre>
 
     <section class="method" id="rootpoa-id_to_reference">
       <pre><code class="language-typescript">async id_to_reference(oid: Uint8Array): Promise&lt;Object&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="rootpoa-_startserver">
+      <pre><code class="language-typescript">// Start the GIOP server for this POA
+// Called by POAManager when activated
+async _startServer(): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="rootpoa-_stopserver">
+      <pre><code class="language-typescript">// Stop the GIOP server
+async _stopServer(): Promise&lt;void&gt;</code></pre>
     </section>
   
     </section>

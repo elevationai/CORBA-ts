@@ -57,7 +57,11 @@
 <li><a href="#typecode-member_type">member_type()</a></li>
 <li><a href="#typecode-content_type">content_type()</a></li>
 <li><a href="#typecode-length">length()</a></li>
-<li><a href="#typecode-set_param">set_param()</a></li></ul>
+<li><a href="#typecode-discriminator_type">discriminator_type()</a></li>
+<li><a href="#typecode-member_label">member_label()</a></li>
+<li><a href="#typecode-default_index">default_index()</a></li>
+<li><a href="#typecode-set_param">set_param()</a></li>
+<li><a href="#typecode-get_param">get_param()</a></li></ul>
       </li>
     
       </ul>
@@ -157,10 +161,35 @@ length(): number</code></pre>
     </section>
   
 
+    <section class="method" id="typecode-discriminator_type">
+      <pre><code class="language-typescript">// Get the discriminator type for unions
+discriminator_type(): TypeCode</code></pre>
+    </section>
+  
+
+    <section class="method" id="typecode-member_label">
+      <pre><code class="language-typescript">// Get the label for a union member
+member_label(index: number): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="typecode-default_index">
+      <pre><code class="language-typescript">// Get the default index for unions (-1 if no default)
+default_index(): number</code></pre>
+    </section>
+  
+
     <section class="method" id="typecode-set_param">
       <pre><code class="language-typescript">// Set a parameter for this TypeCode
 // Used internally during TypeCode construction
 set_param(name: string, value: unknown): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="typecode-get_param">
+      <pre><code class="language-typescript">// Get a parameter for this TypeCode
+// Used internally during TypeCode encoding
+get_param(name: string): unknown</code></pre>
     </section>
   
     </section>

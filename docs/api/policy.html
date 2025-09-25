@@ -65,8 +65,26 @@
     
 
       <li>
+        <a href="#endpointpolicyvalue">EndpointPolicyValue</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#endpointpolicy">EndpointPolicy</a>
+        
+      </li>
+    
+
+      <li>
         <a href="#create-policy">create_policy</a>
         <ul><li><a href="#create-policy-create_policy">create_policy()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#create-endpoint-policy">create_endpoint_policy</a>
+        <ul><li><a href="#create-endpoint-policy-create_endpoint_policy">create_endpoint_policy()</a></li></ul>
       </li>
     
       </ul>
@@ -161,6 +179,34 @@ equals(other: Policy): boolean</code></pre>
     </section>
   
 
+    <section id="endpointpolicyvalue" class="api-section">
+      <h2>EndpointPolicyValue</h2>
+      <pre><code class="language-typescript">interface EndpointPolicyValue</code></pre>
+      <p>EndpointPolicy value structure</p>
+      
+      <h3>Properties</h3>
+    <section class="properties-block">
+      <pre><code class="language-typescript">  host: string;
+  port: number;</code></pre>
+    </section>
+      
+    </section>
+  
+
+    <section id="endpointpolicy" class="api-section">
+      <h2>EndpointPolicy</h2>
+      <pre><code class="language-typescript">class EndpointPolicy extends Policy</code></pre>
+      <p>EndpointPolicy class for configuring POA network endpoints</p>
+      
+      <h3>Properties</h3>
+    <section class="properties-block">
+      <pre><code class="language-typescript">  get host(): string;
+  get port(): number;</code></pre>
+    </section>
+      
+    </section>
+  
+
     <section id="create-policy" class="api-section">
       <h2>create_policy</h2>
       
@@ -172,6 +218,22 @@ equals(other: Policy): boolean</code></pre>
     <section class="method" id="create-policy-create_policy">
       <pre><code class="language-typescript">// Create a policy with the specified type and value
 create_policy(policy_type: number, policy_value: unknown): Policy</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="create-endpoint-policy" class="api-section">
+      <h2>create_endpoint_policy</h2>
+      
+      <p>Create an endpoint policy for POA configuration</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="create-endpoint-policy-create_endpoint_policy">
+      <pre><code class="language-typescript">// Create an endpoint policy for POA configuration
+create_endpoint_policy(host: string, port: number): EndpointPolicy</code></pre>
     </section>
   
     </section>

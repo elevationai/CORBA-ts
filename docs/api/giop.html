@@ -228,10 +228,13 @@
         <a href="#connectionmanager">ConnectionManager</a>
         <ul><li><a href="#connectionmanager-getconnection">getConnection()</a></li>
 <li><a href="#connectionmanager-getconnectionforior">getConnectionForIOR()</a></li>
+<li><a href="#connectionmanager-removeconnection">removeConnection()</a></li>
+<li><a href="#connectionmanager-sendclosemessages">sendCloseMessages()</a></li>
 <li><a href="#connectionmanager-closeall">closeAll()</a></li>
 <li><a href="#connectionmanager-getstats">getStats()</a></li>
 <li><a href="#connectionmanager-getlastused">getLastUsed()</a></li>
 <li><a href="#connectionmanager-startcleanuptimer">startCleanupTimer()</a></li>
+<li><a href="#connectionmanager-cleanupidleconnections">cleanupIdleConnections()</a></li>
 <li><a href="#connectionmanager-setmaxidletime">setMaxIdleTime()</a></li>
 <li><a href="#connectionmanager-setcleanupinterval">setCleanupInterval()</a></li></ul>
       </li>
@@ -248,7 +251,9 @@
         <ul><li><a href="#gioptransport-sendrequest">sendRequest()</a></li>
 <li><a href="#gioptransport-sendonewayrequest">sendOnewayRequest()</a></li>
 <li><a href="#gioptransport-startserver">startServer()</a></li>
-<li><a href="#gioptransport-close">close()</a></li></ul>
+<li><a href="#gioptransport-close">close()</a></li>
+<li><a href="#gioptransport-processpendingwork">processPendingWork()</a></li>
+<li><a href="#gioptransport-cleanupidleconnections">cleanupIdleConnections()</a></li></ul>
       </li>
     
 
@@ -257,6 +262,7 @@
         <ul><li><a href="#giopserver-registerhandler">registerHandler()</a></li>
 <li><a href="#giopserver-start">start()</a></li>
 <li><a href="#giopserver-getaddress">getAddress()</a></li>
+<li><a href="#giopserver-isrunning">isRunning()</a></li>
 <li><a href="#giopserver-stop">stop()</a></li></ul>
       </li>
     
@@ -897,6 +903,18 @@ getConnectionForIOR(ior: IOR): Promise&lt;IIOPConnection&gt;</code></pre>
     </section>
   
 
+    <section class="method" id="connectionmanager-removeconnection">
+      <pre><code class="language-typescript">// Remove a connection from the manager
+removeConnection(connection: IIOPConnection): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="connectionmanager-sendclosemessages">
+      <pre><code class="language-typescript">// Send CloseConnection messages to all active connections
+async sendCloseMessages(): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
     <section class="method" id="connectionmanager-closeall">
       <pre><code class="language-typescript">// Close all connections
 async closeAll(): Promise&lt;void&gt;</code></pre>
@@ -918,6 +936,13 @@ getLastUsed(connection: IIOPConnectionImpl): number</code></pre>
     <section class="method" id="connectionmanager-startcleanuptimer">
       <pre><code class="language-typescript">// Start periodic cleanup of idle connections
 startCleanupTimer(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="connectionmanager-cleanupidleconnections">
+      <pre><code class="language-typescript">// Clean up idle connections
+// Can be called manually or via timer
+cleanupIdleConnections(): Promise&lt;void&gt;</code></pre>
     </section>
   
 
@@ -993,6 +1018,20 @@ startServer(endpoint: ConnectionEndpoint): Promise&lt;GIOPServer&gt;</code></pre
 async close(): Promise&lt;void&gt;</code></pre>
     </section>
   
+
+    <section class="method" id="gioptransport-processpendingwork">
+      <pre><code class="language-typescript">// Process any pending work in the transport layer
+// Called periodically by the ORB&#39;s processRequests method
+processPendingWork(): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="gioptransport-cleanupidleconnections">
+      <pre><code class="language-typescript">// Clean up idle connections
+// Called periodically during health checks
+async cleanupIdleConnections(): Promise&lt;void&gt;</code></pre>
+    </section>
+  
     </section>
   
 
@@ -1015,13 +1054,19 @@ registerHandler(
 
     <section class="method" id="giopserver-start">
       <pre><code class="language-typescript">// Start the server
-start(): Promise&lt;void&gt;</code></pre>
+async start(): Promise&lt;void&gt;</code></pre>
     </section>
   
 
     <section class="method" id="giopserver-getaddress">
       <pre><code class="language-typescript">// Get the actual address the server is listening on
 getAddress(): Deno.NetAddr | null</code></pre>
+    </section>
+  
+
+    <section class="method" id="giopserver-isrunning">
+      <pre><code class="language-typescript">// Check if the server is running
+isRunning(): boolean</code></pre>
     </section>
   
 
