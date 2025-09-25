@@ -124,6 +124,10 @@ export class ORBImpl implements ORB {
   private _value_factories: Map<string, ValueFactory> = new Map();
   private _transport: GIOPTransport;
   private _servers: Map<string, GIOPServer> = new Map();
+  private _pendingRequests: Map<number, Promise<void>> = new Map();
+  private _requestIdCounter: number = 0;
+  private _lastHealthCheck: number = Date.now();
+  private _healthCheckInterval: number = 5000; // Check every 5 seconds
 
   constructor(id: string = "default") {
     this._id = id;
@@ -148,8 +152,41 @@ export class ORBImpl implements ORB {
 
   async shutdown(wait_for_completion: boolean): Promise<void> {
     this._running = false;
+
     if (wait_for_completion) {
       // Wait for all pending operations to complete
+      const timeout = 30000; // 30 second timeout
+      const startTime = Date.now();
+
+      while (this._pendingRequests.size > 0) {
+        if (Date.now() - startTime > timeout) {
+          console.warn(`ORB shutdown timeout: ${this._pendingRequests.size} requests still pending`);
+          break;
+        }
+
+        // Check for completed requests and remove them
+        const completedRequests: number[] = [];
+        for (const [id, promise] of this._pendingRequests.entries()) {
+          const result = await Promise.race([
+            promise.then(() => ({ completed: true })).catch(() => ({ completed: true })),
+            Promise.resolve({ completed: false })
+          ]);
+
+          if (result.completed) {
+            completedRequests.push(id);
+          }
+        }
+
+        // Remove completed requests
+        for (const id of completedRequests) {
+          this._pendingRequests.delete(id);
+        }
+
+        // If still have pending requests, wait a bit and check again
+        if (this._pendingRequests.size > 0) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
     }
 
     // Close all servers
@@ -186,9 +223,103 @@ export class ORBImpl implements ORB {
   }
 
   private async processRequests(): Promise<void> {
-    // Process pending requests
-    // This would handle network communication, invocations, etc.
-    await new Promise((resolve) => setTimeout(resolve, 100)); // Simulate work
+    // Process pending requests from all active servers (POAs)
+    const now = Date.now();
+
+    // Periodic health check for servers and connections
+    if (now - this._lastHealthCheck > this._healthCheckInterval) {
+      await this._performHealthCheck();
+      this._lastHealthCheck = now;
+    }
+
+    // Clean up completed pending requests
+    const completedRequests: number[] = [];
+    for (const [id, promise] of this._pendingRequests.entries()) {
+      // Check if promise is settled using Promise.race with immediate resolution
+      const result = await Promise.race([
+        promise.then(() => ({ completed: true })).catch(() => ({ completed: true })),
+        Promise.resolve({ completed: false })
+      ]);
+
+      if (result.completed) {
+        completedRequests.push(id);
+      }
+    }
+
+    // Remove completed requests from tracking
+    for (const id of completedRequests) {
+      this._pendingRequests.delete(id);
+    }
+
+    // Process any deferred work from the transport layer
+    await this._transport.processPendingWork?.();
+
+    // Small yield to prevent CPU spinning while remaining responsive
+    // This is necessary because POA servers handle requests independently
+    await new Promise((resolve) => setTimeout(resolve, 1));
+  }
+
+  /**
+   * Perform health checks on servers and connections
+   */
+  private async _performHealthCheck(): Promise<void> {
+    const deadServers: string[] = [];
+
+    for (const [id, server] of this._servers.entries()) {
+      if (!server.isRunning()) {
+        deadServers.push(id);
+      }
+    }
+
+    // Clean up dead servers
+    for (const id of deadServers) {
+      const server = this._servers.get(id);
+      if (server) {
+        try {
+          await server.stop();
+        } catch {
+          // Ignore errors during cleanup
+        }
+      }
+      this._servers.delete(id);
+    }
+
+    // Clean up idle connections in the transport layer
+    await this._transport.cleanupIdleConnections?.();
+  }
+
+  /**
+   * Track a pending request
+   * @internal
+   */
+  _trackRequest(promise: Promise<void>): number {
+    const id = this._requestIdCounter++;
+    this._pendingRequests.set(id, promise);
+    return id;
+  }
+
+  /**
+   * Untrack a completed request
+   * @internal
+   */
+  _untrackRequest(id: number): void {
+    this._pendingRequests.delete(id);
+  }
+
+  /**
+   * Register a server with the ORB for lifecycle management
+   * @internal
+   */
+  _registerServer(id: string, server: GIOPServer): void {
+    this._servers.set(id, server);
+  }
+
+  /**
+   * Unregister a server from the ORB
+   * @internal
+   */
+  _unregisterServer(id: string): void {
+    this._servers.delete(id);
   }
 
   string_to_object(str: string): Promise<CORBA.ObjectRef> {

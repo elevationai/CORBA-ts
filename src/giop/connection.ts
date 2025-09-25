@@ -458,14 +458,22 @@ export class ConnectionManager {
       return; // Already started
     }
     this._cleanupTimer = setInterval(() => {
-      this._cleanupIdleConnections();
+      this._cleanupIdleConnectionsInternal();
     }, this._cleanupInterval);
   }
 
   /**
    * Clean up idle connections
+   * Can be called manually or via timer
    */
-  private _cleanupIdleConnections(): void {
+  cleanupIdleConnections(): Promise<void> {
+    return this._cleanupIdleConnectionsInternal();
+  }
+
+  /**
+   * Internal cleanup implementation
+   */
+  private _cleanupIdleConnectionsInternal(): Promise<void> {
     const now = Date.now();
     const toRemove: string[] = [];
 
@@ -483,6 +491,8 @@ export class ConnectionManager {
     for (const key of toRemove) {
       this._connections.delete(key);
     }
+
+    return Promise.resolve();
   }
 
   /**

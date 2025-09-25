@@ -5,7 +5,7 @@
 
 import { CORBA } from "./types.ts";
 import { Object, ObjectReference } from "./object.ts";
-import { Policy } from "./policy.ts";
+import { Policy, PolicyType, EndpointPolicy } from "./policy.ts";
 import { IORUtil } from "./giop/ior.ts";
 import type { IOR } from "./giop/types.ts";
 import { GIOPServer } from "./giop/transport.ts";
@@ -430,18 +430,23 @@ class POAImpl extends ObjectReference implements POA {
   private _children: Map<string, POA> = new Map();
   private _servant_manager: ServantManager | null = null;
   private _default_servant: Servant | null = null;
-  private _host: string = "localhost";
-  private _port: number = 9000;
+  private _host: string = "127.0.0.1";  // Default host
+  private _port: number = 9000;           // Default port
+  private _poa_policies: Policy[] = [];
   private _object_references: Map<string, CORBA.ObjectRef> = new Map();
   private _server: GIOPServer | null = null;
   private _connectionManager: ConnectionManager;
 
-  constructor(name: string, parent: POA | null = null, manager: POAManager | null = null) {
+  constructor(name: string, parent: POA | null = null, manager: POAManager | null = null, policies?: Policy[]) {
     super("IDL:omg.org/PortableServer/POA:1.0");
     this._name = name;
     this._parent = parent;
     this._manager = manager || new POAManagerImpl();
     this._connectionManager = new ConnectionManager();
+    this._poa_policies = policies || [];
+
+    // Apply policies
+    this._applyPolicies();
 
     // Register this POA with its manager
     if (this._manager instanceof POAManagerImpl) {
@@ -449,10 +454,24 @@ class POAImpl extends ObjectReference implements POA {
     }
   }
 
+  /**
+   * Apply policies to configure the POA
+   */
+  private _applyPolicies(): void {
+    for (const policy of this._poa_policies) {
+      if (policy.policy_type() === PolicyType.ENDPOINT_POLICY_TYPE) {
+        const endpointPolicy = policy as EndpointPolicy;
+        this._host = endpointPolicy.host;
+        this._port = endpointPolicy.port;
+      }
+      // Handle other policy types as needed
+    }
+  }
+
   create_POA(
     adapter_name: string,
     a_POAManager: POAManager | null,
-    _policies: Policy[],
+    policies: Policy[],
   ): Promise<POA> {
     if (this._children.has(adapter_name)) {
       return Promise.reject(new CORBA.BAD_PARAM(`Child POA '${adapter_name}' already exists`));
@@ -462,6 +481,7 @@ class POAImpl extends ObjectReference implements POA {
       adapter_name,
       this,
       a_POAManager || this._manager,
+      policies,
     );
 
     this._children.set(adapter_name, child);
@@ -736,6 +756,18 @@ class POAImpl extends ObjectReference implements POA {
     });
 
     await this._server.start();
+
+    // Register the server with the ORB for lifecycle management
+    try {
+      const { ORB_instance } = await import("./orb.ts");
+      const orb = ORB_instance() as unknown as { _registerServer?: (id: string, server: GIOPServer) => void };
+      if (orb._registerServer) {
+        const serverId = `${this._name}:${this._host}:${this._port}`;
+        orb._registerServer(serverId, this._server);
+      }
+    } catch {
+      // ORB might not be initialized yet, that's okay
+    }
   }
 
   /**
@@ -894,6 +926,18 @@ class POAImpl extends ObjectReference implements POA {
    */
   async _stopServer(): Promise<void> {
     if (this._server) {
+      // Unregister from ORB
+      try {
+        const { ORB_instance } = await import("./orb.ts");
+        const orb = ORB_instance() as unknown as { _unregisterServer?: (id: string) => void };
+        if (orb._unregisterServer) {
+          const serverId = `${this._name}:${this._host}:${this._port}`;
+          orb._unregisterServer(serverId);
+        }
+      } catch {
+        // ORB might not be initialized, that's okay
+      }
+
       await this._server.stop();
       this._server = null;
     }
@@ -938,10 +982,11 @@ let _root_poa: POA | null = null;
 
 /**
  * Get the root POA
+ * @param policies Optional policies to configure the root POA
  */
-export function getRootPOA(): POA {
+export function getRootPOA(policies?: Policy[]): POA {
   if (!_root_poa) {
-    _root_poa = new POAImpl("RootPOA");
+    _root_poa = new POAImpl("RootPOA", null, null, policies);
   }
   return _root_poa;
 }

@@ -25,6 +25,7 @@ interface RequestContext {
   resolve: (reply: GIOPReply) => void;
   reject: (error: Error) => void;
   timer: number;
+  startTime: number;
 }
 
 /**
@@ -200,6 +201,7 @@ export class GIOPTransport {
         resolve,
         reject,
         timer,
+        startTime: Date.now(),
       });
 
       // Send the request
@@ -287,6 +289,43 @@ export class GIOPTransport {
 
     return parsedProfile.object_key;
   }
+
+  /**
+   * Process any pending work in the transport layer
+   * Called periodically by the ORB's processRequests method
+   */
+  processPendingWork(): Promise<void> {
+    // Check for timed-out requests
+    const now = Date.now();
+    const timedOutRequests: number[] = [];
+
+    for (const [requestId, context] of this._pendingRequests.entries()) {
+      if (now - context.startTime > this._config.requestTimeout) {
+        timedOutRequests.push(requestId);
+      }
+    }
+
+    // Clean up timed-out requests
+    for (const requestId of timedOutRequests) {
+      const context = this._pendingRequests.get(requestId);
+      if (context) {
+        this._pendingRequests.delete(requestId);
+        const error = new Error(`Request ${requestId} timed out after ${this._config.requestTimeout}ms`);
+        context.reject(error);
+      }
+    }
+
+    return Promise.resolve();
+  }
+
+  /**
+   * Clean up idle connections
+   * Called periodically during health checks
+   */
+  async cleanupIdleConnections(): Promise<void> {
+    // Delegate to connection manager to clean up idle connections
+    await this._connectionManager.cleanupIdleConnections();
+  }
 }
 
 /**
@@ -352,6 +391,13 @@ export class GIOPServer {
    */
   getAddress(): Deno.NetAddr | null {
     return this._listener?.addr as Deno.NetAddr || null;
+  }
+
+  /**
+   * Check if the server is running
+   */
+  isRunning(): boolean {
+    return this._running;
   }
 
   /**

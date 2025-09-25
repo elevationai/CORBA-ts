@@ -34,7 +34,8 @@ export enum PolicyType {
   FIREWALL_POLICY_TYPE = 22,
   BIDIRECTIONAL_POLICY_TYPE = 23,
   SECURE_INVOCATION_POLICY_TYPE = 24,
-  // ... others can be added
+  // Implementation-specific policies
+  ENDPOINT_POLICY_TYPE = 1000,  // Custom policy for POA endpoint configuration
 }
 
 /**
@@ -164,8 +165,40 @@ export enum PolicyErrorCode {
 }
 
 /**
+ * EndpointPolicy value structure
+ */
+export interface EndpointPolicyValue {
+  host: string;
+  port: number;
+}
+
+/**
+ * EndpointPolicy class for configuring POA network endpoints
+ */
+export class EndpointPolicy extends Policy {
+  constructor(value: EndpointPolicyValue) {
+    super(PolicyType.ENDPOINT_POLICY_TYPE, value);
+  }
+
+  get host(): string {
+    return (this.value<EndpointPolicyValue>()).host;
+  }
+
+  get port(): number {
+    return (this.value<EndpointPolicyValue>()).port;
+  }
+}
+
+/**
  * Create a policy with the specified type and value
  */
 export function create_policy(policy_type: number, policy_value: unknown): Policy {
   return new Policy(policy_type, policy_value);
+}
+
+/**
+ * Create an endpoint policy for POA configuration
+ */
+export function create_endpoint_policy(host: string, port: number): EndpointPolicy {
+  return new EndpointPolicy({ host, port });
 }
