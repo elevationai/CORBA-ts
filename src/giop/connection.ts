@@ -377,6 +377,10 @@ export class ConnectionManager {
     if (!endpoint) {
       throw new Error("No IIOP endpoint found in IOR");
     }
+    // Normalize localhost variants to 127.0.0.1 for Windows compatibility
+    if (endpoint.host === 'localhost' || endpoint.host === 'localhost.localdomain') {
+      endpoint.host = '127.0.0.1';
+    }
     return this.getConnection(endpoint);
   }
 

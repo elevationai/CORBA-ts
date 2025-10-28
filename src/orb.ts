@@ -496,55 +496,99 @@ export class ORBImpl implements ORB {
     encodedArgs: Uint8Array,
     returnTypeCode?: TypeCode,
   ): Promise<{ returnValue: unknown; outputBuffer: Uint8Array; isLittleEndian: boolean }> {
-    const ior = (target as { _ior: IOR })._ior;
-    if (!ior) {
+    let currentIor = (target as { _ior: IOR })._ior;
+    if (!currentIor) {
       throw new CORBA.BAD_PARAM("Object reference does not contain IOR");
     }
 
-    // Send request through transport with pre-encoded arguments
-    const reply = await this._transport.sendRequest(ior, operation, encodedArgs);
+    // Maximum number of location forwards to prevent infinite loops
+    const MAX_FORWARDS = 10;
+    let forwardCount = 0;
 
-    // Check reply status
-    if (reply.replyStatus === 0) { // NO_EXCEPTION
-      // Deserialize result using CDR
-      const { CDRInputStream } = await import("./core/cdr/decoder.ts");
-      // Use the endianness from the GIOP reply message
-      const inCdr = new CDRInputStream(reply.body, reply.isLittleEndian());
+    while (forwardCount < MAX_FORWARDS) {
+      // Send request through transport with pre-encoded arguments
+      const reply = await this._transport.sendRequest(currentIor, operation, encodedArgs);
 
-      // Read the return value based on TypeCode or default to void
-      let returnValue: unknown;
-      if (returnTypeCode) {
-        const { decodeWithTypeCode } = await import("./core/cdr/typecode-decoder.ts");
-        try {
-          returnValue = decodeWithTypeCode(inCdr, returnTypeCode);
+      // Check reply status
+      if (reply.replyStatus === 0) { // NO_EXCEPTION
+        // Deserialize result using CDR
+        const { CDRInputStream } = await import("./core/cdr/decoder.ts");
+        // Use the endianness from the GIOP reply message
+//         console.log("[ORB] Creating CDRInputStream for reply body, operation:", operation, "isLittleEndian:", reply.isLittleEndian(), "body length:", reply.body.length, "first 16 bytes:", Array.from(reply.body.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' '));
+        const inCdr = new CDRInputStream(reply.body, reply.isLittleEndian());
+
+        // Read the return value based on TypeCode or default to void
+        let returnValue: unknown;
+        if (returnTypeCode) {
+          const { decodeWithTypeCode } = await import("./core/cdr/typecode-decoder.ts");
+          try {
+            returnValue = decodeWithTypeCode(inCdr, returnTypeCode);
+          }
+          catch {
+            // If decoding fails, try to read as void
+            returnValue = undefined;
+          }
         }
-        catch {
-          // If decoding fails, try to read as void
+        else {
+          // No TypeCode provided - assume void return
           returnValue = undefined;
         }
+
+        // Return both the return value and the remaining buffer for output parameters
+        return {
+          returnValue,
+          outputBuffer: reply.body,
+          isLittleEndian: reply.isLittleEndian(),
+        };
+      }
+      else if (reply.replyStatus === 2) { // SYSTEM_EXCEPTION
+        const sysEx = reply.getSystemException();
+        if (sysEx) {
+          throw new CORBA.SystemException(sysEx.exceptionId, sysEx.minor, sysEx.completionStatus);
+        }
+        throw new CORBA.INTERNAL("System exception with no details");
+      }
+      else if (reply.replyStatus === 3 || reply.replyStatus === 4) { // LOCATION_FORWARD or LOCATION_FORWARD_PERM
+        // Extract the forwarded IOR from the reply body
+        const { CDRInputStream } = await import("./core/cdr/decoder.ts");
+
+        // Use readEncapsulatedObjectRef which handles both encapsulated and non-encapsulated IORs
+        const inCdr = new CDRInputStream(reply.body, reply.isLittleEndian());
+        const iorData = inCdr.readEncapsulatedObjectRef();
+
+        // Convert to IOR format expected by IORUtil
+        const { IORUtil } = await import("./giop/ior.ts");
+        currentIor = {
+          type_id: iorData.typeId,
+          profiles: iorData.profiles
+        };
+
+        // Debug logging to see forwarded location
+        const profile = IORUtil.parseIIOPProfile(currentIor.profiles[0]);
+        if (profile) {
+//           console.log(`[CORBA] LOCATION_FORWARD to ${profile.host}:${profile.port} (operation: ${operation})`);
+        }
+
+        // Normalize localhost variants to 127.0.0.1 for Windows compatibility
+        if (profile.host === 'localhost' || profile.host === 'localhost.localdomain') {
+           profile.host = '127.0.0.1';
+          currentIor.profiles[0] = IORUtil.createIIOPProfile(profile);
+//           console.log(`[CORBA] Normalized host to 127.0.0.1`);
+        }
+        // Update the target's IOR if this is a permanent forward
+        if (reply.replyStatus === 4) { // LOCATION_FORWARD_PERM
+          (target as { _ior: IOR })._ior = currentIor;
+        }
+
+        forwardCount++;
+        continue; // Retry with the new IOR
       }
       else {
-        // No TypeCode provided - assume void return
-        returnValue = undefined;
+        throw new CORBA.INTERNAL(`Unhandled reply status: ${reply.replyStatus}`);
       }
+    }
 
-      // Return both the return value and the remaining buffer for output parameters
-      return {
-        returnValue,
-        outputBuffer: reply.body,
-        isLittleEndian: reply.isLittleEndian(),
-      };
-    }
-    else if (reply.replyStatus === 2) { // SYSTEM_EXCEPTION
-      const sysEx = reply.getSystemException();
-      if (sysEx) {
-        throw new CORBA.SystemException(sysEx.exceptionId, sysEx.minor, sysEx.completionStatus);
-      }
-      throw new CORBA.INTERNAL("System exception with no details");
-    }
-    else {
-      throw new CORBA.INTERNAL(`Unhandled reply status: ${reply.replyStatus}`);
-    }
+    throw new CORBA.INTERNAL(`Too many location forwards (${MAX_FORWARDS})`);
   }
 }
 

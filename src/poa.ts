@@ -695,14 +695,28 @@ class POAImpl extends ObjectReference implements POA {
     // Parse the IIOP profile to extract object key
     try {
       const { CDRInputStream } = await import("./core/cdr/decoder.ts");
-      const cdr = new CDRInputStream(iiopProfile.profileData);
+
+      // IIOP profile data is an encapsulation - first byte is byte order
+      const byteOrder = iiopProfile.profileData[0];
+      const isLittleEndian = byteOrder === 1;
+
+      console.log("[POA] Profile data byte order:", byteOrder, "isLittleEndian:", isLittleEndian);
+      console.log("[POA] Profile data first 32 bytes:", Array.from(iiopProfile.profileData.slice(0, 32)).map(b => b.toString(16).padStart(2, '0')).join(' '));
+
+      // Create stream with proper endianness
+      const cdr = new CDRInputStream(iiopProfile.profileData, isLittleEndian);
+
+      // Skip the byte order marker we already read
+      cdr.readOctet();
 
       // Skip version (2 octets)
       cdr.readOctet(); // major
       cdr.readOctet(); // minor
 
       // Skip host
-      cdr.readString();
+      console.log("[POA] About to read host string, position:", cdr.getPosition(), "remaining:", cdr.remaining());
+      const host = cdr.readString();
+      console.log("[POA] Read host:", host);
 
       // Skip port
       cdr.readUShort();

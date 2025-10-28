@@ -52,8 +52,19 @@ export class IORUtil {
       bytes[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
     }
 
-    const cdr = new CDRInputStream(bytes);
-    return this.decodeIOR(cdr);
+    // Check if this is an encapsulated IOR (CORBA 3.0+)
+    // Encapsulated IORs start with byte order flag: 0x00 (big-endian) or 0x01 (little-endian)
+    if (bytes.length > 0 && (bytes[0] === 0 || bytes[0] === 1)) {
+      // Encapsulated: use the byte order from the flag
+      const littleEndian = bytes[0] === 1;
+      const cdr = new CDRInputStream(bytes, littleEndian);
+      cdr.readOctet(); // Skip the byte order flag
+      return this.decodeIOR(cdr);
+    } else {
+      // Non-encapsulated (CORBA 2.x): use network byte order (big-endian)
+      const cdr = new CDRInputStream(bytes, false);
+      return this.decodeIOR(cdr);
+    }
   }
 
   /**

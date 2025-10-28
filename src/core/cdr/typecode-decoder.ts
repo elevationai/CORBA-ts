@@ -87,16 +87,10 @@ export function decodeWithTypeCode(
     }
 
     case TypeCode.Kind.tk_objref: {
-      // Decode object reference as IOR string
-      const iorString = cdr.readString();
-      if (iorString === "") {
-        // Empty IOR string represents null reference
-        return { _ior: "" };
-      }
-      else {
-        // Return object with _ior property
-        return { _ior: iorString };
-      }
+      // Use the readObjectRef method from CDRInputStream which handles
+      // both encapsulated (GIOP 1.2+) and non-encapsulated (GIOP 1.0/1.1) IORs
+      const ior = cdr.readObjectRef();
+      return { _ior: ior };
     }
 
     default:

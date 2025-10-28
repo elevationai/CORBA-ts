@@ -213,8 +213,8 @@ export class CDRInputStream {
    * Read a string (null-terminated)
    */
   readString(): string {
-    // Save position before reading ULong (for debugging if needed)
     const length = this.readULong();
+
     if (length === 0) {
       return "";
     }
@@ -223,6 +223,15 @@ export class CDRInputStream {
     // or unreasonably large (>10MB is suspicious for CORBA strings)
     const maxReasonableLength = 10 * 1024 * 1024; // 10MB
     if (length > this.remaining() || length > maxReasonableLength) {
+      const posBeforeAlign = this.position - 4; // Back up to where length was
+      const alignMask = 4 - 1;
+      const alignedPos = (posBeforeAlign + alignMask) & ~alignMask;
+      const lengthBytes = this.buffer.slice(alignedPos, Math.min(alignedPos + 4, this.buffer.length));
+
+      console.error("[CDR] ERROR: Invalid string length detected!");
+      console.error("[CDR] Position:", posBeforeAlign, "Length:", length, "Little endian:", this.littleEndian, "Remaining:", this.remaining());
+      console.error("[CDR] Length bytes (hex):", Array.from(lengthBytes).map(b => b.toString(16).padStart(2, '0')).join(' '));
+      console.error("[CDR] Buffer around position:", Array.from(this.buffer.slice(Math.max(0, posBeforeAlign - 8), Math.min(this.buffer.length, posBeforeAlign + 16))).map(b => b.toString(16).padStart(2, '0')).join(' '));
       throw new Error(`Invalid string length: ${length} (remaining: ${this.remaining()})`);
     }
 
@@ -233,6 +242,67 @@ export class CDRInputStream {
     this.readOctet();
 
     return new TextDecoder().decode(bytes);
+  }
+
+  /**
+   * Read an object reference (IOR) - non-encapsulated form
+   * Used when IORs appear as struct members or sequence elements
+   */
+  readObjectRef(): { typeId: string; profiles: { profileId: number; profileData: Uint8Array }[] } {
+    // Read IOR structure directly (not encapsulated)
+    const typeId = this.readString();
+    const profileCount = this.readULong();
+    const profiles: { profileId: number; profileData: Uint8Array }[] = [];
+
+    for (let i = 0; i < profileCount; i++) {
+      const profileId = this.readULong();
+      const length = this.readULong();
+      const profileData = this.readOctetArray(length);
+      profiles.push({ profileId, profileData });
+    }
+
+    return { typeId, profiles };
+  }
+
+  /**
+   * Read an encapsulated object reference (IOR)
+   * Used in LOCATION_FORWARD and similar contexts where IOR may be encapsulated
+   */
+  readEncapsulatedObjectRef(): { typeId: string; profiles: { profileId: number; profileData: Uint8Array }[] } {
+    // Check if it's encapsulated (GIOP 1.2+) or not (GIOP 1.0/1.1)
+    const startPos = this.position;
+    const firstByte = this.buffer[startPos];
+    const isEncapsulated = (firstByte === 0 || firstByte === 1);
+
+    let iorCdr: CDRInputStream;
+    if (isEncapsulated) {
+      // GIOP 1.2+: Object reference is an encapsulated sequence
+      // Read the sequence length first
+      const seqLength = this.readULong();
+      const encapBytes = this.readOctetArray(seqLength);
+
+      // First byte of encapsulation is byte order
+      const iorIsLittleEndian = encapBytes[0] === 1;
+      iorCdr = new CDRInputStream(encapBytes, iorIsLittleEndian);
+      iorCdr.readOctet(); // Skip byte order marker
+    } else {
+      // GIOP 1.0/1.1: Object reference is not encapsulated
+      iorCdr = this;
+    }
+
+    // Read IOR structure
+    const typeId = iorCdr.readString();
+    const profileCount = iorCdr.readULong();
+    const profiles: { profileId: number; profileData: Uint8Array }[] = [];
+
+    for (let i = 0; i < profileCount; i++) {
+      const profileId = iorCdr.readULong();
+      const length = iorCdr.readULong();
+      const profileData = iorCdr.readOctetArray(length);
+      profiles.push({ profileId, profileData });
+    }
+
+    return { typeId, profiles };
   }
 
   /**
