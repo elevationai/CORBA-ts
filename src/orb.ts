@@ -514,7 +514,7 @@ export class ORBImpl implements ORB {
         // Deserialize result using CDR
         const { CDRInputStream } = await import("./core/cdr/decoder.ts");
         // Use the endianness from the GIOP reply message
-//         console.log("[ORB] Creating CDRInputStream for reply body, operation:", operation, "isLittleEndian:", reply.isLittleEndian(), "body length:", reply.body.length, "first 16 bytes:", Array.from(reply.body.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' '));
+        //         console.log("[ORB] Creating CDRInputStream for reply body, operation:", operation, "isLittleEndian:", reply.isLittleEndian(), "body length:", reply.body.length, "first 16 bytes:", Array.from(reply.body.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' '));
         const inCdr = new CDRInputStream(reply.body, reply.isLittleEndian());
 
         // Read the return value based on TypeCode or default to void
@@ -559,21 +559,19 @@ export class ORBImpl implements ORB {
         // Convert to IOR format expected by IORUtil
         const { IORUtil } = await import("./giop/ior.ts");
         currentIor = {
-          type_id: iorData.typeId,
-          profiles: iorData.profiles
+          typeId: iorData.typeId,
+          profiles: iorData.profiles,
         };
 
-        // Debug logging to see forwarded location
+        // Normalize localhost variants to the original host we connected to
         const profile = IORUtil.parseIIOPProfile(currentIor.profiles[0]);
-        if (profile) {
-//           console.log(`[CORBA] LOCATION_FORWARD to ${profile.host}:${profile.port} (operation: ${operation})`);
-        }
-
-        // Normalize localhost variants to 127.0.0.1 for Windows compatibility
-        if (profile.host === 'localhost' || profile.host === 'localhost.localdomain') {
-           profile.host = '127.0.0.1';
-          currentIor.profiles[0] = IORUtil.createIIOPProfile(profile);
-//           console.log(`[CORBA] Normalized host to 127.0.0.1`);
+        if (profile && (profile.host === "localhost" || profile.host === "localhost.localdomain" || profile.host === "127.0.0.1")) {
+          // Get the original host from the initial IOR
+          const originalProfile = IORUtil.parseIIOPProfile((target as { _ior: IOR })._ior.profiles[0]);
+          if (originalProfile && originalProfile.host !== "localhost" && originalProfile.host !== "127.0.0.1") {
+            profile.host = originalProfile.host;
+            currentIor.profiles[0] = IORUtil.createIIOPProfile(profile);
+          }
         }
         // Update the target's IOR if this is a permanent forward
         if (reply.replyStatus === 4) { // LOCATION_FORWARD_PERM

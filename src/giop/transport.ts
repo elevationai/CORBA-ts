@@ -69,16 +69,18 @@ export class GIOPTransport {
     request.body = requestBody;
     request.serviceContext = serviceContext;
 
+    const objectKey = this._extractObjectKey(target);
+
     // Set target address based on version
     if (version.major === 1 && version.minor >= 2) {
       request.target = {
         disposition: 0, // KeyAddr
-        objectKey: this._extractObjectKey(target),
+        objectKey,
       };
     }
     else {
       // GIOP 1.0/1.1 uses object key directly
-      request.objectKey = this._extractObjectKey(target);
+      request.objectKey = objectKey;
     }
 
     // Send request with retry logic
