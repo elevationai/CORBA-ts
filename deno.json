@@ -1,6 +1,6 @@
 {
   "name": "@eai/corba",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A TypeScript implementation of CORBA 3.4 for Deno, providing Object Request Broker (ORB), GIOP/IIOP protocol support, and IDL mapping",
   "license": "MIT",
   "exports": "./mod.ts",

@@ -308,7 +308,7 @@ export class RequestImpl implements Request {
       // Create CDR input stream from the output buffer
       // Note: We need to skip past the return value that was already read
       // Use the endianness from the reply (passed through the result)
-//       console.log("[DII] Creating CDRInputStream for out params, operation:", this._operation, "result.isLittleEndian:", result.isLittleEndian, "outputBuffer length:", result.outputBuffer.length, "first 16 bytes:", Array.from(result.outputBuffer.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' '));
+      //       console.log("[DII] Creating CDRInputStream for out params, operation:", this._operation, "result.isLittleEndian:", result.isLittleEndian, "outputBuffer length:", result.outputBuffer.length, "first 16 bytes:", Array.from(result.outputBuffer.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' '));
       const outCdr = new CDRInputStream(result.outputBuffer, result.isLittleEndian);
 
       // Skip the return value based on its TypeCode

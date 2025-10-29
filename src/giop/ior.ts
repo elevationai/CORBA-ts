@@ -60,7 +60,8 @@ export class IORUtil {
       const cdr = new CDRInputStream(bytes, littleEndian);
       cdr.readOctet(); // Skip the byte order flag
       return this.decodeIOR(cdr);
-    } else {
+    }
+    else {
       // Non-encapsulated (CORBA 2.x): use network byte order (big-endian)
       const cdr = new CDRInputStream(bytes, false);
       return this.decodeIOR(cdr);

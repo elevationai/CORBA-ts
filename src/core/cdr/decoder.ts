@@ -229,9 +229,23 @@ export class CDRInputStream {
       const lengthBytes = this.buffer.slice(alignedPos, Math.min(alignedPos + 4, this.buffer.length));
 
       console.error("[CDR] ERROR: Invalid string length detected!");
-      console.error("[CDR] Position:", posBeforeAlign, "Length:", length, "Little endian:", this.littleEndian, "Remaining:", this.remaining());
-      console.error("[CDR] Length bytes (hex):", Array.from(lengthBytes).map(b => b.toString(16).padStart(2, '0')).join(' '));
-      console.error("[CDR] Buffer around position:", Array.from(this.buffer.slice(Math.max(0, posBeforeAlign - 8), Math.min(this.buffer.length, posBeforeAlign + 16))).map(b => b.toString(16).padStart(2, '0')).join(' '));
+      console.error(
+        "[CDR] Position:",
+        posBeforeAlign,
+        "Length:",
+        length,
+        "Little endian:",
+        this.littleEndian,
+        "Remaining:",
+        this.remaining(),
+      );
+      console.error("[CDR] Length bytes (hex):", Array.from(lengthBytes).map((b) => b.toString(16).padStart(2, "0")).join(" "));
+      console.error(
+        "[CDR] Buffer around position:",
+        Array.from(this.buffer.slice(Math.max(0, posBeforeAlign - 8), Math.min(this.buffer.length, posBeforeAlign + 16))).map((b) =>
+          b.toString(16).padStart(2, "0")
+        ).join(" "),
+      );
       throw new Error(`Invalid string length: ${length} (remaining: ${this.remaining()})`);
     }
 
@@ -272,7 +286,7 @@ export class CDRInputStream {
     // Check if it's encapsulated (GIOP 1.2+) or not (GIOP 1.0/1.1)
     const startPos = this.position;
     const firstByte = this.buffer[startPos];
-    const isEncapsulated = (firstByte === 0 || firstByte === 1);
+    const isEncapsulated = firstByte === 0 || firstByte === 1;
 
     let iorCdr: CDRInputStream;
     if (isEncapsulated) {
@@ -285,7 +299,8 @@ export class CDRInputStream {
       const iorIsLittleEndian = encapBytes[0] === 1;
       iorCdr = new CDRInputStream(encapBytes, iorIsLittleEndian);
       iorCdr.readOctet(); // Skip byte order marker
-    } else {
+    }
+    else {
       // GIOP 1.0/1.1: Object reference is not encapsulated
       iorCdr = this;
     }

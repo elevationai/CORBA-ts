@@ -701,7 +701,10 @@ class POAImpl extends ObjectReference implements POA {
       const isLittleEndian = byteOrder === 1;
 
       console.log("[POA] Profile data byte order:", byteOrder, "isLittleEndian:", isLittleEndian);
-      console.log("[POA] Profile data first 32 bytes:", Array.from(iiopProfile.profileData.slice(0, 32)).map(b => b.toString(16).padStart(2, '0')).join(' '));
+      console.log(
+        "[POA] Profile data first 32 bytes:",
+        Array.from(iiopProfile.profileData.slice(0, 32)).map((b) => b.toString(16).padStart(2, "0")).join(" "),
+      );
 
       // Create stream with proper endianness
       const cdr = new CDRInputStream(iiopProfile.profileData, isLittleEndian);
