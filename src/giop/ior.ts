@@ -54,18 +54,32 @@ export class IORUtil {
 
     // Check if this is an encapsulated IOR (CORBA 3.0+)
     // Encapsulated IORs start with byte order flag: 0x00 (big-endian) or 0x01 (little-endian)
-    if (bytes.length > 0 && (bytes[0] === 0 || bytes[0] === 1)) {
-      // Encapsulated: use the byte order from the flag
-      const littleEndian = bytes[0] === 1;
-      const cdr = new CDRInputStream(bytes, littleEndian);
-      cdr.readOctet(); // Skip the byte order flag
-      return this.decodeIOR(cdr);
+    // However, non-encapsulated IORs often start with 0x00 as part of the string length
+    //
+    // Detection logic:
+    // - If bytes[0] == 0x01: Almost certainly encapsulated little-endian
+    //   (non-encapsulated would mean length > 16 million, unrealistic)
+    // - If bytes[0] == 0x00 AND bytes[1] != 0x00: Likely encapsulated big-endian
+    //   (non-encapsulated lengths like 0x00 0x00 0x00 0xNN have bytes[1] == 0x00)
+    // - Otherwise: Non-encapsulated
+    if (bytes.length > 4) {
+      if (bytes[0] === 1) {
+        // Little-endian encapsulated
+        const cdr = new CDRInputStream(bytes, true);
+        cdr.readOctet(); // Skip the byte order flag
+        return this.decodeIOR(cdr);
+      }
+      else if (bytes[0] === 0 && bytes[1] !== 0) {
+        // Big-endian encapsulated (marker 0x00 followed by non-zero byte)
+        const cdr = new CDRInputStream(bytes, false);
+        cdr.readOctet(); // Skip the byte order flag
+        return this.decodeIOR(cdr);
+      }
     }
-    else {
-      // Non-encapsulated (CORBA 2.x): use network byte order (big-endian)
-      const cdr = new CDRInputStream(bytes, false);
-      return this.decodeIOR(cdr);
-    }
+
+    // Non-encapsulated (CORBA 2.x): use network byte order (big-endian)
+    const cdr = new CDRInputStream(bytes, false);
+    return this.decodeIOR(cdr);
   }
 
   /**

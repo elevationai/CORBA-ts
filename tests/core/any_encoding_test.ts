@@ -184,20 +184,27 @@ Deno.test("Object reference encoding: Handles null references", () => {
   const decoded = decodeWithTypeCode(inCdr, tc);
 
   assertExists(decoded);
-  assertEquals((decoded as { _ior: string })._ior, "");
+  const ior = (decoded as { _ior: { typeId: string; profiles: unknown[] } })._ior;
+  assertEquals(ior.typeId, "");
+  assertEquals(ior.profiles.length, 0);
 });
 
 Deno.test("Object reference decoding: Returns proper structure", () => {
   const cdr = new CDROutputStream();
 
-  // Manually write an IOR string
-  cdr.writeString("IOR:0123456789ABCDEF");
+  // Manually write an IOR structure (not a string)
+  cdr.writeString("IDL:Test:1.0"); // Type ID
+  cdr.writeULong(1); // Profile count
+  cdr.writeULong(0); // TAG_INTERNET_IOP
+  cdr.writeULong(4); // Profile data length
+  cdr.writeOctetArray(new Uint8Array([1, 2, 3, 4])); // Profile data
 
   const inCdr = new CDRInputStream(cdr.getBuffer());
   const tc = new TypeCode(TypeCode.Kind.tk_objref);
   const decoded = decodeWithTypeCode(inCdr, tc);
 
   assertExists(decoded);
-  assertEquals(typeof decoded, "object");
-  assertEquals("_ior" in (decoded as object), true);
+  const ior = (decoded as { _ior: { typeId: string; profiles: unknown[] } })._ior;
+  assertEquals(ior.typeId, "IDL:Test:1.0");
+  assertEquals(ior.profiles.length, 1);
 });
