@@ -8,6 +8,16 @@ import { IOR } from "./types.ts";
 import { IORUtil } from "./ior.ts";
 
 /**
+ * Logger interface for CORBA wire-level logging
+ */
+export interface CorbaLogger {
+  debug(message: string, ...args: unknown[]): void;
+  info(message: string, ...args: unknown[]): void;
+  warn(message: string, ...args: unknown[]): void;
+  error(message: string, ...args: unknown[]): void;
+}
+
+/**
  * Connection state enumeration
  */
 export enum ConnectionState {
@@ -26,6 +36,7 @@ export interface ConnectionConfig {
   readTimeout?: number; // Default: 60000ms
   keepAlive?: boolean; // Default: true
   noDelay?: boolean; // Default: true (disable Nagle's algorithm)
+  logger?: CorbaLogger; // Optional logger for wire-level logging
 }
 
 /**
@@ -58,7 +69,8 @@ export class IIOPConnectionImpl implements IIOPConnection {
   private _endpoint: ConnectionEndpoint;
   private _state: ConnectionState = ConnectionState.DISCONNECTED;
   private _conn: Deno.TcpConn | null = null;
-  private _config: Required<ConnectionConfig>;
+  private _config: Required<Omit<ConnectionConfig, "logger">>;
+  private _logger?: CorbaLogger;
   private _readBuffer: Uint8Array = new Uint8Array(0);
   private _pendingMessages: GIOPMessage[] = [];
   private _readers: Array<(message: GIOPMessage) => void> = [];
@@ -66,6 +78,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
 
   constructor(endpoint: ConnectionEndpoint, config: ConnectionConfig = {}) {
     this._endpoint = endpoint;
+    this._logger = config.logger;
     this._config = {
       connectTimeout: config.connectTimeout ?? 30000,
       readTimeout: config.readTimeout ?? 60000,
@@ -158,6 +171,15 @@ export class IIOPConnectionImpl implements IIOPConnection {
 
     this._lastUsed = Date.now();
     const data = message.serialize();
+
+    // Log outgoing bytes
+    if (this._logger) {
+      const hexData = Array.from(data)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join(" ");
+      this._logger.debug(`SEND ${this._endpoint.host}:${this._endpoint.port} [${data.length} bytes]: ${hexData}`);
+    }
+
     let totalSent = 0;
 
     while (totalSent < data.length) {
@@ -275,6 +297,14 @@ export class IIOPConnectionImpl implements IIOPConnection {
       // Extract complete message
       const messageData = this._readBuffer.subarray(0, totalSize);
       this._readBuffer = this._readBuffer.subarray(totalSize);
+
+      // Log incoming bytes
+      if (this._logger) {
+        const hexData = Array.from(messageData)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(" ");
+        this._logger.debug(`RECV ${this._endpoint.host}:${this._endpoint.port} [${messageData.length} bytes]: ${hexData}`);
+      }
 
       try {
         // Check message type to create appropriate message object
