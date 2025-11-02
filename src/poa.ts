@@ -761,6 +761,15 @@ class POAImpl extends ObjectReference implements POA {
       return; // Server already started
     }
 
+    // Only start server if this POA has an explicit endpoint policy
+    // RootPOA and other POAs without endpoint policies don't need servers
+    const hasEndpointPolicy = this._poa_policies.some(
+      (p) => p.policy_type() === PolicyType.ENDPOINT_POLICY_TYPE,
+    );
+    if (!hasEndpointPolicy) {
+      return; // No endpoint policy, don't start a server
+    }
+
     // Create and start the GIOP server
     this._server = new GIOPServer(
       { host: this._host, port: this._port },
