@@ -223,29 +223,6 @@ export class CDRInputStream {
     // or unreasonably large (>10MB is suspicious for CORBA strings)
     const maxReasonableLength = 10 * 1024 * 1024; // 10MB
     if (length > this.remaining() || length > maxReasonableLength) {
-      const posBeforeAlign = this.position - 4; // Back up to where length was
-      const alignMask = 4 - 1;
-      const alignedPos = (posBeforeAlign + alignMask) & ~alignMask;
-      const lengthBytes = this.buffer.slice(alignedPos, Math.min(alignedPos + 4, this.buffer.length));
-
-      console.error("[CDR] ERROR: Invalid string length detected!");
-      console.error(
-        "[CDR] Position:",
-        posBeforeAlign,
-        "Length:",
-        length,
-        "Little endian:",
-        this.littleEndian,
-        "Remaining:",
-        this.remaining(),
-      );
-      console.error("[CDR] Length bytes (hex):", Array.from(lengthBytes).map((b) => b.toString(16).padStart(2, "0")).join(" "));
-      console.error(
-        "[CDR] Buffer around position:",
-        Array.from(this.buffer.slice(Math.max(0, posBeforeAlign - 8), Math.min(this.buffer.length, posBeforeAlign + 16))).map((b) =>
-          b.toString(16).padStart(2, "0")
-        ).join(" "),
-      );
       throw new Error(`Invalid string length: ${length} (remaining: ${this.remaining()})`);
     }
 

@@ -53,26 +53,28 @@ export class IORUtil {
     }
 
     // Check if this is an encapsulated IOR (CORBA 3.0+)
-    // Encapsulated IORs start with byte order flag: 0x00 (big-endian) or 0x01 (little-endian)
-    // However, non-encapsulated IORs often start with 0x00 as part of the string length
+    // Encapsulated IORs start with byte order flag followed by 3 bytes of padding:
+    // - 0x01 0x00 0x00 0x00 = little-endian
+    // - 0x00 0x00 0x00 0x00 = big-endian (with padding)
     //
     // Detection logic:
-    // - If bytes[0] == 0x01: Almost certainly encapsulated little-endian
-    //   (non-encapsulated would mean length > 16 million, unrealistic)
-    // - If bytes[0] == 0x00 AND bytes[1] != 0x00: Likely encapsulated big-endian
-    //   (non-encapsulated lengths like 0x00 0x00 0x00 0xNN have bytes[1] == 0x00)
-    // - Otherwise: Non-encapsulated
+    // - If bytes[0] == 0x01: Encapsulated little-endian
+    // - If bytes[0] == 0x00 AND bytes[1-3] == 0x00: Encapsulated big-endian
+    // - Otherwise: Non-encapsulated (starts with type ID length)
     if (bytes.length > 4) {
       if (bytes[0] === 1) {
         // Little-endian encapsulated
         const cdr = new CDRInputStream(bytes, true);
-        cdr.readOctet(); // Skip the byte order flag
+        cdr.readOctet(); // Skip byte order flag
+        cdr.skip(3); // Skip 3 bytes of padding
         return this.decodeIOR(cdr);
       }
-      else if (bytes[0] === 0 && bytes[1] !== 0) {
-        // Big-endian encapsulated (marker 0x00 followed by non-zero byte)
+      else if (bytes[0] === 0 && bytes[1] === 0 && bytes[2] === 0 && bytes[3] === 0 && bytes[4] === 0) {
+        // Big-endian encapsulated with padding (bytes 0-3 are 0x00 0x00 0x00 0x00)
+        // The actual IOR starts at byte 4
         const cdr = new CDRInputStream(bytes, false);
-        cdr.readOctet(); // Skip the byte order flag
+        cdr.readOctet(); // Skip byte order flag
+        cdr.skip(3); // Skip 3 bytes of padding
         return this.decodeIOR(cdr);
       }
     }

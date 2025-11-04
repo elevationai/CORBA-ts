@@ -185,3 +185,111 @@ Deno.test("IOR: Components in IIOP profile", () => {
   assertEquals(parsed.components[0].componentId, 1); // CODE_SETS
   assertEquals(parsed.components[1].componentId, 0); // ORB_TYPE
 });
+
+Deno.test("IOR: Parse encapsulated IOR with big-endian padding (IBM WebSphere format)", () => {
+  // This IOR hex string starts with 00 00 00 00 (big-endian byte order + padding)
+  // followed by the actual IOR structure. This is the CORBA 3.0 encapsulation format.
+  // IBM WebSphere sends IORs in this format, which was previously incorrectly parsed.
+  //
+  // Structure breakdown:
+  // 00 00 00 00 = encapsulation (byte order flag 0x00 = big-endian, + 3 bytes padding)
+  // 00 00 00 14 = type ID length = 20
+  // "IDL:Test/Sample:1.0\0" = type ID string (20 bytes including null terminator)
+  // 00 00 00 01 = profile count = 1
+  // 00 00 00 00 = profile ID = TAG_INTERNET_IOP (0)
+  // 00 00 00 18 = profile data length = 24 bytes
+  // Profile data (32 bytes) for IIOP 1.2:
+  //   00 = byte order (big-endian)
+  //   01 02 = IIOP version 1.2
+  //   00 = padding for alignment
+  //   00 00 00 0A = host string length = 10
+  //   6C...00 = "localhost\0" (10 bytes)
+  //   1F 90 = port 8080
+  //   00 00 00 04 = object key length = 4
+  //   01 02 03 04 = object key (4 bytes)
+  //   00 00 00 00 = component count = 0
+
+  const iorHex = "00000000" + // encapsulation header (byte order + padding)
+    "00000014" + // type ID length = 20
+    "49444C3A546573742F53616D706C653A312E3000" + // "IDL:Test/Sample:1.0\0"
+    "00000001" + // profile count = 1
+    "00000000" + // profile ID = TAG_INTERNET_IOP
+    "00000020" + // profile data length = 32 bytes
+    "00" + // profile byte order (big-endian)
+    "0102" + // IIOP version 1.2
+    "00" + // padding
+    "0000000A" + // host length = 10
+    "6C6F63616C686F737400" + // "localhost\0"
+    "1F90" + // port 8080
+    "00000004" + // object key length = 4
+    "01020304" + // object key
+    "00000000"; // component count = 0
+
+  const iorString = "IOR:" + iorHex;
+
+  // Parse the IOR
+  const ior = IORUtil.fromString(iorString);
+
+  // Verify basic IOR structure
+  assertExists(ior);
+  assertEquals(ior.typeId, "IDL:Test/Sample:1.0");
+  assertEquals(ior.profiles.length, 1);
+  assertEquals(ior.profiles[0].profileId, ProfileId.TAG_INTERNET_IOP);
+
+  // Parse the IIOP profile
+  const profile = IORUtil.parseIIOPProfile(ior.profiles[0]);
+  assertExists(profile);
+  assertEquals(profile.host, "localhost");
+  assertEquals(profile.port, 8080);
+  assertEquals(profile.iiop_version.major, 1);
+  assertEquals(profile.iiop_version.minor, 2);
+  assertEquals(profile.object_key, new Uint8Array([1, 2, 3, 4]));
+});
+
+Deno.test("IOR: Parse encapsulated IOR with little-endian", () => {
+  // Create a simple IOR and convert it to string to get a non-encapsulated format
+  const ior = IORUtil.createSimpleIOR(
+    "IDL:Test/Sample:1.0",
+    "localhost",
+    8080,
+    new Uint8Array([1, 2, 3, 4]),
+  );
+
+  const iorString = IORUtil.toString(ior);
+
+  // The generated IOR should be parseable
+  const parsed = IORUtil.fromString(iorString);
+  assertExists(parsed);
+  assertEquals(parsed.typeId, "IDL:Test/Sample:1.0");
+
+  const profile = IORUtil.parseIIOPProfile(parsed.profiles[0]);
+  assertExists(profile);
+  assertEquals(profile.host, "localhost");
+  assertEquals(profile.port, 8080);
+});
+
+Deno.test("IOR: Distinguish encapsulated from non-encapsulated IORs", () => {
+  // Test that we correctly distinguish between:
+  // 1. Encapsulated big-endian: 00 00 00 00 (byte order + padding)
+  // 2. Non-encapsulated: 00 00 00 XX (where XX is part of type ID length)
+
+  // This is a non-encapsulated IOR (old CORBA 2.x format)
+  // It starts with the type ID length directly
+  const ior = IORUtil.createSimpleIOR(
+    "IDL:omg.org/CORBA/Object:1.0",
+    "example.com",
+    2809,
+    new Uint8Array([0xAB, 0xCD, 0xEF]),
+  );
+
+  const iorString = IORUtil.toString(ior);
+  const parsed = IORUtil.fromString(iorString);
+
+  assertExists(parsed);
+  assertEquals(parsed.typeId, "IDL:omg.org/CORBA/Object:1.0");
+
+  const profile = IORUtil.parseIIOPProfile(parsed.profiles[0]);
+  assertExists(profile);
+  assertEquals(profile.host, "example.com");
+  assertEquals(profile.port, 2809);
+});
