@@ -57,6 +57,18 @@ export enum ReplyStatusType {
 }
 
 /**
+ * Locate Status Types (for LocateReply)
+ */
+export enum LocateStatusType {
+  UNKNOWN_OBJECT = 0,
+  OBJECT_HERE = 1,
+  OBJECT_FORWARD = 2,
+  OBJECT_FORWARD_PERM = 3, // GIOP 1.2+
+  LOC_SYSTEM_EXCEPTION = 4, // GIOP 1.2+
+  LOC_NEEDS_ADDRESSING_MODE = 5, // GIOP 1.2+
+}
+
+/**
  * Service Context
  */
 export interface ServiceContext {

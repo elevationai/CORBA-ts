@@ -3,8 +3,17 @@
  */
 
 import { assertEquals, assertExists } from "@std/assert";
-import { GIOPCancelRequest, GIOPCloseConnection, GIOPFragment, GIOPMessageError, GIOPReply, GIOPRequest } from "../../src/giop/messages.ts";
-import { AddressingDisposition, GIOPMessageType, ReplyStatusType } from "../../src/giop/types.ts";
+import {
+  GIOPCancelRequest,
+  GIOPCloseConnection,
+  GIOPFragment,
+  GIOPLocateReply,
+  GIOPLocateRequest,
+  GIOPMessageError,
+  GIOPReply,
+  GIOPRequest,
+} from "../../src/giop/messages.ts";
+import { AddressingDisposition, GIOPMessageType, LocateStatusType, ReplyStatusType } from "../../src/giop/types.ts";
 import { CDROutputStream } from "../../src/core/cdr/index.ts";
 
 Deno.test("GIOP Request: Basic serialization/deserialization", () => {
@@ -305,4 +314,105 @@ Deno.test("GIOP Fragment: Large fragment body", () => {
   assertEquals(fragment2.fragmentBody[0], 0);
   assertEquals(fragment2.fragmentBody[100], 100);
   assertEquals(fragment2.fragmentBody[1000], 1000 % 256);
+});
+
+Deno.test("GIOP LocateRequest: Basic serialization/deserialization (GIOP 1.2)", () => {
+  const locReq = new GIOPLocateRequest({ major: 1, minor: 2 });
+  locReq.requestId = 42;
+  locReq.target = {
+    disposition: AddressingDisposition.KeyAddr,
+    objectKey: new Uint8Array([1, 2, 3, 4]),
+  };
+
+  // Serialize
+  const buffer = locReq.serialize();
+  assertExists(buffer);
+
+  // Verify GIOP header
+  assertEquals(buffer[0], 0x47); // 'G'
+  assertEquals(buffer[1], 0x49); // 'I'
+  assertEquals(buffer[2], 0x4F); // 'O'
+  assertEquals(buffer[3], 0x50); // 'P'
+  assertEquals(buffer[7], GIOPMessageType.LocateRequest);
+
+  // Deserialize
+  const locReq2 = new GIOPLocateRequest();
+  locReq2.deserialize(buffer);
+
+  assertEquals(locReq2.requestId, 42);
+  assertExists(locReq2.target);
+  assertEquals(locReq2.target.disposition, AddressingDisposition.KeyAddr);
+});
+
+Deno.test("GIOP LocateRequest: GIOP 1.0 compatibility", () => {
+  const locReq = new GIOPLocateRequest({ major: 1, minor: 0 });
+  locReq.requestId = 123;
+  locReq.objectKey = new Uint8Array([10, 20, 30, 40]);
+
+  // Serialize
+  const buffer = locReq.serialize();
+
+  // Deserialize
+  const locReq2 = new GIOPLocateRequest();
+  locReq2.deserialize(buffer);
+
+  assertEquals(locReq2.requestId, 123);
+  assertEquals(locReq2.objectKey, new Uint8Array([10, 20, 30, 40]));
+});
+
+Deno.test("GIOP LocateReply: Basic serialization/deserialization", () => {
+  const locReply = new GIOPLocateReply({ major: 1, minor: 2 });
+  locReply.requestId = 42;
+  locReply.locateStatus = LocateStatusType.OBJECT_HERE;
+  locReply.body = new Uint8Array([1, 2, 3, 4]);
+
+  // Serialize
+  const buffer = locReply.serialize();
+  assertExists(buffer);
+
+  // Verify GIOP header
+  assertEquals(buffer[7], GIOPMessageType.LocateReply);
+
+  // Deserialize
+  const locReply2 = new GIOPLocateReply();
+  locReply2.deserialize(buffer);
+
+  assertEquals(locReply2.requestId, 42);
+  assertEquals(locReply2.locateStatus, LocateStatusType.OBJECT_HERE);
+  assertEquals(locReply2.body, new Uint8Array([1, 2, 3, 4]));
+});
+
+Deno.test("GIOP LocateReply: UNKNOWN_OBJECT status", () => {
+  const locReply = new GIOPLocateReply();
+  locReply.requestId = 100;
+  locReply.locateStatus = LocateStatusType.UNKNOWN_OBJECT;
+  locReply.body = new Uint8Array(0); // No additional data
+
+  const buffer = locReply.serialize();
+  assertExists(buffer);
+
+  const locReply2 = new GIOPLocateReply();
+  locReply2.deserialize(buffer);
+
+  assertEquals(locReply2.requestId, 100);
+  assertEquals(locReply2.locateStatus, LocateStatusType.UNKNOWN_OBJECT);
+  assertEquals(locReply2.body.length, 0);
+});
+
+Deno.test("GIOP LocateReply: OBJECT_FORWARD status", () => {
+  const locReply = new GIOPLocateReply();
+  locReply.requestId = 200;
+  locReply.locateStatus = LocateStatusType.OBJECT_FORWARD;
+  // In practice, body would contain IOR data
+  locReply.body = new Uint8Array([5, 6, 7, 8, 9, 10]);
+
+  const buffer = locReply.serialize();
+  assertExists(buffer);
+
+  const locReply2 = new GIOPLocateReply();
+  locReply2.deserialize(buffer);
+
+  assertEquals(locReply2.requestId, 200);
+  assertEquals(locReply2.locateStatus, LocateStatusType.OBJECT_FORWARD);
+  assertEquals(locReply2.body, new Uint8Array([5, 6, 7, 8, 9, 10]));
 });

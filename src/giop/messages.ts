@@ -11,6 +11,7 @@ import {
   GIOPMessageType,
   GIOPVersion,
   IOR,
+  LocateStatusType,
   ReplyStatusType,
   ServiceContext,
   SystemExceptionReplyBody,
@@ -734,5 +735,228 @@ export class GIOPFragment extends GIOPMessage {
 
     // Rest is fragment body
     this.fragmentBody = cdr.readRemaining();
+  }
+}
+
+/**
+ * GIOP LocateRequest Message
+ * Used to check if an object exists at a particular location
+ */
+export class GIOPLocateRequest extends GIOPMessage {
+  public requestId: number = 0;
+  public target?: TargetAddress;
+  public objectKey?: Uint8Array; // For GIOP 1.0/1.1
+
+  constructor(version?: GIOPVersion) {
+    super(GIOPMessageType.LocateRequest, version);
+  }
+
+  serialize(): Uint8Array {
+    const cdr = new CDROutputStream(256, this.isLittleEndian());
+
+    // Write header placeholder
+    this.writeHeader(cdr);
+
+    // Remember position for size update
+    const bodySizePos = cdr.getPosition() - 4;
+    const bodyStart = cdr.getPosition();
+
+    // Write based on GIOP version
+    if (this.header.version.minor <= 1) {
+      // GIOP 1.0/1.1: request_id + object_key
+      cdr.writeULong(this.requestId);
+
+      if (this.objectKey) {
+        cdr.writeULong(this.objectKey.length);
+        cdr.writeOctetArray(this.objectKey);
+      }
+      else {
+        cdr.writeULong(0);
+      }
+    }
+    else {
+      // GIOP 1.2+: request_id + target
+      cdr.writeULong(this.requestId);
+
+      if (this.target) {
+        this.writeTargetAddress(cdr, this.target);
+      }
+      else if (this.objectKey) {
+        // Default to KeyAddr
+        cdr.writeShort(AddressingDisposition.KeyAddr);
+        cdr.writeULong(this.objectKey.length);
+        cdr.writeOctetArray(this.objectKey);
+      }
+      else {
+        throw new Error("No target address specified");
+      }
+    }
+
+    // Calculate and update body size
+    const bodySize = cdr.getPosition() - bodyStart;
+    const buffer = cdr.getBuffer();
+    const view = new DataView(buffer.buffer, buffer.byteOffset + bodySizePos, 4);
+    view.setUint32(0, bodySize, this.isLittleEndian());
+
+    return buffer;
+  }
+
+  private writeTargetAddress(cdr: CDROutputStream, target: TargetAddress): void {
+    cdr.writeShort(target.disposition);
+
+    switch (target.disposition) {
+      case AddressingDisposition.KeyAddr:
+        cdr.writeULong(target.objectKey.length);
+        cdr.writeOctetArray(target.objectKey);
+        break;
+
+      case AddressingDisposition.ProfileAddr:
+        this.writeTaggedProfile(cdr, target.profile);
+        break;
+
+      case AddressingDisposition.ReferenceAddr:
+        this.writeIOR(cdr, target.ior);
+        break;
+    }
+  }
+
+  private writeTaggedProfile(cdr: CDROutputStream, profile: TaggedProfile): void {
+    cdr.writeULong(profile.profileId);
+    cdr.writeULong(profile.profileData.length);
+    cdr.writeOctetArray(profile.profileData);
+  }
+
+  private writeIOR(cdr: CDROutputStream, ior: IOR): void {
+    cdr.writeString(ior.typeId);
+    cdr.writeULong(ior.profiles.length);
+    for (const profile of ior.profiles) {
+      this.writeTaggedProfile(cdr, profile);
+    }
+  }
+
+  deserialize(buffer: Uint8Array): void {
+    this.readHeader(buffer);
+
+    const cdr = new CDRInputStream(buffer, this.isLittleEndian());
+
+    // Start reading after the header
+    cdr.setPosition(12);
+
+    // Request ID
+    this.requestId = cdr.readULong();
+
+    if (this.header.version.minor <= 1) {
+      // GIOP 1.0/1.1: object_key
+      const keyLength = cdr.readULong();
+      this.objectKey = cdr.readOctetArray(keyLength);
+    }
+    else {
+      // GIOP 1.2+: target address
+      this.target = this.readTargetAddress(cdr);
+    }
+  }
+
+  private readTargetAddress(cdr: CDRInputStream): TargetAddress {
+    const disposition = cdr.readShort();
+
+    switch (disposition) {
+      case AddressingDisposition.KeyAddr: {
+        const length = cdr.readULong();
+        const objectKey = cdr.readOctetArray(length);
+        return { disposition, objectKey };
+      }
+
+      case AddressingDisposition.ProfileAddr: {
+        const profile = this.readTaggedProfile(cdr);
+        return { disposition, profile };
+      }
+
+      case AddressingDisposition.ReferenceAddr: {
+        const ior = this.readIOR(cdr);
+        return { disposition, ior };
+      }
+
+      default:
+        throw new Error(`Unknown addressing disposition: ${disposition}`);
+    }
+  }
+
+  private readTaggedProfile(cdr: CDRInputStream): TaggedProfile {
+    const profileId = cdr.readULong();
+    const length = cdr.readULong();
+    const profileData = cdr.readOctetArray(length);
+    return { profileId, profileData };
+  }
+
+  private readIOR(cdr: CDRInputStream): IOR {
+    const typeId = cdr.readString();
+    const profileCount = cdr.readULong();
+    const profiles: TaggedProfile[] = [];
+
+    for (let i = 0; i < profileCount; i++) {
+      profiles.push(this.readTaggedProfile(cdr));
+    }
+
+    return { typeId, profiles };
+  }
+}
+
+/**
+ * GIOP LocateReply Message
+ * Response to a LocateRequest indicating object location status
+ */
+export class GIOPLocateReply extends GIOPMessage {
+  public requestId: number = 0;
+  public locateStatus: LocateStatusType = LocateStatusType.UNKNOWN_OBJECT;
+  public body: Uint8Array = new Uint8Array(0); // Additional data based on status
+
+  constructor(version?: GIOPVersion) {
+    super(GIOPMessageType.LocateReply, version);
+  }
+
+  serialize(): Uint8Array {
+    const cdr = new CDROutputStream(256, this.isLittleEndian());
+
+    // Write header placeholder
+    this.writeHeader(cdr);
+
+    // Remember position for size update
+    const bodySizePos = cdr.getPosition() - 4;
+    const bodyStart = cdr.getPosition();
+
+    // Request ID
+    cdr.writeULong(this.requestId);
+
+    // Locate status
+    cdr.writeULong(this.locateStatus);
+
+    // Additional body data (e.g., IOR for OBJECT_FORWARD)
+    cdr.writeOctetArray(this.body);
+
+    // Calculate and update body size
+    const bodySize = cdr.getPosition() - bodyStart;
+    const buffer = cdr.getBuffer();
+    const view = new DataView(buffer.buffer, buffer.byteOffset + bodySizePos, 4);
+    view.setUint32(0, bodySize, this.isLittleEndian());
+
+    return buffer;
+  }
+
+  deserialize(buffer: Uint8Array): void {
+    this.readHeader(buffer);
+
+    const cdr = new CDRInputStream(buffer, this.isLittleEndian());
+
+    // Start reading after the header
+    cdr.setPosition(12);
+
+    // Request ID
+    this.requestId = cdr.readULong();
+
+    // Locate status
+    this.locateStatus = cdr.readULong();
+
+    // Rest is additional body data
+    this.body = cdr.readRemaining();
   }
 }

@@ -3,7 +3,17 @@
  * Handles TCP connections for GIOP message transport
  */
 
-import { GIOPCloseConnection, GIOPFragment, GIOPMessage, GIOPMessageError, GIOPReply, GIOPRequest } from "./messages.ts";
+import {
+  GIOPCancelRequest,
+  GIOPCloseConnection,
+  GIOPFragment,
+  GIOPLocateReply,
+  GIOPLocateRequest,
+  GIOPMessage,
+  GIOPMessageError,
+  GIOPReply,
+  GIOPRequest,
+} from "./messages.ts";
 import { IOR } from "./types.ts";
 import { IORUtil } from "./ior.ts";
 
@@ -372,6 +382,15 @@ export class IIOPConnectionImpl implements IIOPConnection {
             break;
           case 1: // Reply
             message = new GIOPReply({ major: messageData[4], minor: messageData[5] });
+            break;
+          case 2: // CancelRequest
+            message = new GIOPCancelRequest({ major: messageData[4], minor: messageData[5] });
+            break;
+          case 3: // LocateRequest
+            message = new GIOPLocateRequest({ major: messageData[4], minor: messageData[5] });
+            break;
+          case 4: // LocateReply
+            message = new GIOPLocateReply({ major: messageData[4], minor: messageData[5] });
             break;
           case 5: // CloseConnection
             message = new GIOPCloseConnection({ major: messageData[4], minor: messageData[5] });
