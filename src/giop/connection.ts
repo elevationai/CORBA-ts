@@ -3,7 +3,7 @@
  * Handles TCP connections for GIOP message transport
  */
 
-import { GIOPCloseConnection, GIOPMessage, GIOPMessageError, GIOPReply, GIOPRequest } from "./messages.ts";
+import { GIOPCloseConnection, GIOPFragment, GIOPMessage, GIOPMessageError, GIOPReply, GIOPRequest } from "./messages.ts";
 import { IOR } from "./types.ts";
 import { IORUtil } from "./ior.ts";
 
@@ -74,6 +74,12 @@ export class IIOPConnectionImpl implements IIOPConnection {
   private _readBuffer: Uint8Array = new Uint8Array(0);
   private _pendingMessages: GIOPMessage[] = [];
   private _readers: Array<(message: GIOPMessage) => void> = [];
+  private _fragmentBuffers: Map<number, Uint8Array[]> = new Map(); // Track fragments by request ID
+  private _fragmentedMessages: Map<number, GIOPMessage> = new Map(); // Track initial fragmented messages
+  private _fragmentTimestamps: Map<number, number> = new Map(); // Track when fragment collection started
+  private _fragmentTimeout: number = 30000; // 30 seconds timeout for incomplete fragments
+  private _lastFragmentCleanup: number = Date.now(); // Track when we last cleaned up stale fragments
+  private _fragmentCleanupInterval: number = 10000; // Clean up stale fragments every 10 seconds
   _lastUsed: number = Date.now(); // Package-private for ConnectionManager access
 
   constructor(endpoint: ConnectionEndpoint, config: ConnectionConfig = {}) {
@@ -231,8 +237,50 @@ export class IIOPConnectionImpl implements IIOPConnection {
     this._readers = [];
     this._pendingMessages = [];
 
+    // Clean up any incomplete fragments
+    if (this._fragmentBuffers.size > 0 || this._fragmentedMessages.size > 0) {
+      if (this._logger) {
+        this._logger.warn(
+          `Cleaning up ${this._fragmentBuffers.size} incomplete fragment buffers and ${this._fragmentedMessages.size} fragmented messages on connection close`,
+        );
+      }
+      this._fragmentBuffers.clear();
+      this._fragmentedMessages.clear();
+      this._fragmentTimestamps.clear();
+    }
+
     this._state = ConnectionState.CLOSED;
     return Promise.resolve();
+  }
+
+  /**
+   * Clean up stale fragment buffers that have exceeded the timeout
+   */
+  private _cleanupStaleFragments(): void {
+    const now = Date.now();
+    const staleRequestIds: number[] = [];
+
+    // Find all fragments that have exceeded the timeout
+    for (const [requestId, timestamp] of this._fragmentTimestamps.entries()) {
+      if (now - timestamp > this._fragmentTimeout) {
+        staleRequestIds.push(requestId);
+      }
+    }
+
+    // Clean up stale fragments
+    if (staleRequestIds.length > 0) {
+      if (this._logger) {
+        this._logger.warn(
+          `Cleaning up ${staleRequestIds.length} stale fragment buffers that exceeded ${this._fragmentTimeout}ms timeout`,
+        );
+      }
+
+      for (const requestId of staleRequestIds) {
+        this._fragmentBuffers.delete(requestId);
+        this._fragmentedMessages.delete(requestId);
+        this._fragmentTimestamps.delete(requestId);
+      }
+    }
   }
 
   private async _startReading(): Promise<void> {
@@ -271,6 +319,13 @@ export class IIOPConnectionImpl implements IIOPConnection {
   }
 
   private _parseMessages(): void {
+    // Periodically clean up stale fragments
+    const now = Date.now();
+    if (now - this._lastFragmentCleanup > this._fragmentCleanupInterval) {
+      this._cleanupStaleFragments();
+      this._lastFragmentCleanup = now;
+    }
+
     while (this._readBuffer.length >= 12) { // Minimum GIOP header size
       // Check for GIOP magic bytes
       if (
@@ -324,12 +379,124 @@ export class IIOPConnectionImpl implements IIOPConnection {
           case 6: // MessageError
             message = new GIOPMessageError({ major: messageData[4], minor: messageData[5] });
             break;
+          case 7: // Fragment
+            message = new GIOPFragment({ major: messageData[4], minor: messageData[5] });
+            break;
           default:
             console.error(`Unsupported message type: ${messageType}`);
             continue;
         }
 
         message.deserialize(messageData);
+
+        // Check if this is a Request or Reply with FRAGMENT flag set
+        const hasFragmentFlag = (messageData[6] & 0x02) !== 0; // GIOPFlags.FRAGMENT
+
+        if ((message instanceof GIOPRequest || message instanceof GIOPReply) && hasFragmentFlag) {
+          // This is a fragmented Request or Reply - store it and wait for fragments
+          const requestId = message instanceof GIOPRequest ? message.requestId : message.requestId;
+
+          if (this._logger) {
+            this._logger.debug(
+              `Received fragmented ${message instanceof GIOPRequest ? "Request" : "Reply"} ${requestId}, waiting for fragments`,
+            );
+          }
+
+          // Store the initial message, initialize fragment buffer, and record timestamp
+          this._fragmentedMessages.set(requestId, message);
+          this._fragmentBuffers.set(requestId, []);
+          this._fragmentTimestamps.set(requestId, Date.now());
+          continue;
+        }
+
+        // Handle Fragment messages (type 7)
+        if (message instanceof GIOPFragment) {
+          const requestId = message.requestId;
+
+          // Get fragment buffer for this request ID
+          const fragments = this._fragmentBuffers.get(requestId);
+          if (!fragments) {
+            if (this._logger) {
+              this._logger.warn(
+                `Received fragment for request ${requestId} but no initial message found, skipping`,
+              );
+            }
+            continue;
+          }
+
+          // Add this fragment's body to the buffer
+          fragments.push(message.fragmentBody);
+
+          // If more fragments follow, continue receiving
+          if (message.hasMoreFragments()) {
+            if (this._logger) {
+              this._logger.debug(
+                `Fragment received for request ${requestId}, waiting for more fragments (${fragments.length} so far)`,
+              );
+            }
+            continue;
+          }
+
+          // This is the last fragment - reassemble the complete message
+          if (this._logger) {
+            this._logger.debug(
+              `Final fragment received for request ${requestId}, reassembling ${fragments.length} fragments`,
+            );
+          }
+
+          // Get the original message
+          const originalMessage = this._fragmentedMessages.get(requestId);
+          if (!originalMessage) {
+            if (this._logger) {
+              this._logger.error(`No original message found for request ${requestId}`);
+            }
+            // Clean up all fragment state
+            this._fragmentBuffers.delete(requestId);
+            this._fragmentedMessages.delete(requestId);
+            this._fragmentTimestamps.delete(requestId);
+            continue;
+          }
+
+          // Concatenate all fragment bodies
+          const totalLength = fragments.reduce((sum, frag) => sum + frag.length, 0);
+          const fragmentData = new Uint8Array(totalLength);
+          let offset = 0;
+          for (const frag of fragments) {
+            fragmentData.set(frag, offset);
+            offset += frag.length;
+          }
+
+          // Append fragments to the original message body
+          if (originalMessage instanceof GIOPRequest) {
+            const completeBody = new Uint8Array(originalMessage.body.length + fragmentData.length);
+            completeBody.set(originalMessage.body);
+            completeBody.set(fragmentData, originalMessage.body.length);
+            originalMessage.body = completeBody;
+          }
+          else if (originalMessage instanceof GIOPReply) {
+            const completeBody = new Uint8Array(originalMessage.body.length + fragmentData.length);
+            completeBody.set(originalMessage.body);
+            completeBody.set(fragmentData, originalMessage.body.length);
+            originalMessage.body = completeBody;
+          }
+
+          // Clean up
+          this._fragmentBuffers.delete(requestId);
+          this._fragmentedMessages.delete(requestId);
+          this._fragmentTimestamps.delete(requestId);
+
+          if (this._logger) {
+            this._logger.debug(
+              `Reassembled complete message for request ${requestId}, total body size: ${
+                originalMessage instanceof GIOPRequest ? originalMessage.body.length : (originalMessage as GIOPReply).body.length
+              } bytes`,
+            );
+          }
+
+          // Deliver the complete message
+          message = originalMessage;
+        }
+
         // Deliver message to waiting reader or queue it
         if (this._readers.length > 0) {
           const reader = this._readers.shift()!;
@@ -341,6 +508,13 @@ export class IIOPConnectionImpl implements IIOPConnection {
       }
       catch (error) {
         console.error("Error parsing GIOP message:", error);
+        if (this._logger) {
+          this._logger.warn(
+            `Message parsing error occurred. Current fragment state: ${this._fragmentedMessages.size} fragmented messages, ${this._fragmentBuffers.size} fragment buffers`,
+          );
+        }
+        // Note: Cannot clean up specific request fragments here as we don't know which requestId failed
+        // Stale fragments will be cleaned up by timeout mechanism or on connection close
         // Skip this message and continue
       }
     }

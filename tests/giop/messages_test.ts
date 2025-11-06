@@ -3,7 +3,7 @@
  */
 
 import { assertEquals, assertExists } from "@std/assert";
-import { GIOPCancelRequest, GIOPCloseConnection, GIOPMessageError, GIOPReply, GIOPRequest } from "../../src/giop/messages.ts";
+import { GIOPCancelRequest, GIOPCloseConnection, GIOPFragment, GIOPMessageError, GIOPReply, GIOPRequest } from "../../src/giop/messages.ts";
 import { AddressingDisposition, GIOPMessageType, ReplyStatusType } from "../../src/giop/types.ts";
 import { CDROutputStream } from "../../src/core/cdr/index.ts";
 
@@ -214,4 +214,95 @@ Deno.test("GIOP: Service context handling", () => {
   assertEquals(request2.serviceContext[0].contextData, new Uint8Array([10, 20, 30]));
   assertEquals(request2.serviceContext[1].contextId, 2);
   assertEquals(request2.serviceContext[1].contextData, new Uint8Array([40, 50]));
+});
+
+Deno.test("GIOP Fragment: Basic serialization/deserialization", () => {
+  const fragment = new GIOPFragment({ major: 1, minor: 1 });
+  fragment.requestId = 42;
+  fragment.fragmentBody = new Uint8Array([1, 2, 3, 4, 5]);
+
+  // Serialize
+  const buffer = fragment.serialize();
+  assertExists(buffer);
+
+  // Verify GIOP header
+  assertEquals(buffer[0], 0x47); // 'G'
+  assertEquals(buffer[1], 0x49); // 'I'
+  assertEquals(buffer[2], 0x4F); // 'O'
+  assertEquals(buffer[3], 0x50); // 'P'
+  assertEquals(buffer[4], 1); // Major version
+  assertEquals(buffer[5], 1); // Minor version
+  assertEquals(buffer[7], GIOPMessageType.Fragment);
+
+  // Deserialize
+  const fragment2 = new GIOPFragment();
+  fragment2.deserialize(buffer);
+
+  assertEquals(fragment2.requestId, 42);
+  assertEquals(fragment2.fragmentBody, new Uint8Array([1, 2, 3, 4, 5]));
+});
+
+Deno.test("GIOP Fragment: More fragments flag", () => {
+  const fragment = new GIOPFragment();
+  fragment.requestId = 100;
+  fragment.fragmentBody = new Uint8Array([10, 20, 30]);
+
+  // Test setting more fragments flag
+  fragment.setMoreFragments(true);
+  assertEquals(fragment.hasMoreFragments(), true);
+
+  const buffer = fragment.serialize();
+
+  // Check flags byte has fragment bit set (bit 1)
+  assertEquals((buffer[6] & 0x02) !== 0, true);
+
+  // Deserialize and verify
+  const fragment2 = new GIOPFragment();
+  fragment2.deserialize(buffer);
+  assertEquals(fragment2.hasMoreFragments(), true);
+
+  // Test clearing more fragments flag
+  fragment.setMoreFragments(false);
+  assertEquals(fragment.hasMoreFragments(), false);
+
+  const buffer2 = fragment.serialize();
+  assertEquals((buffer2[6] & 0x02) !== 0, false);
+});
+
+Deno.test("GIOP Fragment: Empty fragment body", () => {
+  const fragment = new GIOPFragment();
+  fragment.requestId = 999;
+  fragment.fragmentBody = new Uint8Array(0);
+
+  const buffer = fragment.serialize();
+  assertExists(buffer);
+
+  const fragment2 = new GIOPFragment();
+  fragment2.deserialize(buffer);
+
+  assertEquals(fragment2.requestId, 999);
+  assertEquals(fragment2.fragmentBody.length, 0);
+});
+
+Deno.test("GIOP Fragment: Large fragment body", () => {
+  const fragment = new GIOPFragment();
+  fragment.requestId = 500;
+  // Create a large fragment body (1MB)
+  fragment.fragmentBody = new Uint8Array(1024 * 1024);
+  for (let i = 0; i < fragment.fragmentBody.length; i++) {
+    fragment.fragmentBody[i] = i % 256;
+  }
+
+  const buffer = fragment.serialize();
+  assertExists(buffer);
+
+  const fragment2 = new GIOPFragment();
+  fragment2.deserialize(buffer);
+
+  assertEquals(fragment2.requestId, 500);
+  assertEquals(fragment2.fragmentBody.length, 1024 * 1024);
+  // Verify some sample bytes
+  assertEquals(fragment2.fragmentBody[0], 0);
+  assertEquals(fragment2.fragmentBody[100], 100);
+  assertEquals(fragment2.fragmentBody[1000], 1000 % 256);
 });

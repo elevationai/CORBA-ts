@@ -664,3 +664,75 @@ export class GIOPMessageError extends GIOPMessage {
     // No body to read
   }
 }
+
+/**
+ * GIOP Fragment Message (GIOP 1.1+)
+ * Used for fragmented messages that exceed the maximum message size
+ */
+export class GIOPFragment extends GIOPMessage {
+  public requestId: number = 0;
+  public fragmentBody: Uint8Array = new Uint8Array(0);
+
+  constructor(version?: GIOPVersion) {
+    super(GIOPMessageType.Fragment, version);
+  }
+
+  /**
+   * Check if more fragments follow
+   */
+  hasMoreFragments(): boolean {
+    return (this.header.flags & GIOPFlags.FRAGMENT) !== 0;
+  }
+
+  /**
+   * Set the more fragments flag
+   */
+  setMoreFragments(moreFragments: boolean): void {
+    if (moreFragments) {
+      this.header.flags |= GIOPFlags.FRAGMENT;
+    }
+    else {
+      this.header.flags &= ~GIOPFlags.FRAGMENT;
+    }
+  }
+
+  serialize(): Uint8Array {
+    const cdr = new CDROutputStream(16 + this.fragmentBody.length, this.isLittleEndian());
+
+    // Write header placeholder
+    this.writeHeader(cdr);
+
+    // Remember position for size update
+    const bodySizePos = cdr.getPosition() - 4;
+    const bodyStart = cdr.getPosition();
+
+    // Write request ID
+    cdr.writeULong(this.requestId);
+
+    // Write fragment body
+    cdr.writeOctetArray(this.fragmentBody);
+
+    // Calculate and update body size
+    const bodySize = cdr.getPosition() - bodyStart;
+    const buffer = cdr.getBuffer();
+    const view = new DataView(buffer.buffer, buffer.byteOffset + bodySizePos, 4);
+    view.setUint32(0, bodySize, this.isLittleEndian());
+
+    return buffer;
+  }
+
+  deserialize(buffer: Uint8Array): void {
+    this.readHeader(buffer);
+
+    const cdr = new CDRInputStream(buffer, this.isLittleEndian());
+
+    // Start reading after the header
+    cdr.setPosition(12);
+
+    // Read request ID
+    this.requestId = cdr.readULong();
+
+    // Rest is fragment body
+    this.fragmentBody = cdr.readRemaining();
+  }
+}
