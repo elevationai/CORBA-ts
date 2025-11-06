@@ -10,6 +10,7 @@ import { CDRInputStream } from "../../src/core/cdr/decoder.ts";
 import { CORBA } from "../../src/types.ts";
 import type { IOR } from "../../src/giop/types.ts";
 import type { Object } from "../../src/object.ts";
+import { create_endpoint_policy } from "../../src/policy.ts";
 
 // Mock Servant for testing
 class TestServant implements Servant {
@@ -242,4 +243,130 @@ Deno.test("POA: reference_to_id handles IOR without IIOP profile", async () => {
     assertEquals((error as Error).constructor.name, "BAD_PARAM");
     assertEquals((error as Error).message.includes("No IIOP profile"), true);
   }
+});
+
+Deno.test("POA: _dispatchRequest handles _non_existent for existing servant", async () => {
+  const endpointPolicy = create_endpoint_policy("localhost", 9000);
+  const poa = new RootPOA("TestPOA", null, null, [endpointPolicy]);
+  const servant = new TestServant();
+
+  // Activate servant
+  const oid = await poa.activate_object(servant);
+
+  // Import required types for creating GIOP request
+  const { GIOPRequest } = await import("../../src/giop/messages.ts");
+
+  // Create a GIOP request for _non_existent operation
+  const request = new GIOPRequest({ major: 1, minor: 2 });
+  request.requestId = 1;
+  request.operation = "_non_existent";
+  request.objectKey = oid;
+  request.body = new Uint8Array(0); // _non_existent has no parameters
+
+  // Dispatch the request (use private method via casting)
+  const poaWithPrivate = poa as unknown as {
+    _dispatchRequest: (req: typeof request, conn: unknown) => Promise<{ replyStatus: number; body: Uint8Array }>;
+  };
+
+  const reply = await poaWithPrivate._dispatchRequest(request, null);
+
+  // Should return NO_EXCEPTION (0)
+  assertEquals(reply.replyStatus, 0);
+
+  // Decode the reply body - should be boolean false (object exists)
+  const { CDRInputStream } = await import("../../src/core/cdr/decoder.ts");
+  const inputCDR = new CDRInputStream(reply.body);
+  const result = inputCDR.readBoolean();
+
+  assertEquals(result, false); // false = object exists
+});
+
+Deno.test("POA: _dispatchRequest handles _non_existent for non-existent servant", async () => {
+  const endpointPolicy = create_endpoint_policy("localhost", 9000);
+  const poa = new RootPOA("TestPOA", null, null, [endpointPolicy]);
+
+  // Create object ID that doesn't exist
+  const nonExistentOid = new Uint8Array([123, 45, 67, 89]);
+
+  // Import required types
+  const { GIOPRequest } = await import("../../src/giop/messages.ts");
+
+  // Create a GIOP request for _non_existent operation
+  const request = new GIOPRequest({ major: 1, minor: 2 });
+  request.requestId = 2;
+  request.operation = "_non_existent";
+  request.objectKey = nonExistentOid;
+  request.body = new Uint8Array(0);
+
+  // Dispatch the request
+  const poaWithPrivate = poa as unknown as {
+    _dispatchRequest: (req: typeof request, conn: unknown) => Promise<{ replyStatus: number; body: Uint8Array }>;
+  };
+
+  const reply = await poaWithPrivate._dispatchRequest(request, null);
+
+  // Should return SYSTEM_EXCEPTION (2) because servant not found
+  assertEquals(reply.replyStatus, 2);
+
+  // The exception should be BAD_PARAM in the reply body
+  const { CDRInputStream } = await import("../../src/core/cdr/decoder.ts");
+  const inputCDR = new CDRInputStream(reply.body);
+  const exceptionId = inputCDR.readString();
+
+  assertEquals(exceptionId.includes("BAD_PARAM"), true);
+});
+
+Deno.test("POA: _dispatchRequest _non_existent doesn't require _invoke method", async () => {
+  // This tests that _non_existent is handled specially and doesn't require
+  // the servant to implement _invoke or have a _non_existent method
+
+  const endpointPolicy = create_endpoint_policy("localhost", 9000);
+  const poa = new RootPOA("TestPOA", null, null, [endpointPolicy]);
+
+  // Create a minimal servant without _invoke method
+  class MinimalServant implements Servant {
+    _repository_id(): string {
+      return "IDL:Test/Minimal:1.0";
+    }
+    _default_POA(): POA {
+      return poa;
+    }
+    _is_a(repositoryId: string): boolean {
+      return repositoryId === this._repository_id();
+    }
+    _all_interfaces(): string[] {
+      return [this._repository_id()];
+    }
+    _non_existent(): boolean {
+      return false;
+    }
+    // Note: No _invoke method and no custom _non_existent operation method
+  }
+
+  const servant = new MinimalServant();
+  const oid = await poa.activate_object(servant);
+
+  const { GIOPRequest } = await import("../../src/giop/messages.ts");
+
+  const request = new GIOPRequest({ major: 1, minor: 2 });
+  request.requestId = 3;
+  request.operation = "_non_existent";
+  request.objectKey = oid;
+  request.body = new Uint8Array(0);
+
+  const poaWithPrivate = poa as unknown as {
+    _dispatchRequest: (req: typeof request, conn: unknown) => Promise<{ replyStatus: number; body: Uint8Array }>;
+  };
+
+  const reply = await poaWithPrivate._dispatchRequest(request, null);
+
+  // Should succeed with NO_EXCEPTION
+  assertEquals(reply.replyStatus, 0);
+
+  // Should return false (object exists)
+  const { CDRInputStream } = await import("../../src/core/cdr/decoder.ts");
+  const inputCDR = new CDRInputStream(reply.body);
+  const result = inputCDR.readBoolean();
+
+  assertEquals(result, false);
 });
