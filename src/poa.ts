@@ -860,6 +860,18 @@ class POAImpl extends ObjectReference implements POA {
         return reply;
       }
 
+      if (operation === "_non_existent") {
+        // Object exists if we found the servant
+        const outputCDR = new CDROutputStream();
+        outputCDR.writeBoolean(false); // false = object exists
+
+        const reply = new GIOPReply(request.version);
+        reply.requestId = request.requestId;
+        reply.replyStatus = 0; // NO_EXCEPTION
+        reply.body = outputCDR.getBuffer();
+        return reply;
+      }
+
       // Check if servant has _invoke method (CORBA static skeleton standard)
       const invokableServant = servant as unknown as Partial<InvokableServant>;
       if (typeof invokableServant._invoke === "function") {
