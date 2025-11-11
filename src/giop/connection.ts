@@ -19,6 +19,7 @@ import { IOR } from "./types.ts";
 import { IORUtil } from "./ior.ts";
 
 const logger = getLogger("CORBA-connection");
+const bytesLogger = getLogger("CORBA-bytes");
 
 /**
  * Logger interface for CORBA wire-level logging
@@ -193,7 +194,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
     const hexData = Array.from(data)
       .map((b) => b.toString(16).padStart(2, "0"))
       .join(" ");
-    logger.debug(`SEND ${this._endpoint.host}:${this._endpoint.port} [${data.length} bytes]: ${hexData}`);
+    bytesLogger.debug(`SEND ${this._endpoint.host}:${this._endpoint.port} [${data.length} bytes]: ${hexData}`);
 
     let totalSent = 0;
 
@@ -362,7 +363,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
       const hexData = Array.from(messageData)
         .map((b) => b.toString(16).padStart(2, "0"))
         .join(" ");
-      logger.debug(`RECV ${this._endpoint.host}:${this._endpoint.port} [${messageData.length} bytes]: ${hexData}`);
+      bytesLogger.debug(`RECV ${this._endpoint.host}:${this._endpoint.port} [${messageData.length} bytes]: ${hexData}`);
 
       try {
         // Check message type to create appropriate message object
