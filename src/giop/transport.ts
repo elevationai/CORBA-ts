@@ -3,11 +3,13 @@
  * High-level interface for sending and receiving GIOP messages
  */
 
+import { getLogger } from "logging-ts";
 import { GIOPCloseConnection, GIOPMessage, GIOPMessageError, GIOPReply, GIOPRequest } from "./messages.ts";
-import { ConnectionEndpoint, ConnectionManager, type CorbaLogger, IIOPConnection } from "./connection.ts";
+import { ConnectionEndpoint, ConnectionManager, IIOPConnection } from "./connection.ts";
 import { GIOPMessageType, GIOPVersion, IOR, ReplyStatusType, ServiceContext } from "./types.ts";
 import { IORUtil } from "./ior.ts";
-import { getWireLogger } from "../poa.ts";
+
+const logger = getLogger("CORBA-bytes");
 
 /**
  * Transport configuration
@@ -41,7 +43,7 @@ export class GIOPTransport {
   private _closed: boolean = false;
 
   constructor(config: TransportConfig = {}) {
-    this._connectionManager = new ConnectionManager({ logger: getWireLogger() });
+    this._connectionManager = new ConnectionManager();
     this._config = {
       requestTimeout: config.requestTimeout ?? 30000,
       maxRetries: config.maxRetries ?? 3,
@@ -126,8 +128,8 @@ export class GIOPTransport {
   /**
    * Start listening for incoming requests on specified endpoint
    */
-  startServer(endpoint: ConnectionEndpoint, logger?: CorbaLogger): Promise<GIOPServer> {
-    return Promise.resolve(new GIOPServer(endpoint, this._connectionManager, logger));
+  startServer(endpoint: ConnectionEndpoint): Promise<GIOPServer> {
+    return Promise.resolve(new GIOPServer(endpoint, this._connectionManager));
   }
 
   /**
@@ -340,15 +342,13 @@ export class GIOPServer {
   private _running: boolean = false;
   private _acceptReady: Promise<void> | null = null;
   private _acceptReadyResolve: (() => void) | null = null;
-  private _logger?: CorbaLogger;
   private _handlers: Map<
     string,
     (request: GIOPRequest, connection: IIOPConnection) => Promise<GIOPReply>
   > = new Map();
 
-  constructor(endpoint: ConnectionEndpoint, _connectionManager: ConnectionManager, logger?: CorbaLogger) {
+  constructor(endpoint: ConnectionEndpoint, _connectionManager: ConnectionManager) {
     this._endpoint = endpoint;
-    this._logger = logger;
   }
 
   /**
@@ -495,13 +495,11 @@ export class GIOPServer {
           readBuffer = readBuffer.subarray(totalSize);
 
           // Log incoming callback request bytes
-          if (this._logger) {
-            const hexData = Array.from(messageData)
-              .map((b) => b.toString(16).padStart(2, "0"))
-              .join(" ");
-            const addr = conn.remoteAddr as Deno.NetAddr;
-            this._logger.debug(`RECV ${addr.hostname}:${addr.port} [${messageData.length} bytes]: ${hexData}`);
-          }
+          const hexData = Array.from(messageData)
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join(" ");
+          const addr = conn.remoteAddr as Deno.NetAddr;
+          logger.debug(`RECV ${addr.hostname}:${addr.port} [${messageData.length} bytes]: ${hexData}`);
 
           try {
             await this._processMessage(messageData, conn);
@@ -573,13 +571,11 @@ export class GIOPServer {
       const replyData = errorReply.serialize();
 
       // Log outgoing error response bytes
-      if (this._logger) {
-        const hexData = Array.from(replyData)
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join(" ");
-        const addr = conn.remoteAddr as Deno.NetAddr;
-        this._logger.debug(`SEND ${addr.hostname}:${addr.port} [${replyData.length} bytes]: ${hexData}`);
-      }
+      const hexData1 = Array.from(replyData)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join(" ");
+      const addr1 = conn.remoteAddr as Deno.NetAddr;
+      logger.debug(`SEND ${addr1.hostname}:${addr1.port} [${replyData.length} bytes]: ${hexData1}`);
 
       await conn.write(replyData);
       return;
@@ -596,13 +592,11 @@ export class GIOPServer {
         const data = message.serialize();
 
         // Log outgoing response bytes from wrapper
-        if (this._logger) {
-          const hexData = Array.from(data)
-            .map((b) => b.toString(16).padStart(2, "0"))
-            .join(" ");
-          const addr = conn.remoteAddr as Deno.NetAddr;
-          this._logger.debug(`SEND ${addr.hostname}:${addr.port} [${data.length} bytes]: ${hexData}`);
-        }
+        const hexData2 = Array.from(data)
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join(" ");
+        const addr2 = conn.remoteAddr as Deno.NetAddr;
+        logger.debug(`SEND ${addr2.hostname}:${addr2.port} [${data.length} bytes]: ${hexData2}`);
 
         await conn.write(data);
       },
@@ -620,13 +614,11 @@ export class GIOPServer {
       const replyData = reply.serialize();
 
       // Log outgoing reply bytes
-      if (this._logger) {
-        const hexData = Array.from(replyData)
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join(" ");
-        const addr = conn.remoteAddr as Deno.NetAddr;
-        this._logger.debug(`SEND ${addr.hostname}:${addr.port} [${replyData.length} bytes]: ${hexData}`);
-      }
+      const hexData3 = Array.from(replyData)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join(" ");
+      const addr3 = conn.remoteAddr as Deno.NetAddr;
+      logger.debug(`SEND ${addr3.hostname}:${addr3.port} [${replyData.length} bytes]: ${hexData3}`);
 
       await conn.write(replyData);
     }

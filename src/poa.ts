@@ -9,30 +9,11 @@ import { EndpointPolicy, Policy, PolicyType } from "./policy.ts";
 import { IORUtil } from "./giop/ior.ts";
 import type { IOR } from "./giop/types.ts";
 import { GIOPServer } from "./giop/transport.ts";
-import { ConnectionManager, type CorbaLogger } from "./giop/connection.ts";
+import { ConnectionManager } from "./giop/connection.ts";
 import { GIOPReply, GIOPRequest } from "./giop/messages.ts";
 import { CDRInputStream } from "./core/cdr/decoder.ts";
 import { CDROutputStream } from "./core/cdr/encoder.ts";
 import type { IIOPConnection } from "./giop/connection.ts";
-
-/**
- * Module-level wire logger for CORBA connections
- */
-let wireLogger: CorbaLogger | undefined;
-
-/**
- * Set the wire-level logger for all CORBA connections
- */
-export function setWireLogger(logger: CorbaLogger | undefined): void {
-  wireLogger = logger;
-}
-
-/**
- * Get the wire-level logger
- */
-export function getWireLogger(): CorbaLogger | undefined {
-  return wireLogger;
-}
 
 /**
  * AdapterActivator interface
@@ -461,7 +442,7 @@ class POAImpl extends ObjectReference implements POA {
     this._name = name;
     this._parent = parent;
     this._manager = manager || new POAManagerImpl();
-    this._connectionManager = new ConnectionManager({ logger: getWireLogger() });
+    this._connectionManager = new ConnectionManager();
     this._poa_policies = policies || [];
 
     // Apply policies
@@ -793,7 +774,6 @@ class POAImpl extends ObjectReference implements POA {
     this._server = new GIOPServer(
       { host: this._host, port: this._port },
       this._connectionManager,
-      getWireLogger(),
     );
 
     // Register a generic handler that dispatches to servants

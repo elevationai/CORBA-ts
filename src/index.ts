@@ -39,11 +39,9 @@ export * from "./core/exceptions/system.ts";
 
 // Export POA (including ResponseHandler for skeletons)
 export * from "./poa.ts";
-export { setWireLogger } from "./poa.ts";
 
 // Export GIOP/IIOP
 export * from "./giop.ts";
-export type { CorbaLogger } from "./giop/connection.ts";
 
 // Export DII
 export * from "./dii.ts";
