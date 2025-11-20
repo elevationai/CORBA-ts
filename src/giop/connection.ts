@@ -4,6 +4,7 @@
  */
 
 import { getLogger } from "logging-ts";
+import { CDRInputStream } from "../core/cdr/index.ts";
 import {
   GIOPCancelRequest,
   GIOPCloseConnection,
@@ -15,6 +16,7 @@ import {
   GIOPReply,
   GIOPRequest,
 } from "./messages.ts";
+import { GIOPHeader } from "./types.ts";
 import { IOR } from "./types.ts";
 import { IORUtil } from "./ior.ts";
 
@@ -94,6 +96,8 @@ export class IIOPConnectionImpl implements IIOPConnection {
   private _lastFragmentCleanup: number = Date.now(); // Track when we last cleaned up stale fragments
   private _fragmentCleanupInterval: number = 10000; // Clean up stale fragments every 10 seconds
   _lastUsed: number = Date.now(); // Package-private for ConnectionManager access
+  private _negotiatedCharCodeSet: number = 0x05010001; // Default: UTF-8
+  private _negotiatedWcharCodeset: number = 0x00010109; // Default: UTF-16
 
   constructor(endpoint: ConnectionEndpoint, config: ConnectionConfig = {}) {
     this._endpoint = endpoint;
@@ -188,7 +192,10 @@ export class IIOPConnectionImpl implements IIOPConnection {
     }
 
     this._lastUsed = Date.now();
-    const data = message.serialize();
+    const data = message.serialize({
+      charSet: this._negotiatedCharCodeSet,
+      wcharSet: this._negotiatedWcharCodeset,
+    });
 
     // Log outgoing bytes
     const hexData = Array.from(data)
@@ -324,7 +331,30 @@ export class IIOPConnectionImpl implements IIOPConnection {
     this._readBuffer = newBuffer;
   }
 
+  private _parseHeader(messageData: Uint8Array): GIOPHeader {
+    const flags = messageData[6];
+    const isLittleEndian = (flags & 0x01) !== 0;
+    const view = new DataView(
+      messageData.buffer,
+      messageData.byteOffset + 8,
+      4,
+    );
+    const messageSize = view.getUint32(0, isLittleEndian);
+
+    return {
+      magic: messageData.slice(0, 4),
+      version: {
+        major: messageData[4],
+        minor: messageData[5],
+      },
+      flags: flags,
+      messageType: messageData[7],
+      messageSize: messageSize,
+    };
+  }
+
   private _parseMessages(): void {
+    logger.debug(`_parseMessages called with read buffer size: ${this._readBuffer.length}`);
     // Periodically clean up stale fragments
     const now = Date.now();
     if (now - this._lastFragmentCleanup > this._fragmentCleanupInterval) {
@@ -333,6 +363,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
     }
 
     while (this._readBuffer.length >= 12) { // Minimum GIOP header size
+      logger.debug(`Parsing loop start. Buffer size: ${this._readBuffer.length}`);
       // Check for GIOP magic bytes
       if (
         this._readBuffer[0] !== 0x47 || this._readBuffer[1] !== 0x49 ||
@@ -341,23 +372,20 @@ export class IIOPConnectionImpl implements IIOPConnection {
         throw new Error("Invalid GIOP magic bytes");
       }
 
-      // Check byte order flag (bit 0 of flags byte)
-      const flags = this._readBuffer[6];
-      const isLittleEndian = (flags & 0x01) !== 0;
-
-      // Read message size from header (bytes 8-11)
-      const view = new DataView(this._readBuffer.buffer, this._readBuffer.byteOffset + 8, 4);
-      const messageSize = view.getUint32(0, isLittleEndian);
-      const totalSize = 12 + messageSize; // Header + body
+      const header = this._parseHeader(this._readBuffer);
+      const totalSize = 12 + header.messageSize;
+      logger.debug(`Parsed header. MessageType: ${header.messageType}, MessageSize: ${header.messageSize}, TotalSize: ${totalSize}`);
 
       if (this._readBuffer.length < totalSize) {
         // Not enough data yet
+        logger.debug(`Incomplete message. Need ${totalSize}, have ${this._readBuffer.length}. Waiting for more data.`);
         break;
       }
 
       // Extract complete message
       const messageData = this._readBuffer.subarray(0, totalSize);
       this._readBuffer = this._readBuffer.subarray(totalSize);
+      logger.debug(`Extracted message. Remaining buffer size: ${this._readBuffer.length}`);
 
       // Log incoming bytes
       const hexData = Array.from(messageData)
@@ -366,48 +394,84 @@ export class IIOPConnectionImpl implements IIOPConnection {
       bytesLogger.debug(`RECV ${this._endpoint.host}:${this._endpoint.port} [${messageData.length} bytes]: ${hexData}`);
 
       try {
-        // Check message type to create appropriate message object
-        const messageType = messageData[7];
         let message: GIOPMessage;
 
-        switch (messageType) {
+        switch (header.messageType) {
           case 0: // Request
-            message = new GIOPRequest({ major: messageData[4], minor: messageData[5] });
+            message = new GIOPRequest(header.version);
             break;
           case 1: // Reply
-            message = new GIOPReply({ major: messageData[4], minor: messageData[5] });
+            message = new GIOPReply(header.version);
             break;
           case 2: // CancelRequest
-            message = new GIOPCancelRequest({ major: messageData[4], minor: messageData[5] });
+            message = new GIOPCancelRequest(header.version);
             break;
           case 3: // LocateRequest
-            message = new GIOPLocateRequest({ major: messageData[4], minor: messageData[5] });
+            message = new GIOPLocateRequest(header.version);
             break;
           case 4: // LocateReply
-            message = new GIOPLocateReply({ major: messageData[4], minor: messageData[5] });
+            message = new GIOPLocateReply(header.version);
             break;
           case 5: // CloseConnection
-            message = new GIOPCloseConnection({ major: messageData[4], minor: messageData[5] });
+            message = new GIOPCloseConnection(header.version);
             break;
           case 6: // MessageError
-            message = new GIOPMessageError({ major: messageData[4], minor: messageData[5] });
+            message = new GIOPMessageError(header.version);
             break;
           case 7: // Fragment
-            message = new GIOPFragment({ major: messageData[4], minor: messageData[5] });
+            message = new GIOPFragment(header.version);
             break;
           default:
-            console.error(`Unsupported message type: ${messageType}`);
+            console.error(`Unsupported message type: ${header.messageType}`);
             continue;
         }
 
-        message.deserialize(messageData);
+        // Set header on the message object
+        message.header = header;
+
+        // Create a CDR stream for the body, configured with negotiated codesets
+        const bodyCdr = new CDRInputStream(
+          messageData.subarray(12),
+          (header.flags & 0x01) !== 0,
+          {
+            charSet: this._negotiatedCharCodeSet,
+            wcharSet: this._negotiatedWcharCodeset,
+          },
+        );
+
+        logger.debug(`Calling deserialize for message type ${header.messageType}...`);
+        message.deserialize(bodyCdr, 12);
+        logger.debug(`Deserialize completed.`);
+
+        // After deserializing, if it's a reply, check for codeset negotiation
+        if (message instanceof GIOPReply) {
+          const codeSetComponent = message.serviceContext.find(
+            (ctx) => ctx.contextId === 1, // ServiceContextId.CodeSets
+          );
+          if (codeSetComponent) {
+            const negotiated = IORUtil.parseCodeSetsComponent(
+              codeSetComponent.contextData,
+            );
+            if (
+              negotiated.charSet !== this._negotiatedCharCodeSet ||
+              negotiated.wcharSet !== this._negotiatedWcharCodeset
+            ) {
+              this._negotiatedCharCodeSet = negotiated.charSet;
+              this._negotiatedWcharCodeset = negotiated.wcharSet;
+              logger.debug(
+                `Negotiated new codesets for connection ${this._endpoint.host}:${this._endpoint.port}. ` +
+                  `char: 0x${negotiated.charSet.toString(16)}, wchar: 0x${negotiated.wcharSet.toString(16)}`,
+              );
+            }
+          }
+        }
 
         // Check if this is a Request or Reply with FRAGMENT flag set
-        const hasFragmentFlag = (messageData[6] & 0x02) !== 0; // GIOPFlags.FRAGMENT
+        const hasFragmentFlag = (header.flags & 0x02) !== 0; // GIOPFlags.FRAGMENT
 
         if ((message instanceof GIOPRequest || message instanceof GIOPReply) && hasFragmentFlag) {
           // This is a fragmented Request or Reply - store it and wait for fragments
-          const requestId = message instanceof GIOPRequest ? message.requestId : message.requestId;
+          const requestId = (message as GIOPRequest | GIOPReply).requestId;
 
           logger.debug(
             `Received fragmented ${message instanceof GIOPRequest ? "Request" : "Reply"} ${requestId}, waiting for fragments`,
@@ -501,9 +565,11 @@ export class IIOPConnectionImpl implements IIOPConnection {
         // Deliver message to waiting reader or queue it
         if (this._readers.length > 0) {
           const reader = this._readers.shift()!;
+          logger.debug(`Delivering message type ${header.messageType} to a waiting reader.`);
           reader(message);
         }
         else {
+          logger.debug(`No waiting readers. Queuing message type ${header.messageType}.`);
           this._pendingMessages.push(message);
         }
       }

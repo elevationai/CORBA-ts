@@ -351,6 +351,30 @@ export class IORUtil {
   }
 
   /**
+   * Parse a CodeSets component from its raw data
+   */
+  static parseCodeSetsComponent(componentData: Uint8Array): { charSet: number; wcharSet: number } {
+    // The data is an encapsulation. First byte is byte order.
+    const isLittleEndian = componentData[0] === 1;
+    const cdr = new CDRInputStream(componentData, isLittleEndian);
+    cdr.readOctet(); // Skip byte order
+
+    const charSet = cdr.readULong();
+    const numCharConversion = cdr.readULong();
+    if (numCharConversion > 0) {
+      cdr.skip(numCharConversion * 4); // Skip conversion sets
+    }
+
+    const wcharSet = cdr.readULong();
+    const numWcharConversion = cdr.readULong();
+    if (numWcharConversion > 0) {
+      cdr.skip(numWcharConversion * 4); // Skip conversion sets
+    }
+
+    return { charSet, wcharSet };
+  }
+
+  /**
    * Add ORB Type component
    */
   static createORBTypeComponent(orbType: string): TaggedComponent {

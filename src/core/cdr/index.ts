@@ -5,6 +5,7 @@
 
 export { CDROutputStream } from "./encoder.ts";
 export { CDRInputStream } from "./decoder.ts";
+export type { NegotiatedCodeSets } from "./decoder.ts";
 
 // Re-export for convenience
 export type { TCKind } from "./typecode.ts";

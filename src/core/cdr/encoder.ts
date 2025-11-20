@@ -3,17 +3,96 @@
  * CORBA 3.4 Specification compliant implementation
  */
 
+import { NegotiatedCodeSets } from "./decoder.ts";
+
 export class CDROutputStream {
   private buffer: Uint8Array;
   private view: DataView;
   private position: number = 0;
   private readonly littleEndian: boolean;
   private readonly growthFactor: number = 2;
+  private readonly codesets: NegotiatedCodeSets | null;
 
-  constructor(initialSize: number = 256, littleEndian: boolean = false) {
+  constructor(
+    initialSize: number = 256,
+    littleEndian: boolean = false,
+    codesets: NegotiatedCodeSets | null = null,
+  ) {
     this.buffer = new Uint8Array(initialSize);
     this.view = new DataView(this.buffer.buffer);
     this.littleEndian = littleEndian;
+    this.codesets = codesets;
+  }
+
+  /**
+   * Encode a string to UTF-16 bytes
+   * JavaScript strings are UTF-16 internally, so we just need to extract the bytes
+   */
+  private encodeUTF16(value: string, includeBOM: boolean = false): Uint8Array {
+    const bomLength = includeBOM ? 2 : 0;
+    const bytes = new Uint8Array(value.length * 2 + bomLength);
+    let offset = 0;
+
+    // Add BOM if requested (0xFEFF for BE, 0xFFFE for LE)
+    if (includeBOM) {
+      if (this.littleEndian) {
+        bytes[offset++] = 0xFF;
+        bytes[offset++] = 0xFE;
+      } else {
+        bytes[offset++] = 0xFE;
+        bytes[offset++] = 0xFF;
+      }
+    }
+
+    // Convert each UTF-16 code unit to bytes
+    for (let i = 0; i < value.length; i++) {
+      const codeUnit = value.charCodeAt(i);
+      if (this.littleEndian) {
+        bytes[offset++] = codeUnit & 0xFF;
+        bytes[offset++] = (codeUnit >> 8) & 0xFF;
+      } else {
+        bytes[offset++] = (codeUnit >> 8) & 0xFF;
+        bytes[offset++] = codeUnit & 0xFF;
+      }
+    }
+
+    return bytes;
+  }
+
+  /**
+   * Encode a string to ISO-8859-1 (Latin-1) bytes
+   * Each character maps to a single byte (0-255)
+   */
+  private encodeISO88591(value: string): Uint8Array {
+    const bytes = new Uint8Array(value.length);
+    for (let i = 0; i < value.length; i++) {
+      const code = value.charCodeAt(i);
+      if (code > 255) {
+        // Character not representable in ISO-8859-1
+        // Replace with '?' (0x3F) as per common practice
+        bytes[i] = 0x3F;
+      } else {
+        bytes[i] = code;
+      }
+    }
+    return bytes;
+  }
+
+  /**
+   * Encode a string using the specified codeset
+   */
+  private encodeString(value: string, codeset: number, includeBOM: boolean = false): Uint8Array {
+    switch (codeset) {
+      case 0x05010001: // UTF-8
+        return new TextEncoder().encode(value);
+      case 0x00010109: // UTF-16
+        return this.encodeUTF16(value, includeBOM);
+      case 0x00010001: // ISO-8859-1
+        return this.encodeISO88591(value);
+      default:
+        // Fallback to UTF-8
+        return new TextEncoder().encode(value);
+    }
   }
 
   /**
@@ -209,27 +288,27 @@ export class CDROutputStream {
    * Write a string (null-terminated)
    */
   writeString(value: string): void {
-    const bytes = new TextEncoder().encode(value);
-    // CORBA spec: even empty strings must have a null terminator
-    // Empty string is encoded as length=1 with just null byte
-    if (bytes.length === 0) {
-      this.writeULong(1); // Length 1 for null terminator
-      this.writeOctet(0); // Write null terminator
-    }
-    else {
-      this.writeULong(bytes.length + 1); // Include null terminator in length
-      this.writeOctetArray(bytes);
-      this.writeOctet(0); // Null terminator
-    }
+    // Default to ISO-8859-1 if no negotiation happened, as per CORBA spec.
+    const codeset = this.codesets?.charSet ?? 0x00010001;
+    const bytes = this.encodeString(value, codeset);
+
+    this.writeULong(bytes.length + 1); // Include null terminator in length
+    this.writeOctetArray(bytes);
+    this.writeOctet(0); // Null terminator
   }
 
   /**
    * Write a wide string
-   * GIOP 1.2+ uses UTF-8 encoding with length prefix
+   * GIOP 1.2+ uses length-prefixed encoding with optional BOM
    */
   writeWString(value: string): void {
-    const bytes = new TextEncoder().encode(value);
-    this.writeULong(bytes.length); // No null terminator for wstring in GIOP 1.2+
+    // Default to UTF-16 if no negotiation happened.
+    const codeset = this.codesets?.wcharSet ?? 0x00010109;
+    // Include BOM for wstring as per CORBA convention
+    const bytes = this.encodeString(value, codeset, true);
+
+    // wstring length is byte length
+    this.writeULong(bytes.length);
     this.writeOctetArray(bytes);
   }
 

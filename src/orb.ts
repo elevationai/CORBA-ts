@@ -551,17 +551,11 @@ export class ORBImpl implements ORB {
       else if (reply.replyStatus === 3 || reply.replyStatus === 4) { // LOCATION_FORWARD or LOCATION_FORWARD_PERM
         // Extract the forwarded IOR from the reply body
         const { CDRInputStream } = await import("./core/cdr/decoder.ts");
-
-        // Use readEncapsulatedObjectRef which handles both encapsulated and non-encapsulated IORs
-        const inCdr = new CDRInputStream(reply.body, reply.isLittleEndian());
-        const iorData = inCdr.readEncapsulatedObjectRef();
-
-        // Convert to IOR format expected by IORUtil
         const { IORUtil } = await import("./giop/ior.ts");
-        currentIor = {
-          typeId: iorData.typeId,
-          profiles: iorData.profiles,
-        };
+
+        const inCdr = new CDRInputStream(reply.body, reply.isLittleEndian());
+        // LOCATION_FORWARD body contains raw IOR (not encapsulated, even in GIOP 1.2)
+        currentIor = IORUtil.decodeIOR(inCdr);
 
         // Normalize localhost variants to the original host we connected to
         const profile = IORUtil.parseIIOPProfile(currentIor.profiles[0]);

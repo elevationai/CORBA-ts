@@ -3,7 +3,8 @@
  * CORBA 3.4 Specification compliant
  */
 
-import { CDRInputStream, CDROutputStream } from "../core/cdr/index.ts";
+import { getLogger } from "logging-ts";
+import { CDRInputStream, CDROutputStream, NegotiatedCodeSets } from "../core/cdr/index.ts";
 import {
   AddressingDisposition,
   GIOPFlags,
@@ -19,11 +20,13 @@ import {
   TargetAddress,
 } from "./types.ts";
 
+const logger = getLogger("CORBA-messages");
+
 /**
  * Base class for all GIOP messages
  */
 export abstract class GIOPMessage {
-  protected header: GIOPHeader;
+  public header: GIOPHeader;
 
   constructor(
     messageType: GIOPMessageType,
@@ -67,12 +70,13 @@ export abstract class GIOPMessage {
   /**
    * Serialize the message to a buffer
    */
-  abstract serialize(): Uint8Array;
+  abstract serialize(codesets: NegotiatedCodeSets | null): Uint8Array;
 
   /**
-   * Deserialize the message from a buffer
+   * Deserialize the message from a CDR stream.
+   * The stream should be positioned at the start of the message body.
    */
-  abstract deserialize(buffer: Uint8Array): void;
+  abstract deserialize(cdr: CDRInputStream, headerSize: number): void;
 
   /**
    * Write GIOP header to CDR stream
@@ -84,31 +88,6 @@ export abstract class GIOPMessage {
     cdr.writeOctet(this.header.flags);
     cdr.writeOctet(this.header.messageType);
     cdr.writeULong(this.header.messageSize);
-  }
-
-  /**
-   * Read GIOP header from buffer
-   */
-  protected readHeader(buffer: Uint8Array): void {
-    // Validate magic number
-    if (
-      buffer[0] !== 0x47 || buffer[1] !== 0x49 ||
-      buffer[2] !== 0x4F || buffer[3] !== 0x50
-    ) {
-      throw new Error("Invalid GIOP magic number");
-    }
-
-    this.header.magic = buffer.slice(0, 4);
-    this.header.version = {
-      major: buffer[4],
-      minor: buffer[5],
-    };
-    this.header.flags = buffer[6];
-    this.header.messageType = buffer[7];
-
-    // Read message size based on endianness
-    const view = new DataView(buffer.buffer, buffer.byteOffset + 8, 4);
-    this.header.messageSize = view.getUint32(0, this.isLittleEndian());
   }
 
   /**
@@ -159,8 +138,8 @@ export class GIOPRequest extends GIOPMessage {
     super(GIOPMessageType.Request, version);
   }
 
-  serialize(): Uint8Array {
-    const cdr = new CDROutputStream(1024, this.isLittleEndian());
+  serialize(codesets: NegotiatedCodeSets | null): Uint8Array {
+    const cdr = new CDROutputStream(1024, this.isLittleEndian(), codesets);
 
     // Write header placeholder
     this.writeHeader(cdr);
@@ -289,17 +268,7 @@ export class GIOPRequest extends GIOPMessage {
     }
   }
 
-  deserialize(buffer: Uint8Array): void {
-    this.readHeader(buffer);
-
-    const cdr = new CDRInputStream(
-      buffer,
-      this.isLittleEndian(),
-    );
-
-    // Start reading after the header
-    cdr.setPosition(12);
-
+  deserialize(cdr: CDRInputStream, headerSize: number): void {
     if (this.header.version.minor <= 1) {
       this.deserializeRequest_1_0(cdr);
     }
@@ -423,8 +392,8 @@ export class GIOPReply extends GIOPMessage {
     super(GIOPMessageType.Reply, version);
   }
 
-  serialize(): Uint8Array {
-    const cdr = new CDROutputStream(1024, this.isLittleEndian());
+  serialize(codesets: NegotiatedCodeSets | null): Uint8Array {
+    const cdr = new CDROutputStream(1024, this.isLittleEndian(), codesets);
 
     // Write header placeholder
     this.writeHeader(cdr);
@@ -465,6 +434,7 @@ export class GIOPReply extends GIOPMessage {
   }
 
   private serializeReply_1_2(cdr: CDROutputStream): void {
+    // GIOP 1.2 field order: request_id, reply_status, service_context
     // Request ID
     cdr.writeULong(this.requestId);
 
@@ -475,38 +445,18 @@ export class GIOPReply extends GIOPMessage {
     this.writeServiceContext(cdr, this.serviceContext);
 
     // GIOP 1.2 aligns body to 8-byte boundary
-    // The alignment is relative to the start of the GIOP message (including header)
-    // The CDR position already includes the header bytes
-    const currentPos = cdr.getPosition();
-    const remainder = currentPos % 8;
-    if (remainder !== 0) {
-      // Add padding
-      const paddingBytes = 8 - remainder;
-      for (let i = 0; i < paddingBytes; i++) {
-        cdr.writeOctet(0);
-      }
-    }
+    cdr.align(8);
 
     // Message body
     cdr.writeOctetArray(this.body);
   }
 
-  deserialize(buffer: Uint8Array): void {
-    this.readHeader(buffer);
-
-    const cdr = new CDRInputStream(
-      buffer,
-      this.isLittleEndian(),
-    );
-
-    // Start reading after the header
-    cdr.setPosition(12);
-
+  deserialize(cdr: CDRInputStream, headerSize: number): void {
     if (this.header.version.minor <= 1) {
       this.deserializeReply_1_0(cdr);
     }
     else {
-      this.deserializeReply_1_2(cdr);
+      this.deserializeReply_1_2(cdr, headerSize);
     }
   }
 
@@ -524,38 +474,35 @@ export class GIOPReply extends GIOPMessage {
     this.body = cdr.readRemaining();
   }
 
-  private deserializeReply_1_2(cdr: CDRInputStream): void {
+  private deserializeReply_1_2(cdr: CDRInputStream, headerSize: number): void {
+    logger.debug("Deserializing GIOP 1.2 Reply...");
+    const startPos = cdr.getPosition();
+
+    // GIOP 1.2 field order: request_id, reply_status, service_context
     // Request ID
     this.requestId = cdr.readULong();
+    logger.debug(`Read request ID ${this.requestId}, stream pos: ${cdr.getPosition()}`);
 
     // Reply status
     this.replyStatus = cdr.readULong();
+    logger.debug(`Read reply status ${this.replyStatus}, stream pos: ${cdr.getPosition()}`);
 
     // Service context
     this.serviceContext = this.readServiceContext(cdr);
+    logger.debug(`Read service context, stream pos: ${cdr.getPosition()}`);
 
     // GIOP 1.2 aligns body to 8-byte boundary from start of GIOP message
-    // The CDR stream now includes the header, so position is already absolute
-    const beforeAlignPos = cdr.getPosition();
-    const remainder = beforeAlignPos % 8;
+    const absolutePos = headerSize + cdr.getPosition();
+    const remainder = absolutePos % 8;
     if (remainder !== 0) {
       const padding = 8 - remainder;
+      logger.debug(`Applying ${padding} bytes of alignment padding.`);
       cdr.skip(padding);
     }
 
-    // Calculate actual body size
-    // Message size includes everything after the header
-    // We've read: request ID (4), reply status (4), service context, and alignment padding
-    const bytesReadSoFar = cdr.getPosition() - 12; // Subtract header size to get body-relative position
-    const bodySize = this.header.messageSize - bytesReadSoFar;
-
-    // Read only the actual body bytes, not any trailing data
-    if (bodySize > 0) {
-      this.body = cdr.readOctetArray(bodySize);
-    }
-    else {
-      this.body = new Uint8Array(0);
-    }
+    // Rest is body
+    this.body = cdr.readRemaining();
+    logger.debug(`Deserialized reply body, size: ${this.body.length}. Final stream pos: ${cdr.getPosition()}`);
   }
 
   /**
@@ -586,8 +533,8 @@ export class GIOPCancelRequest extends GIOPMessage {
     super(GIOPMessageType.CancelRequest, version);
   }
 
-  serialize(): Uint8Array {
-    const cdr = new CDROutputStream(16, this.isLittleEndian());
+  serialize(codesets: NegotiatedCodeSets | null): Uint8Array {
+    const cdr = new CDROutputStream(16, this.isLittleEndian(), codesets);
 
     // Write header
     this.writeHeader(cdr);
@@ -603,17 +550,7 @@ export class GIOPCancelRequest extends GIOPMessage {
     return cdr.getBuffer();
   }
 
-  deserialize(buffer: Uint8Array): void {
-    this.readHeader(buffer);
-
-    const cdr = new CDRInputStream(
-      buffer,
-      this.isLittleEndian(),
-    );
-
-    // Start reading after the header
-    cdr.setPosition(12);
-
+  deserialize(cdr: CDRInputStream): void {
     this.requestId = cdr.readULong();
   }
 }
@@ -626,8 +563,8 @@ export class GIOPCloseConnection extends GIOPMessage {
     super(GIOPMessageType.CloseConnection, version);
   }
 
-  serialize(): Uint8Array {
-    const cdr = new CDROutputStream(12, this.isLittleEndian());
+  serialize(codesets: NegotiatedCodeSets | null): Uint8Array {
+    const cdr = new CDROutputStream(12, this.isLittleEndian(), codesets);
 
     // Write header with zero body size
     this.header.messageSize = 0;
@@ -636,8 +573,7 @@ export class GIOPCloseConnection extends GIOPMessage {
     return cdr.getBuffer();
   }
 
-  deserialize(buffer: Uint8Array): void {
-    this.readHeader(buffer);
+  deserialize(cdr: CDRInputStream): void {
     // No body to read
   }
 }
@@ -650,8 +586,8 @@ export class GIOPMessageError extends GIOPMessage {
     super(GIOPMessageType.MessageError, version);
   }
 
-  serialize(): Uint8Array {
-    const cdr = new CDROutputStream(12, this.isLittleEndian());
+  serialize(codesets: NegotiatedCodeSets | null): Uint8Array {
+    const cdr = new CDROutputStream(12, this.isLittleEndian(), codesets);
 
     // Write header with zero body size
     this.header.messageSize = 0;
@@ -660,8 +596,7 @@ export class GIOPMessageError extends GIOPMessage {
     return cdr.getBuffer();
   }
 
-  deserialize(buffer: Uint8Array): void {
-    this.readHeader(buffer);
+  deserialize(cdr: CDRInputStream): void {
     // No body to read
   }
 }
@@ -697,8 +632,8 @@ export class GIOPFragment extends GIOPMessage {
     }
   }
 
-  serialize(): Uint8Array {
-    const cdr = new CDROutputStream(16 + this.fragmentBody.length, this.isLittleEndian());
+  serialize(codesets: NegotiatedCodeSets | null): Uint8Array {
+    const cdr = new CDROutputStream(16 + this.fragmentBody.length, this.isLittleEndian(), codesets);
 
     // Write header placeholder
     this.writeHeader(cdr);
@@ -722,14 +657,7 @@ export class GIOPFragment extends GIOPMessage {
     return buffer;
   }
 
-  deserialize(buffer: Uint8Array): void {
-    this.readHeader(buffer);
-
-    const cdr = new CDRInputStream(buffer, this.isLittleEndian());
-
-    // Start reading after the header
-    cdr.setPosition(12);
-
+  deserialize(cdr: CDRInputStream): void {
     // Read request ID
     this.requestId = cdr.readULong();
 
@@ -751,8 +679,8 @@ export class GIOPLocateRequest extends GIOPMessage {
     super(GIOPMessageType.LocateRequest, version);
   }
 
-  serialize(): Uint8Array {
-    const cdr = new CDROutputStream(256, this.isLittleEndian());
+  serialize(codesets: NegotiatedCodeSets | null): Uint8Array {
+    const cdr = new CDROutputStream(256, this.isLittleEndian(), codesets);
 
     // Write header placeholder
     this.writeHeader(cdr);
@@ -834,14 +762,7 @@ export class GIOPLocateRequest extends GIOPMessage {
     }
   }
 
-  deserialize(buffer: Uint8Array): void {
-    this.readHeader(buffer);
-
-    const cdr = new CDRInputStream(buffer, this.isLittleEndian());
-
-    // Start reading after the header
-    cdr.setPosition(12);
-
+  deserialize(cdr: CDRInputStream): void {
     // Request ID
     this.requestId = cdr.readULong();
 
@@ -914,8 +835,8 @@ export class GIOPLocateReply extends GIOPMessage {
     super(GIOPMessageType.LocateReply, version);
   }
 
-  serialize(): Uint8Array {
-    const cdr = new CDROutputStream(256, this.isLittleEndian());
+  serialize(codesets: NegotiatedCodeSets | null): Uint8Array {
+    const cdr = new CDROutputStream(256, this.isLittleEndian(), codesets);
 
     // Write header placeholder
     this.writeHeader(cdr);
@@ -942,14 +863,7 @@ export class GIOPLocateReply extends GIOPMessage {
     return buffer;
   }
 
-  deserialize(buffer: Uint8Array): void {
-    this.readHeader(buffer);
-
-    const cdr = new CDRInputStream(buffer, this.isLittleEndian());
-
-    // Start reading after the header
-    cdr.setPosition(12);
-
+  deserialize(cdr: CDRInputStream): void {
     // Request ID
     this.requestId = cdr.readULong();
 
@@ -960,3 +874,4 @@ export class GIOPLocateReply extends GIOPMessage {
     this.body = cdr.readRemaining();
   }
 }
+
