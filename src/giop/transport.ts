@@ -8,6 +8,7 @@ import { GIOPCloseConnection, GIOPMessage, GIOPMessageError, GIOPReply, GIOPRequ
 import { ConnectionEndpoint, ConnectionManager, IIOPConnection } from "./connection.ts";
 import { GIOPMessageType, GIOPVersion, IOR, ReplyStatusType, ServiceContext } from "./types.ts";
 import { IORUtil } from "./ior.ts";
+import { CDRInputStream } from "../core/cdr/index.ts";
 
 const logger = getLogger("CORBA-bytes");
 
@@ -555,7 +556,16 @@ export class GIOPServer {
 
     // Parse as request
     const request = new GIOPRequest();
-    request.deserialize(messageData);
+    request.header = {
+      magic: messageData.slice(0, 4),
+      version: { major: messageData[4], minor: messageData[5] },
+      flags: messageData[6],
+      messageType: messageData[7],
+      messageSize: new DataView(messageData.buffer, messageData.byteOffset + 8, 4).getUint32(0, (messageData[6] & 0x01) !== 0),
+    };
+    const requestCdr = new CDRInputStream(messageData, (messageData[6] & 0x01) !== 0);
+    requestCdr.setPosition(12); // Start after header
+    request.deserialize(requestCdr, 12);
 
     // Find handler - check for specific operation first, then wildcard
     let handler = this._handlers.get(request.operation);
@@ -563,12 +573,20 @@ export class GIOPServer {
       handler = this._handlers.get("*"); // Check for wildcard handler
     }
 
+    // Extract codesets from request service context per CORBA spec
+    let codesets = null;
+    const codeSetContext = request.serviceContext.find((ctx) => ctx.contextId === 1); // ServiceContextId.CodeSets
+    if (codeSetContext) {
+      codesets = IORUtil.parseCodeSetsComponent(codeSetContext.contextData);
+    }
+
     if (!handler) {
       // Send exception reply
       const errorReply = new GIOPReply(request.version);
       errorReply.requestId = request.requestId;
       errorReply.replyStatus = ReplyStatusType.SYSTEM_EXCEPTION;
-      const replyData = errorReply.serialize();
+      // Use extracted codesets from request, or null (defaults) if not present
+      const replyData = errorReply.serialize(codesets);
 
       // Log outgoing error response bytes
       const hexData1 = Array.from(replyData)
@@ -589,7 +607,7 @@ export class GIOPServer {
       connect: async () => {},
       disconnect: async () => {},
       send: async (message: GIOPMessage) => {
-        const data = message.serialize();
+        const data = message.serialize(codesets);
 
         // Log outgoing response bytes from wrapper
         const hexData2 = Array.from(data)
@@ -611,7 +629,7 @@ export class GIOPServer {
     // Per CORBA spec: oneway operations (responseExpected=false) must NOT send replies
     if (request.responseExpected) {
       reply.requestId = request.requestId;
-      const replyData = reply.serialize();
+      const replyData = reply.serialize(codesets);
 
       // Log outgoing reply bytes
       const hexData3 = Array.from(replyData)

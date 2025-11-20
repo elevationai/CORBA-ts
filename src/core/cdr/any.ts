@@ -474,22 +474,22 @@ function decodeUnion(inp: CDRInputStream, type: TypeCode): CORBAValue {
 }
 
 function encodeValueMembers(out: CDROutputStream, value: CORBAValue, type: TypeCode): void {
-    // Encode base type members first.
-    const baseType = type.concrete_base_type();
-    if (baseType && baseType.kind() !== TCKind.tk_null) {
-        encodeValueMembers(out, value, baseType);
-    }
+  // Encode base type members first.
+  const baseType = type.concrete_base_type();
+  if (baseType && baseType.kind() !== TCKind.tk_null) {
+    encodeValueMembers(out, value, baseType);
+  }
 
-    // Encode own members.
-    const memberCount = type.member_count();
-    for (let i = 0; i < memberCount; i++) {
-        const memberName = type.member_name(i);
-        const memberType = type.member_type(i);
-        if (memberType) {
-            const memberValue = (value as Record<string, CORBAValue>)[memberName];
-            encodeValue(out, memberValue, memberType);
-        }
+  // Encode own members.
+  const memberCount = type.member_count();
+  for (let i = 0; i < memberCount; i++) {
+    const memberName = type.member_name(i);
+    const memberType = type.member_type(i);
+    if (memberType) {
+      const memberValue = (value as Record<string, CORBAValue>)[memberName];
+      encodeValue(out, memberValue, memberType);
     }
+  }
 }
 
 function encodeValueType(out: CDROutputStream, value: CORBAValue, type: TypeCode): void {
@@ -503,21 +503,21 @@ function encodeValueType(out: CDROutputStream, value: CORBAValue, type: TypeCode
   // We will encode with a repository ID.
   const repositoryId = type.id();
   if (!repositoryId) {
-      throw new Error("Cannot encode valuetype without a repository ID.");
+    throw new Error("Cannot encode valuetype without a repository ID.");
   }
 
   // Let's check for boxed types first.
   if (repositoryId === "IDL:omg.org/CORBA/WStringValue:1.0") {
-      out.writeLong(0x7fffff00); // Standard marshaling tag
-      out.writeString(repositoryId);
-      out.writeWString(value as string);
-      return;
+    out.writeLong(0x7fffff00); // Standard marshaling tag
+    out.writeString(repositoryId);
+    out.writeWString(value as string);
+    return;
   }
   if (repositoryId === "IDL:omg.org/CORBA/StringValue:1.0") {
-      out.writeLong(0x7fffff00); // Standard marshaling tag
-      out.writeString(repositoryId);
-      out.writeString(value as string);
-      return;
+    out.writeLong(0x7fffff00); // Standard marshaling tag
+    out.writeString(repositoryId);
+    out.writeString(value as string);
+    return;
   }
 
   // For general valuetypes, we encode their state.
@@ -528,26 +528,26 @@ function encodeValueType(out: CDROutputStream, value: CORBAValue, type: TypeCode
 }
 
 function decodeValueMembers(inp: CDRInputStream, type: TypeCode): CORBAValue {
-    const result: Record<string, CORBAValue> = {};
+  const result: Record<string, CORBAValue> = {};
 
-    // A valuetype can have a base type.
-    const baseType = type.concrete_base_type();
-    if (baseType && baseType.kind() !== TCKind.tk_null) {
-        const baseValue = decodeValueMembers(inp, baseType) as Record<string, CORBAValue>;
-        Object.assign(result, baseValue);
+  // A valuetype can have a base type.
+  const baseType = type.concrete_base_type();
+  if (baseType && baseType.kind() !== TCKind.tk_null) {
+    const baseValue = decodeValueMembers(inp, baseType) as Record<string, CORBAValue>;
+    Object.assign(result, baseValue);
+  }
+
+  // Then decode own members.
+  const memberCount = type.member_count();
+  for (let i = 0; i < memberCount; i++) {
+    const memberName = type.member_name(i);
+    const memberType = type.member_type(i);
+    if (memberType) {
+      result[memberName] = decodeValue(inp, memberType);
     }
+  }
 
-    // Then decode own members.
-    const memberCount = type.member_count();
-    for (let i = 0; i < memberCount; i++) {
-        const memberName = type.member_name(i);
-        const memberType = type.member_type(i);
-        if (memberType) {
-            result[memberName] = decodeValue(inp, memberType);
-        }
-    }
-
-    return result;
+  return result;
 }
 
 function decodeValueType(inp: CDRInputStream, type: TypeCode): CORBAValue {
@@ -579,11 +579,11 @@ function decodeValueType(inp: CDRInputStream, type: TypeCode): CORBAValue {
       return inp.readWString();
     }
     if (repositoryId === "IDL:omg.org/CORBA/StringValue:1.0") {
-        return inp.readString();
+      return inp.readString();
     }
 
     if (header === 0x7fffff01) { // chunked
-        throw new Error("Chunked valuetype encoding not yet supported.");
+      throw new Error("Chunked valuetype encoding not yet supported.");
     }
 
     // For standard (0x7fffff00) or other custom (0x7fffff02) valuetypes,
@@ -599,7 +599,7 @@ function decodeValueType(inp: CDRInputStream, type: TypeCode): CORBAValue {
     const expectedEndPos = startPos + header;
     // If we didn't consume the exact number of bytes, seek to the end
     if (inp.getPosition() !== expectedEndPos) {
-        inp.setPosition(expectedEndPos);
+      inp.setPosition(expectedEndPos);
     }
     return value;
   }

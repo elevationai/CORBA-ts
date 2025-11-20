@@ -186,6 +186,16 @@ export class TypeCode {
   }
 
   /**
+   * Get the concrete base type for valuetypes
+   * Returns null TypeCode if no concrete base
+   */
+  concrete_base_type(): TypeCode {
+    this.check_method_validity("concrete_base_type");
+    const base = this._params.get("concreteBase");
+    return base ? base as TypeCode : new TypeCode(TypeCode.Kind.tk_null);
+  }
+
+  /**
    * Set a parameter for this TypeCode
    * Used internally during TypeCode construction
    */
@@ -317,8 +327,10 @@ export namespace TypeCode {
       case Kind.tk_struct:
       case Kind.tk_enum:
       case Kind.tk_except:
-      case Kind.tk_value:
         return [...basic_methods, "id", "name", "member_count", "member_name", "member_type"];
+
+      case Kind.tk_value:
+        return [...basic_methods, "id", "name", "member_count", "member_name", "member_type", "concrete_base_type"];
 
       case Kind.tk_union:
         return [

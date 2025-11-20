@@ -51,13 +51,14 @@ Deno.test("CDR: primitive types round-trip", () => {
 Deno.test("CDR: string encoding/decoding", () => {
   const out = new CDROutputStream();
 
+  // Regular strings use ISO-8859-1 by default (CORBA spec)
+  // Only Latin-1 characters (0-255) are supported without charset negotiation
   const testStrings = [
     "",
     "Hello",
     "Hello, World!",
-    "Unicode: 你好世界",
-    "Emoji: 🎉🎊",
     "Special chars: \n\t\r",
+    "Latin-1: àéîöü",
     "a".repeat(1000),
   ];
 

@@ -38,7 +38,8 @@ export class CDROutputStream {
       if (this.littleEndian) {
         bytes[offset++] = 0xFF;
         bytes[offset++] = 0xFE;
-      } else {
+      }
+      else {
         bytes[offset++] = 0xFE;
         bytes[offset++] = 0xFF;
       }
@@ -50,7 +51,8 @@ export class CDROutputStream {
       if (this.littleEndian) {
         bytes[offset++] = codeUnit & 0xFF;
         bytes[offset++] = (codeUnit >> 8) & 0xFF;
-      } else {
+      }
+      else {
         bytes[offset++] = (codeUnit >> 8) & 0xFF;
         bytes[offset++] = codeUnit & 0xFF;
       }
@@ -71,7 +73,8 @@ export class CDROutputStream {
         // Character not representable in ISO-8859-1
         // Replace with '?' (0x3F) as per common practice
         bytes[i] = 0x3F;
-      } else {
+      }
+      else {
         bytes[i] = code;
       }
     }

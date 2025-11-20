@@ -268,7 +268,7 @@ export class GIOPRequest extends GIOPMessage {
     }
   }
 
-  deserialize(cdr: CDRInputStream, headerSize: number): void {
+  deserialize(cdr: CDRInputStream, _headerSize: number): void {
     if (this.header.version.minor <= 1) {
       this.deserializeRequest_1_0(cdr);
     }
@@ -476,7 +476,6 @@ export class GIOPReply extends GIOPMessage {
 
   private deserializeReply_1_2(cdr: CDRInputStream, headerSize: number): void {
     logger.debug("Deserializing GIOP 1.2 Reply...");
-    const startPos = cdr.getPosition();
 
     // GIOP 1.2 field order: request_id, reply_status, service_context
     // Request ID
@@ -573,7 +572,7 @@ export class GIOPCloseConnection extends GIOPMessage {
     return cdr.getBuffer();
   }
 
-  deserialize(cdr: CDRInputStream): void {
+  deserialize(_cdr: CDRInputStream): void {
     // No body to read
   }
 }
@@ -596,7 +595,7 @@ export class GIOPMessageError extends GIOPMessage {
     return cdr.getBuffer();
   }
 
-  deserialize(cdr: CDRInputStream): void {
+  deserialize(_cdr: CDRInputStream): void {
     // No body to read
   }
 }
@@ -874,4 +873,3 @@ export class GIOPLocateReply extends GIOPMessage {
     this.body = cdr.readRemaining();
   }
 }
-
