@@ -307,7 +307,6 @@ export namespace TypeCode {
 
     switch (kind) {
       case Kind.tk_objref:
-      case Kind.tk_value_box:
       case Kind.tk_abstract_interface:
       case Kind.tk_local_interface:
       case Kind.tk_component:
@@ -343,6 +342,7 @@ export namespace TypeCode {
         return [...basic_methods, "content_type", "length"];
 
       case Kind.tk_alias:
+      case Kind.tk_value_box:
         return [...basic_methods, "id", "name", "content_type"];
 
       default:

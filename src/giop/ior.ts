@@ -312,7 +312,7 @@ export class IORUtil {
       host,
       port,
       object_key: objectKey,
-      components: [],
+      components: [this.createCodeSetsComponent()],
     });
 
     return {
@@ -325,10 +325,14 @@ export class IORUtil {
    * Add CodeSets component to IIOP profile
    */
   static createCodeSetsComponent(
-    charCodeSet: number = 0x00010001, // ISO 8859-1
+    charCodeSet: number = 0x05010001, // UTF-8
     wcharCodeSet: number = 0x00010109, // UTF-16
   ): TaggedComponent {
     const cdr = new CDROutputStream();
+
+    // CodeSets component must be encapsulated (GIOP 1.2+)
+    // Start with byte order marker
+    cdr.writeOctet(0); // 0 = big-endian
 
     // Native char code set
     cdr.writeULong(charCodeSet);

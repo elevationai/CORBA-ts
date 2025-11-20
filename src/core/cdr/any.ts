@@ -259,6 +259,10 @@ export function encodeValue(out: CDROutputStream, value: CORBAValue, type: TypeC
       break;
     }
 
+    case TCKind.tk_value:
+      encodeValueType(out, value, type);
+      break;
+
     default:
       throw new Error(`Unsupported type kind for encoding: ${typeKind}`);
   }
@@ -349,15 +353,23 @@ export function decodeValue(inp: CDRInputStream, type: TypeCode): CORBAValue {
     case TCKind.tk_array:
       return decodeArray(inp, type);
 
-    case TCKind.tk_alias:
-    case TCKind.tk_value_box: {
-      // Decode the aliased/boxed type
-      const contentType2 = type.content_type();
-      if (contentType2) {
-        return decodeValue(inp, contentType2);
+    case TCKind.tk_alias: {
+      // Aliases directly wrap another type, no valuetype encoding
+      const contentType = type.content_type();
+      if (contentType) {
+        return decodeValue(inp, contentType);
       }
       return null;
     }
+
+    case TCKind.tk_value_box: {
+      // Boxed valuetypes use valuetype encoding on the wire
+      // Decode as a valuetype, similar to tk_value
+      return decodeValueType(inp, type);
+    }
+
+    case TCKind.tk_value:
+      return decodeValueType(inp, type);
 
     default:
       throw new Error(`Unsupported type kind for decoding: ${typeKind}`);
@@ -459,6 +471,141 @@ function decodeUnion(inp: CDRInputStream, type: TypeCode): CORBAValue {
   }
 
   return result;
+}
+
+function encodeValueMembers(out: CDROutputStream, value: CORBAValue, type: TypeCode): void {
+    // Encode base type members first.
+    const baseType = type.concrete_base_type();
+    if (baseType && baseType.kind() !== TCKind.tk_null) {
+        encodeValueMembers(out, value, baseType);
+    }
+
+    // Encode own members.
+    const memberCount = type.member_count();
+    for (let i = 0; i < memberCount; i++) {
+        const memberName = type.member_name(i);
+        const memberType = type.member_type(i);
+        if (memberType) {
+            const memberValue = (value as Record<string, CORBAValue>)[memberName];
+            encodeValue(out, memberValue, memberType);
+        }
+    }
+}
+
+function encodeValueType(out: CDROutputStream, value: CORBAValue, type: TypeCode): void {
+  if (value === null) {
+    out.writeLong(0); // Null valuetype
+    return;
+  }
+
+  // A full implementation would handle sharing/indirection here.
+  // For now, we encode the concrete value.
+  // We will encode with a repository ID.
+  const repositoryId = type.id();
+  if (!repositoryId) {
+      throw new Error("Cannot encode valuetype without a repository ID.");
+  }
+
+  // Let's check for boxed types first.
+  if (repositoryId === "IDL:omg.org/CORBA/WStringValue:1.0") {
+      out.writeLong(0x7fffff00); // Standard marshaling tag
+      out.writeString(repositoryId);
+      out.writeWString(value as string);
+      return;
+  }
+  if (repositoryId === "IDL:omg.org/CORBA/StringValue:1.0") {
+      out.writeLong(0x7fffff00); // Standard marshaling tag
+      out.writeString(repositoryId);
+      out.writeString(value as string);
+      return;
+  }
+
+  // For general valuetypes, we encode their state.
+  // We'll use standard marshaling with a repository ID.
+  out.writeLong(0x7fffff00);
+  out.writeString(repositoryId);
+  encodeValueMembers(out, value, type);
+}
+
+function decodeValueMembers(inp: CDRInputStream, type: TypeCode): CORBAValue {
+    const result: Record<string, CORBAValue> = {};
+
+    // A valuetype can have a base type.
+    const baseType = type.concrete_base_type();
+    if (baseType && baseType.kind() !== TCKind.tk_null) {
+        const baseValue = decodeValueMembers(inp, baseType) as Record<string, CORBAValue>;
+        Object.assign(result, baseValue);
+    }
+
+    // Then decode own members.
+    const memberCount = type.member_count();
+    for (let i = 0; i < memberCount; i++) {
+        const memberName = type.member_name(i);
+        const memberType = type.member_type(i);
+        if (memberType) {
+            result[memberName] = decodeValue(inp, memberType);
+        }
+    }
+
+    return result;
+}
+
+function decodeValueType(inp: CDRInputStream, type: TypeCode): CORBAValue {
+  // Valuetypes can be encoded in several ways.
+  // We read a tag/header first. This is a long.
+  const header = inp.readLong();
+
+  if (header === 0) {
+    // Null valuetype
+    return null;
+  }
+
+  if (header === -1) { // 0xFFFFFFFF
+    // Indirection. The next long is the position.
+    const position = inp.readLong();
+    // A full implementation would need to cache decoded valuetypes and seek.
+    throw new Error(`Valuetype indirection not yet supported. Position: ${position}`);
+  }
+
+  // Check for special tags for valuetypes with repository IDs.
+  // 0x7fffff00: standard marshaling
+  // 0x7fffff01: chunked marshaling
+  // 0x7fffff02: custom marshaling
+  if (header >= 0x7fffff00 && header <= 0x7fffff0f) { // Range for valuetype tags
+    const repositoryId = inp.readString();
+
+    // Handle boxed types like WStringValue, which may be sent with a tk_value TypeCode
+    if (repositoryId === "IDL:omg.org/CORBA/WStringValue:1.0") {
+      return inp.readWString();
+    }
+    if (repositoryId === "IDL:omg.org/CORBA/StringValue:1.0") {
+        return inp.readString();
+    }
+
+    if (header === 0x7fffff01) { // chunked
+        throw new Error("Chunked valuetype encoding not yet supported.");
+    }
+
+    // For standard (0x7fffff00) or other custom (0x7fffff02) valuetypes,
+    // we decode the members.
+    return decodeValueMembers(inp, type);
+  }
+
+  // If the header is not a special tag, it's the length of the state.
+  // This is for valuetypes without a repository ID on the wire.
+  if (header > 0) {
+    const startPos = inp.getPosition();
+    const value = decodeValueMembers(inp, type);
+    const expectedEndPos = startPos + header;
+    // If we didn't consume the exact number of bytes, seek to the end
+    if (inp.getPosition() !== expectedEndPos) {
+        inp.setPosition(expectedEndPos);
+    }
+    return value;
+  }
+
+  // Other negative values are reserved.
+  throw new Error(`Invalid or unsupported valuetype header: ${header}`);
 }
 
 function encodeSequence(out: CDROutputStream, value: CORBAValue[], type: TypeCode): void {

@@ -299,14 +299,11 @@ export class CDRInputStream {
 
   /**
    * Read a wide string
-   * GIOP 1.2+ uses UTF-8 encoding with length prefix
+   * GIOP 1.2+ wstrings include encoding (typically UTF-16 with BOM)
    */
   readWString(): string {
-    // Save position before reading ULong (for debugging if needed)
     const length = this.readULong();
-    if (length === 0) {
-      return "";
-    }
+    if (length === 0) return "";
 
     // Sanity check: strings shouldn't be larger than remaining buffer
     // or unreasonably large (>10MB is suspicious for CORBA strings)
@@ -316,9 +313,18 @@ export class CDRInputStream {
     }
 
     const bytes = this.readOctetArray(length);
-    return new TextDecoder().decode(bytes);
-  }
 
+    // Check for UTF-16 BOM
+    if (bytes.length >= 2 && bytes[0] === 0xFF && bytes[1] === 0xFE) {
+      return new TextDecoder("utf-16le").decode(bytes);
+    } else if (bytes.length >= 2 && bytes[0] === 0xFE && bytes[1] === 0xFF) {
+      return new TextDecoder("utf-16be").decode(bytes);
+    }
+
+    // Spec-compliant fallback: use stream's endianness for UTF-16
+    const encoding = this.littleEndian ? "utf-16le" : "utf-16be";
+    return new TextDecoder(encoding).decode(bytes);
+  }
   /**
    * Read an octet array (no length prefix)
    */
