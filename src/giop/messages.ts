@@ -20,7 +20,7 @@ import {
   TargetAddress,
 } from "./types.ts";
 
-const logger = getLogger("CORBA-messages");
+const logger = getLogger("CORBA");
 
 /**
  * Base class for all GIOP messages

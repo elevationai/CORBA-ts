@@ -98,6 +98,24 @@ export enum ServiceContextId {
 }
 
 /**
+ * CodeSet Component - represents a native code set and optional conversion code sets
+ * Per CORBA spec CONV_FRAME::CodeSetComponent
+ */
+export interface CodeSetComponent {
+  native_code_set: number; // CodeSetId
+  conversion_code_sets: number[]; // sequence<CodeSetId>
+}
+
+/**
+ * CodeSet Component Info - complete code set information for char and wchar
+ * Per CORBA spec CONV_FRAME::CodeSetComponentInfo
+ */
+export interface CodeSetComponentInfo {
+  ForCharData: CodeSetComponent;
+  ForWcharData: CodeSetComponent;
+}
+
+/**
  * Addressing Disposition (GIOP 1.2+)
  */
 export enum AddressingDisposition {

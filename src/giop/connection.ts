@@ -20,7 +20,7 @@ import { GIOPHeader } from "./types.ts";
 import { IOR } from "./types.ts";
 import { IORUtil } from "./ior.ts";
 
-const logger = getLogger("CORBA-connection");
+const logger = getLogger("CORBA");
 const bytesLogger = getLogger("CORBA-bytes");
 
 /**
@@ -449,18 +449,24 @@ export class IIOPConnectionImpl implements IIOPConnection {
             (ctx) => ctx.contextId === 1, // ServiceContextId.CodeSets
           );
           if (codeSetComponent) {
-            const negotiated = IORUtil.parseCodeSetsComponent(
+            const codeSetsInfo = IORUtil.parseCodeSetsComponent(
               codeSetComponent.contextData,
             );
+            // Extract native code sets from the full CodeSetComponentInfo
+            const charSet = codeSetsInfo.ForCharData.native_code_set;
+            const wcharSet = codeSetsInfo.ForWcharData.native_code_set;
             if (
-              negotiated.charSet !== this._negotiatedCharCodeSet ||
-              negotiated.wcharSet !== this._negotiatedWcharCodeset
+              charSet !== this._negotiatedCharCodeSet ||
+              wcharSet !== this._negotiatedWcharCodeset
             ) {
-              this._negotiatedCharCodeSet = negotiated.charSet;
-              this._negotiatedWcharCodeset = negotiated.wcharSet;
+              this._negotiatedCharCodeSet = charSet;
+              this._negotiatedWcharCodeset = wcharSet;
               logger.debug(
-                `Negotiated new codesets for connection ${this._endpoint.host}:${this._endpoint.port}. ` +
-                  `char: 0x${negotiated.charSet.toString(16)}, wchar: 0x${negotiated.wcharSet.toString(16)}`,
+                "Negotiated new codesets for connection %s:%d - char: 0x%x, wchar: 0x%x",
+                this._endpoint.host,
+                this._endpoint.port,
+                charSet,
+                wcharSet,
               );
             }
           }

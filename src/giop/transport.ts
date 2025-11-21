@@ -516,8 +516,12 @@ export class GIOPServer {
         }
       }
     }
-    catch (_error) {
+    catch (error) {
       // Connection error handled - connection closed
+      logger.error("Connection error: %v", error);
+      if (error instanceof Error && error.stack) {
+        logger.debug("Stack trace: %s", error.stack);
+      }
     }
     finally {
       try {
@@ -567,6 +571,8 @@ export class GIOPServer {
     requestCdr.setPosition(12); // Start after header
     request.deserialize(requestCdr, 12);
 
+    logger.debug("Processing request: operation='%s' requestId=%d", request.operation, request.requestId);
+
     // Find handler - check for specific operation first, then wildcard
     let handler = this._handlers.get(request.operation);
     if (!handler) {
@@ -577,10 +583,16 @@ export class GIOPServer {
     let codesets = null;
     const codeSetContext = request.serviceContext.find((ctx) => ctx.contextId === 1); // ServiceContextId.CodeSets
     if (codeSetContext) {
-      codesets = IORUtil.parseCodeSetsComponent(codeSetContext.contextData);
+      const codeSetsInfo = IORUtil.parseCodeSetsComponent(codeSetContext.contextData);
+      // Extract native code sets for CDR stream encoding/decoding
+      codesets = {
+        charSet: codeSetsInfo.ForCharData.native_code_set,
+        wcharSet: codeSetsInfo.ForWcharData.native_code_set,
+      };
     }
 
     if (!handler) {
+      logger.error("No handler found for operation '%s'", request.operation);
       // Send exception reply
       const errorReply = new GIOPReply(request.version);
       errorReply.requestId = request.requestId;

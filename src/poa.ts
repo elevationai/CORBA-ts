@@ -3,6 +3,7 @@
  * Based on CORBA 3.4 specification
  */
 
+import { getLogger } from "logging-ts";
 import { CORBA } from "./types.ts";
 import { Object, ObjectReference } from "./object.ts";
 import { EndpointPolicy, Policy, PolicyType } from "./policy.ts";
@@ -14,6 +15,8 @@ import { GIOPReply, GIOPRequest } from "./giop/messages.ts";
 import { CDRInputStream } from "./core/cdr/decoder.ts";
 import { CDROutputStream } from "./core/cdr/encoder.ts";
 import type { IIOPConnection } from "./giop/connection.ts";
+
+const logger = getLogger("CORBA");
 
 /**
  * AdapterActivator interface
@@ -700,12 +703,6 @@ class POAImpl extends ObjectReference implements POA {
       const byteOrder = iiopProfile.profileData[0];
       const isLittleEndian = byteOrder === 1;
 
-      console.log("[POA] Profile data byte order:", byteOrder, "isLittleEndian:", isLittleEndian);
-      console.log(
-        "[POA] Profile data first 32 bytes:",
-        Array.from(iiopProfile.profileData.slice(0, 32)).map((b) => b.toString(16).padStart(2, "0")).join(" "),
-      );
-
       // Create stream with proper endianness
       const cdr = new CDRInputStream(iiopProfile.profileData, isLittleEndian);
 
@@ -717,9 +714,7 @@ class POAImpl extends ObjectReference implements POA {
       cdr.readOctet(); // minor
 
       // Skip host
-      console.log("[POA] About to read host string, position:", cdr.getPosition(), "remaining:", cdr.remaining());
-      const host = cdr.readString();
-      console.log("[POA] Read host:", host);
+      cdr.readString();
 
       // Skip port
       cdr.readUShort();
@@ -770,6 +765,8 @@ class POAImpl extends ObjectReference implements POA {
       return; // No endpoint policy, don't start a server
     }
 
+    logger.info("Starting POA '%s' on %s:%d", this._name, this._host, this._port);
+
     // Create and start the GIOP server
     this._server = new GIOPServer(
       { host: this._host, port: this._port },
@@ -801,6 +798,7 @@ class POAImpl extends ObjectReference implements POA {
    * Dispatch a GIOP request to the appropriate servant
    */
   private async _dispatchRequest(request: GIOPRequest, _connection: IIOPConnection): Promise<GIOPReply> {
+    logger.debug("Dispatching request: operation='%s' requestId=%d", request.operation, request.requestId);
     try {
       // Extract the object ID from the request
       let objectId = request.objectKey;
@@ -821,8 +819,20 @@ class POAImpl extends ObjectReference implements POA {
       // Get the operation name
       const operation = request.operation;
 
+      // Extract codesets from request service context per CORBA spec
+      let codesets = null;
+      const codeSetContext = request.serviceContext.find((ctx) => ctx.contextId === 1); // ServiceContextId.CodeSets
+      if (codeSetContext) {
+        const codeSetsInfo = IORUtil.parseCodeSetsComponent(codeSetContext.contextData);
+        // Extract native code sets for CDR stream encoding/decoding
+        codesets = {
+          charSet: codeSetsInfo.ForCharData.native_code_set,
+          wcharSet: codeSetsInfo.ForWcharData.native_code_set,
+        };
+      }
+
       // Create CDR streams for decoding request and encoding reply
-      const inputCDR = new CDRInputStream(request.body, request.isLittleEndian());
+      const inputCDR = new CDRInputStream(request.body, request.isLittleEndian(), codesets);
 
       // Handle standard CORBA operations specially
       if (operation === "_is_a") {
@@ -927,7 +937,10 @@ class POAImpl extends ObjectReference implements POA {
       return reply;
     }
     catch (error) {
-      // DEBUG: Log any exceptions that occur
+      logger.error("Error dispatching request: %v", error);
+      if (error instanceof Error && error.stack) {
+        logger.debug("Stack trace: %s", error.stack);
+      }
 
       // Create an exception reply
       const reply = new GIOPReply(request.version);

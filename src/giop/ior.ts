@@ -3,9 +3,12 @@
  * CORBA 3.4 Specification compliant
  */
 
+import { getLogger } from "logging-ts";
 import { CDRInputStream, CDROutputStream } from "../core/cdr/index.ts";
-import { ComponentId, IIOPProfileBody, IOR, ProfileId, TaggedComponent, TaggedProfile } from "./types.ts";
+import { CodeSetComponentInfo, ComponentId, IIOPProfileBody, IOR, ProfileId, TaggedComponent, TaggedProfile } from "./types.ts";
 import { CorbalocProtocol, parseCorbaloc as parseCorbalocURL } from "./corbaloc.ts";
+
+const logger = getLogger("CORBA");
 
 /**
  * IOR utilities and operations
@@ -352,26 +355,89 @@ export class IORUtil {
 
   /**
    * Parse a CodeSets component from its raw data
+   *
+   * Per CORBA spec CONV_FRAME::CodeSetComponentInfo, the structure is:
+   * - Encapsulation byte order marker (1 byte)
+   * - Padding to 4-byte alignment (3 bytes)
+   * - ForCharData:
+   *   - native_code_set (4 bytes)
+   *   - conversion_code_sets sequence length (4 bytes)
+   *   - conversion_code_sets array (length * 4 bytes)
+   * - ForWcharData:
+   *   - native_code_set (4 bytes)
+   *   - conversion_code_sets sequence length (4 bytes)
+   *   - conversion_code_sets array (length * 4 bytes)
+   *
+   * Some implementations send a simplified format with just the two native code sets
+   * when conversion_code_sets sequences are empty. This is technically non-compliant
+   * but we handle it for interoperability.
    */
-  static parseCodeSetsComponent(componentData: Uint8Array): { charSet: number; wcharSet: number } {
-    // The data is an encapsulation. First byte is byte order.
-    const isLittleEndian = componentData[0] === 1;
+  static parseCodeSetsComponent(componentData: Uint8Array): CodeSetComponentInfo {
+    logger.debug("Parsing CodeSets: %d bytes", componentData.length);
+
+    // Encapsulation: first byte is byte order, followed by 3 bytes padding
+    const byteOrderByte = componentData[0];
+    const isLittleEndian = byteOrderByte === 1;
+
     const cdr = new CDRInputStream(componentData, isLittleEndian);
+
+    // Skip byte order marker + 3 bytes of padding (total 4 bytes)
     cdr.readOctet(); // Skip byte order
+    cdr.skip(3); // Skip padding
 
-    const charSet = cdr.readULong();
+    // Check if this is non-compliant simplified format (8 bytes remaining)
+    // Some implementations omit the sequence length fields when they're zero
+    if (cdr.remaining() === 8) {
+      // Simplified format: just native code sets, no sequence lengths or conversion sets
+      const charNativeCodeSet = cdr.readULong();
+      const wcharNativeCodeSet = cdr.readULong();
+      logger.debug("CodeSets (simplified): char=0x%x wchar=0x%x", charNativeCodeSet, wcharNativeCodeSet);
+      return {
+        ForCharData: {
+          native_code_set: charNativeCodeSet,
+          conversion_code_sets: [],
+        },
+        ForWcharData: {
+          native_code_set: wcharNativeCodeSet,
+          conversion_code_sets: [],
+        },
+      };
+    }
+
+    // Standard compliant format - parse ForCharData
+    const charNativeCodeSet = cdr.readULong();
     const numCharConversion = cdr.readULong();
-    if (numCharConversion > 0) {
-      cdr.skip(numCharConversion * 4); // Skip conversion sets
+    const charConversionSets: number[] = [];
+    for (let i = 0; i < numCharConversion; i++) {
+      charConversionSets.push(cdr.readULong());
     }
 
-    const wcharSet = cdr.readULong();
+    // Parse ForWcharData
+    const wcharNativeCodeSet = cdr.readULong();
     const numWcharConversion = cdr.readULong();
-    if (numWcharConversion > 0) {
-      cdr.skip(numWcharConversion * 4); // Skip conversion sets
+    const wcharConversionSets: number[] = [];
+    for (let i = 0; i < numWcharConversion; i++) {
+      wcharConversionSets.push(cdr.readULong());
     }
 
-    return { charSet, wcharSet };
+    logger.debug(
+      "CodeSets (full): char=0x%x (%d conversions) wchar=0x%x (%d conversions)",
+      charNativeCodeSet,
+      numCharConversion,
+      wcharNativeCodeSet,
+      numWcharConversion,
+    );
+
+    return {
+      ForCharData: {
+        native_code_set: charNativeCodeSet,
+        conversion_code_sets: charConversionSets,
+      },
+      ForWcharData: {
+        native_code_set: wcharNativeCodeSet,
+        conversion_code_sets: wcharConversionSets,
+      },
+    };
   }
 
   /**
