@@ -203,15 +203,6 @@ Deno.test("EventHandler - error handling in callback", async () => {
   await init();
 
   const appRef = "TEST_APP_008";
-  const errors: Error[] = [];
-
-  // Capture console.error to verify error logging
-  const originalError = console.error;
-  console.error = (_msg: string, err: Error) => {
-    if (err instanceof Error) {
-      errors.push(err);
-    }
-  };
 
   const handler = new EventHandler(appRef, (_e: unknown) => {
     throw new Error("Test error in callback");
@@ -231,12 +222,6 @@ Deno.test("EventHandler - error handling in callback", async () => {
       assertEquals(err.message, "Test error in callback");
     }
   }
-
-  // Restore console.error
-  console.error = originalError;
-
-  assertEquals(errors.length, 1);
-  assertEquals(errors[0].message, "Test error in callback");
 
   await handler.deactivate();
 });

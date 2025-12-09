@@ -480,28 +480,28 @@ export class GIOPReply extends GIOPMessage {
     // GIOP 1.2 field order: request_id, reply_status, service_context
     // Request ID
     this.requestId = cdr.readULong();
-    logger.debug(`Read request ID ${this.requestId}, stream pos: ${cdr.getPosition()}`);
+    logger.debug("Read request ID %d, stream pos: %d", this.requestId, cdr.getPosition());
 
     // Reply status
     this.replyStatus = cdr.readULong();
-    logger.debug(`Read reply status ${this.replyStatus}, stream pos: ${cdr.getPosition()}`);
+    logger.debug("Read reply status %d, stream pos: %d", this.replyStatus, cdr.getPosition());
 
     // Service context
     this.serviceContext = this.readServiceContext(cdr);
-    logger.debug(`Read service context, stream pos: ${cdr.getPosition()}`);
+    logger.debug("Read service context, stream pos: %d", cdr.getPosition());
 
     // GIOP 1.2 aligns body to 8-byte boundary from start of GIOP message
     const absolutePos = headerSize + cdr.getPosition();
     const remainder = absolutePos % 8;
     if (remainder !== 0) {
       const padding = 8 - remainder;
-      logger.debug(`Applying ${padding} bytes of alignment padding.`);
+      logger.debug("Applying %d bytes of alignment padding.", padding);
       cdr.skip(padding);
     }
 
     // Rest is body
     this.body = cdr.readRemaining();
-    logger.debug(`Deserialized reply body, size: ${this.body.length}. Final stream pos: ${cdr.getPosition()}`);
+    logger.debug("Deserialized reply body, size: %d. Final stream pos: %d", this.body.length, cdr.getPosition());
   }
 
   /**

@@ -819,15 +819,14 @@ class POAImpl extends ObjectReference implements POA {
       // Get the operation name
       const operation = request.operation;
 
-      // Extract codesets from request service context per CORBA spec
+      // Extract codesets from request service context
       let codesets = null;
       const codeSetContext = request.serviceContext.find((ctx) => ctx.contextId === 1); // ServiceContextId.CodeSets
       if (codeSetContext) {
-        const codeSetsInfo = IORUtil.parseCodeSetsComponent(codeSetContext.contextData);
-        // Extract native code sets for CDR stream encoding/decoding
+        const codeSetsCtx = IORUtil.parseCodeSetContext(codeSetContext.contextData);
         codesets = {
-          charSet: codeSetsInfo.ForCharData.native_code_set,
-          wcharSet: codeSetsInfo.ForWcharData.native_code_set,
+          charSet: codeSetsCtx.charCodeSet,
+          wcharSet: codeSetsCtx.wcharCodeSet,
         };
       }
 
@@ -937,10 +936,8 @@ class POAImpl extends ObjectReference implements POA {
       return reply;
     }
     catch (error) {
-      logger.error("Error dispatching request: %v", error);
-      if (error instanceof Error && error.stack) {
-        logger.debug("Stack trace: %s", error.stack);
-      }
+      logger.error("Error dispatching request");
+      logger.exception(error);
 
       // Create an exception reply
       const reply = new GIOPReply(request.version);

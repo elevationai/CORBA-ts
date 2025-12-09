@@ -3,14 +3,15 @@
  * High-level interface for sending and receiving GIOP messages
  */
 
-import { getLogger } from "logging-ts";
+import { getLogger, lazyHex } from "logging-ts";
 import { GIOPCloseConnection, GIOPMessage, GIOPMessageError, GIOPReply, GIOPRequest } from "./messages.ts";
 import { ConnectionEndpoint, ConnectionManager, IIOPConnection } from "./connection.ts";
 import { GIOPMessageType, GIOPVersion, IOR, ReplyStatusType, ServiceContext } from "./types.ts";
 import { IORUtil } from "./ior.ts";
 import { CDRInputStream } from "../core/cdr/index.ts";
 
-const logger = getLogger("CORBA-bytes");
+const logger = getLogger("CORBA");
+const bytesLogger = getLogger("CORBA-bytes");
 
 /**
  * Transport configuration
@@ -237,6 +238,9 @@ export class GIOPTransport {
             clearTimeout(context.timer);
             context.resolve(message);
           }
+          else {
+            logger.debug("Received Reply for unknown/expired request %d (no pending request found)", message.requestId);
+          }
         }
         else if (message instanceof GIOPCloseConnection) {
           // Reject all pending requests for this connection
@@ -252,7 +256,7 @@ export class GIOPTransport {
           break;
         }
         else if (message instanceof GIOPMessageError) {
-          console.error("Received MessageError from server - protocol error");
+          logger.error("Received MessageError from server - protocol error");
           // Reject all pending requests due to protocol error
           for (const [requestId, context] of this._pendingRequests) {
             this._pendingRequests.delete(requestId);
@@ -263,11 +267,16 @@ export class GIOPTransport {
           await connection.close();
           break;
         }
+        else if (message && message.header) {
+          // Unsolicited message (e.g., server-initiated callback/event)
+          logger.debug("Received unsolicited message type=%d", message.header.messageType);
+        }
       }
     }
     catch (error) {
       if (!this._closed) {
-        console.error("Error processing replies:", error);
+        logger.error("Error processing replies");
+        logger.exception(error);
       }
     }
   }
@@ -496,11 +505,8 @@ export class GIOPServer {
           readBuffer = readBuffer.subarray(totalSize);
 
           // Log incoming callback request bytes
-          const hexData = Array.from(messageData)
-            .map((b) => b.toString(16).padStart(2, "0"))
-            .join(" ");
           const addr = conn.remoteAddr as Deno.NetAddr;
-          logger.debug(`RECV ${addr.hostname}:${addr.port} [${messageData.length} bytes]: ${hexData}`);
+          bytesLogger.debug("RECV %s:%d [%d bytes]: %s", addr.hostname, addr.port, messageData.length, lazyHex(messageData));
 
           try {
             await this._processMessage(messageData, conn);
@@ -518,10 +524,8 @@ export class GIOPServer {
     }
     catch (error) {
       // Connection error handled - connection closed
-      logger.error("Connection error: %v", error);
-      if (error instanceof Error && error.stack) {
-        logger.debug("Stack trace: %s", error.stack);
-      }
+      logger.error("Connection error");
+      logger.exception(error);
     }
     finally {
       try {
@@ -539,7 +543,7 @@ export class GIOPServer {
       messageData[0] !== 0x47 || messageData[1] !== 0x49 ||
       messageData[2] !== 0x4F || messageData[3] !== 0x50
     ) {
-      console.error("Invalid GIOP magic bytes");
+      logger.error("Invalid GIOP magic bytes");
       return;
     }
 
@@ -554,7 +558,7 @@ export class GIOPServer {
 
     // Only handle Request messages for normal processing
     if (messageType !== GIOPMessageType.Request) {
-      console.warn(`Unexpected message type on server: ${messageType}`);
+      logger.warn("Unexpected message type on server: %d", messageType);
       return;
     }
 
@@ -579,15 +583,14 @@ export class GIOPServer {
       handler = this._handlers.get("*"); // Check for wildcard handler
     }
 
-    // Extract codesets from request service context per CORBA spec
+    // Extract codesets from request service context
     let codesets = null;
     const codeSetContext = request.serviceContext.find((ctx) => ctx.contextId === 1); // ServiceContextId.CodeSets
     if (codeSetContext) {
-      const codeSetsInfo = IORUtil.parseCodeSetsComponent(codeSetContext.contextData);
-      // Extract native code sets for CDR stream encoding/decoding
+      const codeSetsCtx = IORUtil.parseCodeSetContext(codeSetContext.contextData);
       codesets = {
-        charSet: codeSetsInfo.ForCharData.native_code_set,
-        wcharSet: codeSetsInfo.ForWcharData.native_code_set,
+        charSet: codeSetsCtx.charCodeSet,
+        wcharSet: codeSetsCtx.wcharCodeSet,
       };
     }
 
@@ -601,11 +604,8 @@ export class GIOPServer {
       const replyData = errorReply.serialize(codesets);
 
       // Log outgoing error response bytes
-      const hexData1 = Array.from(replyData)
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join(" ");
       const addr1 = conn.remoteAddr as Deno.NetAddr;
-      logger.debug(`SEND ${addr1.hostname}:${addr1.port} [${replyData.length} bytes]: ${hexData1}`);
+      bytesLogger.debug("SEND %s:%d [%d bytes]: %s", addr1.hostname, addr1.port, replyData.length, lazyHex(replyData));
 
       await conn.write(replyData);
       return;
@@ -622,11 +622,8 @@ export class GIOPServer {
         const data = message.serialize(codesets);
 
         // Log outgoing response bytes from wrapper
-        const hexData2 = Array.from(data)
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join(" ");
         const addr2 = conn.remoteAddr as Deno.NetAddr;
-        logger.debug(`SEND ${addr2.hostname}:${addr2.port} [${data.length} bytes]: ${hexData2}`);
+        bytesLogger.debug("SEND %s:%d [%d bytes]: %s", addr2.hostname, addr2.port, data.length, lazyHex(data));
 
         await conn.write(data);
       },
@@ -644,11 +641,8 @@ export class GIOPServer {
       const replyData = reply.serialize(codesets);
 
       // Log outgoing reply bytes
-      const hexData3 = Array.from(replyData)
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join(" ");
       const addr3 = conn.remoteAddr as Deno.NetAddr;
-      logger.debug(`SEND ${addr3.hostname}:${addr3.port} [${replyData.length} bytes]: ${hexData3}`);
+      bytesLogger.debug("SEND %s:%d [%d bytes]: %s", addr3.hostname, addr3.port, replyData.length, lazyHex(replyData));
 
       await conn.write(replyData);
     }

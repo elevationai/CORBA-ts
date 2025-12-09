@@ -3,6 +3,11 @@
  * TCP/IP transport for CORBA IIOP protocol
  */
 
+import { getLogger, lazyHex } from "logging-ts";
+
+const logger = getLogger("CORBA");
+const bytesLogger = getLogger("CORBA-bytes");
+
 /**
  * IIOP Connection for client/server communication
  */
@@ -47,6 +52,8 @@ export class IIOPConnection {
     if (this.closed) {
       throw new Error("Connection is closed");
     }
+
+    bytesLogger.debug("SEND %s:%d [%d bytes]: %s", this.host, this.port, message.length, lazyHex(message));
 
     try {
       let written = 0;
@@ -121,6 +128,8 @@ export class IIOPConnection {
       const fullMessage = new Uint8Array(12 + messageSize);
       fullMessage.set(header);
       fullMessage.set(body, 12);
+
+      bytesLogger.debug("RECV %s:%d [%d bytes]: %s", this.host, this.port, fullMessage.length, lazyHex(fullMessage));
 
       return fullMessage;
     }
@@ -225,8 +234,8 @@ export class IIOPListener {
           break;
         }
         // Log error but continue accepting
-        const message = error instanceof Error ? error.message : String(error);
-        console.error(`Error accepting connection: ${message}`);
+        logger.error("Error accepting connection");
+        logger.exception(error);
       }
     }
   }

@@ -3,6 +3,7 @@
  * Based on CORBA 3.4 specification
  */
 
+import { getLogger } from "logging-ts";
 import { CORBA } from "./types.ts";
 import { TypeCode } from "./typecode.ts";
 import { Policy } from "./policy.ts";
@@ -10,6 +11,8 @@ import { ValueFactory } from "./valuetype.ts";
 import { GIOPServer, GIOPTransport } from "./giop/transport.ts";
 import { IORUtil } from "./giop/ior.ts";
 import { IOR } from "./giop/types.ts";
+
+const logger = getLogger("CORBA");
 
 /**
  * ORB initialization options
@@ -160,7 +163,7 @@ export class ORBImpl implements ORB {
 
       while (this._pendingRequests.size > 0) {
         if (Date.now() - startTime > timeout) {
-          console.warn(`ORB shutdown timeout: ${this._pendingRequests.size} requests still pending`);
+          logger.warn("ORB shutdown timeout: %d requests still pending", this._pendingRequests.size);
           break;
         }
 

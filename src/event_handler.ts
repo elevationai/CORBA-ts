@@ -2,9 +2,12 @@
  * CORBA Event Handler - Simplified event listener registration
  */
 
+import { getLogger } from "logging-ts";
 import { getRootPOA, Servant } from "./poa.ts";
 import type { POA } from "./poa.ts";
 import type { CORBA } from "./types.ts";
+
+const logger = getLogger("CORBA");
 
 /**
  * Event callback function type - fully generic
@@ -50,7 +53,8 @@ class EventListenerServant<T = unknown> extends Servant {
       }
     }
     catch (error) {
-      console.error("Error in event callback:", error);
+      logger.error("Error in event callback");
+      logger.exception(error);
       throw error;
     }
   }

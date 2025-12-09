@@ -3,10 +3,13 @@
  * Based on CORBA 3.4 specification
  */
 
+import { getLogger } from "logging-ts";
 import { CORBA } from "./types.ts";
 import { ParameterMode } from "./object.ts";
 import { Context } from "./context.ts";
 import { TypeCode } from "./typecode.ts";
+
+const logger = getLogger("CORBA");
 
 /**
  * Request interface
@@ -332,7 +335,8 @@ export class RequestImpl implements Request {
             }
             catch (error) {
               // Log the error and throw - don't use dummy values
-              console.error(`Failed to decode output parameter: ${error}`);
+              logger.error("Failed to decode output parameter");
+              logger.exception(error);
               throw new CORBA.MARSHAL(`Failed to decode output parameter: ${error}`);
             }
           }

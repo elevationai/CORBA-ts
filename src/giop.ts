@@ -3,9 +3,12 @@
  * Based on CORBA 3.4 specification
  */
 
+import { getLogger } from "logging-ts";
 import type { ServiceContext } from "./giop/types.ts";
 import type { CDRInputStream } from "./core/cdr/decoder.ts";
 import type { CDROutputStream } from "./core/cdr/encoder.ts";
+
+const logger = getLogger("CORBA");
 
 // Export all GIOP types and classes
 export * from "./giop/types.ts";
@@ -591,7 +594,8 @@ export async function parseIOR(iorString: string): Promise<IIOPProfile | null> {
     return null;
   }
   catch (error) {
-    console.error(`Failed to parse IOR: ${error}`);
+    logger.error("Failed to parse IOR");
+    logger.exception(error);
     return null;
   }
 }
@@ -632,7 +636,8 @@ export async function createIOR(profile: IIOPProfile): Promise<string> {
     return IORUtil.toString(ior);
   }
   catch (error) {
-    console.error(`Failed to create IOR: ${error}`);
+    logger.error("Failed to create IOR");
+    logger.exception(error);
     return "IOR:"; // Return minimal IOR on error
   }
 }

@@ -3,6 +3,7 @@
  * Provides a standalone naming service that can be run as a daemon process
  */
 
+import { getLogger } from "logging-ts";
 import { CORBA } from "./types.ts";
 import { ORBImpl } from "./orb.ts";
 import { GIOPTransport } from "./giop/transport.ts";
@@ -11,6 +12,8 @@ import { ReplyStatusType } from "./giop/types.ts";
 import { ConnectionEndpoint } from "./giop/connection.ts";
 import { IORUtil } from "./giop/ior.ts";
 import { NameUtil, NamingContextExt, NamingContextExtImpl } from "./naming.ts";
+
+const logger = getLogger("CORBA");
 
 /**
  * Configuration for the naming service server
@@ -96,8 +99,8 @@ export class NamingServer {
       this._running = true;
 
       if (this._config.enableLogging) {
-        console.log(`Naming Service started on ${this._config.host}:${this._config.port}`);
-        console.log(`Root context IOR: ${this._getIORString()}`);
+        logger.info("Naming Service started on %s:%d", this._config.host, this._config.port);
+        logger.info("Root context IOR: %s", this._getIORString());
       }
     }
     catch (error) {
@@ -131,12 +134,13 @@ export class NamingServer {
       this._running = false;
 
       if (this._config.enableLogging) {
-        console.log("Naming Service stopped");
+        logger.info("Naming Service stopped");
       }
     }
     catch (error) {
       if (this._config.enableLogging) {
-        console.error(`Error stopping naming server: ${error}`);
+        logger.error("Error stopping naming server");
+        logger.exception(error);
       }
     }
   }
@@ -287,18 +291,20 @@ export class NamingServer {
         }
         catch (error) {
           if (this._config.enableLogging) {
-            console.warn(`Failed to restore binding: ${error}`);
+            logger.warn("Failed to restore binding");
+            logger.exception(error);
           }
         }
       }
 
       if (this._config.enableLogging) {
-        console.log(`Loaded ${bindings.length} persistent bindings`);
+        logger.info("Loaded %d persistent bindings", bindings.length);
       }
     }
     catch (error) {
       if (this._config.enableLogging) {
-        console.warn(`Failed to load persistent data: ${error}`);
+        logger.warn("Failed to load persistent data");
+        logger.exception(error);
       }
     }
   }
@@ -317,12 +323,13 @@ export class NamingServer {
       await Deno.writeTextFile(this._config.persistentFile, data);
 
       if (this._config.enableLogging) {
-        console.log(`Saved ${bindings.length} persistent bindings`);
+        logger.info("Saved %d persistent bindings", bindings.length);
       }
     }
     catch (error) {
       if (this._config.enableLogging) {
-        console.error(`Failed to save persistent data: ${error}`);
+        logger.error("Failed to save persistent data");
+        logger.exception(error);
       }
     }
   }
@@ -341,7 +348,7 @@ export class NamingServerCLI {
 
     // Handle graceful shutdown
     const shutdown = async () => {
-      console.log("Shutting down naming service...");
+      logger.info("Shutting down naming service...");
       await server.stop();
       Deno.exit(0);
     };
@@ -361,7 +368,8 @@ export class NamingServerCLI {
       }
     }
     catch (error) {
-      console.error(`Failed to start naming service: ${error}`);
+      logger.error("Failed to start naming service");
+      logger.exception(error);
       Deno.exit(1);
     }
   }

@@ -441,6 +441,38 @@ export class IORUtil {
   }
 
   /**
+   * Parse a CodeSetContext from service context data
+   *
+   * Per CORBA spec CONV_FRAME::CodeSetContext (used in service context id=1):
+   * - Encapsulation byte order marker (1 byte)
+   * - Padding to 4-byte alignment (3 bytes)
+   * - char_data: CodeSetId (4 bytes) - the negotiated char codeset
+   * - wchar_data: CodeSetId (4 bytes) - the negotiated wchar codeset
+   *
+   * This is different from CodeSetComponentInfo used in IOR TAG_CODE_SETS.
+   */
+  static parseCodeSetContext(contextData: Uint8Array): { charCodeSet: number; wcharCodeSet: number } {
+    logger.debug("Parsing CodeSetContext: %d bytes", contextData.length);
+
+    // Encapsulation: first byte is byte order
+    const byteOrderByte = contextData[0];
+    const isLittleEndian = byteOrderByte === 1;
+
+    const cdr = new CDRInputStream(contextData, isLittleEndian);
+
+    // Skip byte order marker + 3 bytes of padding (total 4 bytes)
+    cdr.readOctet(); // Skip byte order
+    cdr.skip(3); // Skip padding
+
+    const charCodeSet = cdr.readULong();
+    const wcharCodeSet = cdr.readULong();
+
+    logger.debug("CodeSetContext: char=0x%x wchar=0x%x", charCodeSet, wcharCodeSet);
+
+    return { charCodeSet, wcharCodeSet };
+  }
+
+  /**
    * Add ORB Type component
    */
   static createORBTypeComponent(orbType: string): TaggedComponent {

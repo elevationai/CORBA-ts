@@ -1,13 +1,14 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@eai/logging-ts@1": "1.0.0",
+    "jsr:@eai/logging-ts@^2.1.0": "2.1.0",
     "jsr:@std/assert@*": "1.0.14",
     "jsr:@std/assert@0.224": "0.224.0",
     "jsr:@std/assert@1": "1.0.14",
     "jsr:@std/assert@^1.0.14": "1.0.14",
     "jsr:@std/fmt@^1.0.5": "1.0.8",
-    "jsr:@std/fs@^1.0.11": "1.0.19",
+    "jsr:@std/fmt@^1.0.8": "1.0.8",
+    "jsr:@std/fs@^1.0.11": "1.0.20",
     "jsr:@std/internal@^1.0.10": "1.0.10",
     "jsr:@std/io@~0.225.2": "0.225.2",
     "jsr:@std/json@^1.0.0-rc.1": "1.0.2",
@@ -16,9 +17,10 @@
     "jsr:@std/path@0.224": "0.224.0"
   },
   "jsr": {
-    "@eai/logging-ts@1.0.0": {
-      "integrity": "7570dcf3348b93317368e70c60c120d1e81c312f71e4bbf41d650a1f3c81e613",
+    "@eai/logging-ts@2.1.0": {
+      "integrity": "07195bdfd5a736673184eb2d654b3876f90eea0945c6bfa8d4e10a0bfc291c5a",
       "dependencies": [
+        "jsr:@std/fmt@^1.0.8",
         "jsr:@std/jsonc",
         "jsr:@std/log",
         "jsr:@std/path"
@@ -36,8 +38,8 @@
     "@std/fmt@1.0.8": {
       "integrity": "71e1fc498787e4434d213647a6e43e794af4fd393ef8f52062246e06f7e372b7"
     },
-    "@std/fs@1.0.19": {
-      "integrity": "051968c2b1eae4d2ea9f79a08a3845740ef6af10356aff43d3e2ef11ed09fb06"
+    "@std/fs@1.0.20": {
+      "integrity": "e953206aae48d46ee65e8783ded459f23bec7dd1f3879512911c35e5484ea187"
     },
     "@std/internal@1.0.10": {
       "integrity": "e3be62ce42cab0e177c27698e5d9800122f67b766a0bea6ca4867886cbde8cf7"
@@ -57,7 +59,7 @@
     "@std/log@0.224.14": {
       "integrity": "257f7adceee3b53bb2bc86c7242e7d1bc59729e57d4981c4a7e5b876c808f05e",
       "dependencies": [
-        "jsr:@std/fmt",
+        "jsr:@std/fmt@^1.0.5",
         "jsr:@std/fs",
         "jsr:@std/io"
       ]
@@ -142,7 +144,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@eai/logging-ts@1",
+      "jsr:@eai/logging-ts@^2.1.0",
       "jsr:@std/assert@^1.0.14"
     ]
   }

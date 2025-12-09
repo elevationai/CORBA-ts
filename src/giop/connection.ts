@@ -3,7 +3,7 @@
  * Handles TCP connections for GIOP message transport
  */
 
-import { getLogger } from "logging-ts";
+import { getLogger, lazyHex } from "logging-ts";
 import { CDRInputStream } from "../core/cdr/index.ts";
 import {
   GIOPCancelRequest,
@@ -198,10 +198,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
     });
 
     // Log outgoing bytes
-    const hexData = Array.from(data)
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join(" ");
-    bytesLogger.debug(`SEND ${this._endpoint.host}:${this._endpoint.port} [${data.length} bytes]: ${hexData}`);
+    bytesLogger.debug("SEND %s:%d [%d bytes]: %s", this._endpoint.host, this._endpoint.port, data.length, lazyHex(data));
 
     let totalSent = 0;
 
@@ -314,7 +311,8 @@ export class IIOPConnectionImpl implements IIOPConnection {
       }
       catch (error) {
         if (this._state === ConnectionState.CONNECTED) {
-          console.error("Error reading from connection:", error);
+          logger.error("Error reading from connection");
+          logger.exception(error);
           break;
         }
       }
@@ -354,7 +352,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
   }
 
   private _parseMessages(): void {
-    logger.debug(`_parseMessages called with read buffer size: ${this._readBuffer.length}`);
+    logger.debug("_parseMessages called with read buffer size: %d", this._readBuffer.length);
     // Periodically clean up stale fragments
     const now = Date.now();
     if (now - this._lastFragmentCleanup > this._fragmentCleanupInterval) {
@@ -363,7 +361,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
     }
 
     while (this._readBuffer.length >= 12) { // Minimum GIOP header size
-      logger.debug(`Parsing loop start. Buffer size: ${this._readBuffer.length}`);
+      logger.debug("Parsing loop start. Buffer size: %d", this._readBuffer.length);
       // Check for GIOP magic bytes
       if (
         this._readBuffer[0] !== 0x47 || this._readBuffer[1] !== 0x49 ||
@@ -374,24 +372,21 @@ export class IIOPConnectionImpl implements IIOPConnection {
 
       const header = this._parseHeader(this._readBuffer);
       const totalSize = 12 + header.messageSize;
-      logger.debug(`Parsed header. MessageType: ${header.messageType}, MessageSize: ${header.messageSize}, TotalSize: ${totalSize}`);
+      logger.debug("Parsed header. MessageType: %d, MessageSize: %d, TotalSize: %d", header.messageType, header.messageSize, totalSize);
 
       if (this._readBuffer.length < totalSize) {
         // Not enough data yet
-        logger.debug(`Incomplete message. Need ${totalSize}, have ${this._readBuffer.length}. Waiting for more data.`);
+        logger.debug("Incomplete message. Need %d, have %d. Waiting for more data.", totalSize, this._readBuffer.length);
         break;
       }
 
       // Extract complete message
       const messageData = this._readBuffer.subarray(0, totalSize);
       this._readBuffer = this._readBuffer.subarray(totalSize);
-      logger.debug(`Extracted message. Remaining buffer size: ${this._readBuffer.length}`);
+      logger.debug("Extracted message. Remaining buffer size: %d", this._readBuffer.length);
 
       // Log incoming bytes
-      const hexData = Array.from(messageData)
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join(" ");
-      bytesLogger.debug(`RECV ${this._endpoint.host}:${this._endpoint.port} [${messageData.length} bytes]: ${hexData}`);
+      bytesLogger.debug("RECV %s:%d [%d bytes]: %s", this._endpoint.host, this._endpoint.port, messageData.length, lazyHex(messageData));
 
       try {
         let message: GIOPMessage;
@@ -422,7 +417,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
             message = new GIOPFragment(header.version);
             break;
           default:
-            console.error(`Unsupported message type: ${header.messageType}`);
+            logger.error("Unsupported message type: %d", header.messageType);
             continue;
         }
 
@@ -439,9 +434,9 @@ export class IIOPConnectionImpl implements IIOPConnection {
           },
         );
 
-        logger.debug(`Calling deserialize for message type ${header.messageType}...`);
+        logger.debug("Calling deserialize for message type %d...", header.messageType);
         message.deserialize(bodyCdr, 12);
-        logger.debug(`Deserialize completed.`);
+        logger.debug("Deserialize completed.");
 
         // After deserializing, if it's a reply, check for codeset negotiation
         if (message instanceof GIOPReply) {
@@ -449,12 +444,11 @@ export class IIOPConnectionImpl implements IIOPConnection {
             (ctx) => ctx.contextId === 1, // ServiceContextId.CodeSets
           );
           if (codeSetComponent) {
-            const codeSetsInfo = IORUtil.parseCodeSetsComponent(
+            const codeSetsCtx = IORUtil.parseCodeSetContext(
               codeSetComponent.contextData,
             );
-            // Extract native code sets from the full CodeSetComponentInfo
-            const charSet = codeSetsInfo.ForCharData.native_code_set;
-            const wcharSet = codeSetsInfo.ForWcharData.native_code_set;
+            const charSet = codeSetsCtx.charCodeSet;
+            const wcharSet = codeSetsCtx.wcharCodeSet;
             if (
               charSet !== this._negotiatedCharCodeSet ||
               wcharSet !== this._negotiatedWcharCodeset
@@ -480,7 +474,9 @@ export class IIOPConnectionImpl implements IIOPConnection {
           const requestId = (message as GIOPRequest | GIOPReply).requestId;
 
           logger.debug(
-            `Received fragmented ${message instanceof GIOPRequest ? "Request" : "Reply"} ${requestId}, waiting for fragments`,
+            "Received fragmented %s %d, waiting for fragments",
+            message instanceof GIOPRequest ? "Request" : "Reply",
+            requestId,
           );
 
           // Store the initial message, initialize fragment buffer, and record timestamp
@@ -497,9 +493,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
           // Get fragment buffer for this request ID
           const fragments = this._fragmentBuffers.get(requestId);
           if (!fragments) {
-            logger.warn(
-              `Received fragment for request ${requestId} but no initial message found, skipping`,
-            );
+            logger.warn("Received fragment for request %d but no initial message found, skipping", requestId);
             continue;
           }
 
@@ -508,21 +502,17 @@ export class IIOPConnectionImpl implements IIOPConnection {
 
           // If more fragments follow, continue receiving
           if (message.hasMoreFragments()) {
-            logger.debug(
-              `Fragment received for request ${requestId}, waiting for more fragments (${fragments.length} so far)`,
-            );
+            logger.debug("Fragment received for request %d, waiting for more fragments (%d so far)", requestId, fragments.length);
             continue;
           }
 
           // This is the last fragment - reassemble the complete message
-          logger.debug(
-            `Final fragment received for request ${requestId}, reassembling ${fragments.length} fragments`,
-          );
+          logger.debug("Final fragment received for request %d, reassembling %d fragments", requestId, fragments.length);
 
           // Get the original message
           const originalMessage = this._fragmentedMessages.get(requestId);
           if (!originalMessage) {
-            logger.error(`No original message found for request ${requestId}`);
+            logger.error("No original message found for request %d", requestId);
             // Clean up all fragment state
             this._fragmentBuffers.delete(requestId);
             this._fragmentedMessages.delete(requestId);
@@ -559,9 +549,9 @@ export class IIOPConnectionImpl implements IIOPConnection {
           this._fragmentTimestamps.delete(requestId);
 
           logger.debug(
-            `Reassembled complete message for request ${requestId}, total body size: ${
-              originalMessage instanceof GIOPRequest ? originalMessage.body.length : (originalMessage as GIOPReply).body.length
-            } bytes`,
+            "Reassembled complete message for request %d, total body size: %d bytes",
+            requestId,
+            originalMessage instanceof GIOPRequest ? originalMessage.body.length : (originalMessage as GIOPReply).body.length,
           );
 
           // Deliver the complete message
@@ -571,19 +561,21 @@ export class IIOPConnectionImpl implements IIOPConnection {
         // Deliver message to waiting reader or queue it
         if (this._readers.length > 0) {
           const reader = this._readers.shift()!;
-          logger.debug(`Delivering message type ${header.messageType} to a waiting reader.`);
+          logger.debug("Delivering message type %d to a waiting reader.", header.messageType);
           reader(message);
         }
         else {
-          logger.debug(`No waiting readers. Queuing message type ${header.messageType}.`);
+          logger.debug("No waiting readers. Queuing message type %d.", header.messageType);
           this._pendingMessages.push(message);
         }
       }
       catch (error) {
-        console.error("Error parsing GIOP message:", error);
-        logger.warn(
-          `Message parsing error occurred. Current fragment state: ${this._fragmentedMessages.size} fragmented messages, ${this._fragmentBuffers.size} fragment buffers`,
+        logger.error(
+          "Error parsing GIOP message. Current fragment state: %d fragmented messages, %d fragment buffers",
+          this._fragmentedMessages.size,
+          this._fragmentBuffers.size,
         );
+        logger.exception(error);
         // Note: Cannot clean up specific request fragments here as we don't know which requestId failed
         // Stale fragments will be cleaned up by timeout mechanism or on connection close
         // Skip this message and continue
@@ -687,7 +679,8 @@ export class ConnectionManager {
           await connection.close();
         }
         catch (error) {
-          console.debug("Failed to send CloseConnection:", error);
+          logger.debug("Failed to send CloseConnection");
+          logger.exception(error);
         }
       }
     }
@@ -762,7 +755,8 @@ export class ConnectionManager {
       if (now - lastUsed > this._maxIdleTime && connection.isConnected) {
         toRemove.push(key);
         connection.close().catch((error) => {
-          console.error("Error closing idle connection:", error);
+          logger.error("Error closing idle connection");
+          logger.exception(error);
         });
       }
     }
