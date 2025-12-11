@@ -1,7 +1,7 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@eai/logging-ts@^2.1.0": "2.1.0",
+    "jsr:@eai/logging-ts@^2.3.0": "2.3.0",
     "jsr:@std/assert@*": "1.0.14",
     "jsr:@std/assert@0.224": "0.224.0",
     "jsr:@std/assert@1": "1.0.14",
@@ -17,8 +17,8 @@
     "jsr:@std/path@0.224": "0.224.0"
   },
   "jsr": {
-    "@eai/logging-ts@2.1.0": {
-      "integrity": "07195bdfd5a736673184eb2d654b3876f90eea0945c6bfa8d4e10a0bfc291c5a",
+    "@eai/logging-ts@2.3.0": {
+      "integrity": "124a162b7b40d6ccad86405f54d6bb4d1bbe8db0b9b127b8e858649617a66ff8",
       "dependencies": [
         "jsr:@std/fmt@^1.0.8",
         "jsr:@std/jsonc",
@@ -144,7 +144,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@eai/logging-ts@^2.1.0",
+      "jsr:@eai/logging-ts@^2.3.0",
       "jsr:@std/assert@^1.0.14"
     ]
   }
