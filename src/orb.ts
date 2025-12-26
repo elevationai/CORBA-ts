@@ -8,7 +8,8 @@ import { CORBA } from "./types.ts";
 import { TypeCode } from "./typecode.ts";
 import { Policy } from "./policy.ts";
 import { ValueFactory } from "./valuetype.ts";
-import { GIOPServer, GIOPTransport } from "./giop/transport.ts";
+import { GIOPServer, GIOPTransport, type TransportConfig } from "./giop/transport.ts";
+import { type ConnectionConfig } from "./giop/connection.ts";
 import { IORUtil } from "./giop/ior.ts";
 import { IOR } from "./giop/types.ts";
 
@@ -19,7 +20,8 @@ const logger = getLogger("CORBA");
  */
 export interface ORBInitOptions {
   orb_id?: string;
-  args?: string[];
+  transport?: TransportConfig;
+  connection?: ConnectionConfig;
 }
 
 /**
@@ -131,10 +133,14 @@ export class ORBImpl implements ORB {
   private _requestIdCounter: number = 0;
   private _lastHealthCheck: number = Date.now();
   private _healthCheckInterval: number = 5000; // Check every 5 seconds
+  private _transportConfig?: TransportConfig;
+  private _connectionConfig?: ConnectionConfig;
 
-  constructor(id: string = "default") {
+  constructor(id: string = "default", transportConfig?: TransportConfig, connectionConfig?: ConnectionConfig) {
     this._id = id;
-    this._transport = new GIOPTransport();
+    this._transportConfig = transportConfig;
+    this._connectionConfig = connectionConfig;
+    this._transport = new GIOPTransport(transportConfig, connectionConfig);
   }
 
   id(): string {
@@ -597,7 +603,7 @@ let _orb_instance: ORB | null = null;
  */
 export async function init(options: ORBInitOptions = {}): Promise<ORB> {
   if (!_orb_instance) {
-    _orb_instance = new ORBImpl(options.orb_id);
+    _orb_instance = new ORBImpl(options.orb_id, options.transport, options.connection);
     await _orb_instance.init();
   }
   return _orb_instance;
