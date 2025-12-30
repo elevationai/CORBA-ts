@@ -133,13 +133,9 @@ export class ORBImpl implements ORB {
   private _requestIdCounter: number = 0;
   private _lastHealthCheck: number = Date.now();
   private _healthCheckInterval: number = 5000; // Check every 5 seconds
-  private _transportConfig?: TransportConfig;
-  private _connectionConfig?: ConnectionConfig;
 
   constructor(id: string = "default", transportConfig?: TransportConfig, connectionConfig?: ConnectionConfig) {
     this._id = id;
-    this._transportConfig = transportConfig;
-    this._connectionConfig = connectionConfig;
     this._transport = new GIOPTransport(transportConfig, connectionConfig);
   }
 
