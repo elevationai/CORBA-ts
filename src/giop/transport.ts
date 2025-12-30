@@ -5,7 +5,7 @@
 
 import { getLogger, lazyHex } from "logging-ts";
 import { GIOPCloseConnection, GIOPMessage, GIOPMessageError, GIOPReply, GIOPRequest } from "./messages.ts";
-import { ConnectionEndpoint, ConnectionManager, IIOPConnection } from "./connection.ts";
+import { type ConnectionConfig, ConnectionEndpoint, ConnectionManager, IIOPConnection } from "./connection.ts";
 import { GIOPMessageType, GIOPVersion, IOR, ReplyStatusType, ServiceContext } from "./types.ts";
 import { IORUtil } from "./ior.ts";
 import { CDRInputStream } from "../core/cdr/index.ts";
@@ -44,8 +44,8 @@ export class GIOPTransport {
   private _retryTimers: Set<number> = new Set();
   private _closed: boolean = false;
 
-  constructor(config: TransportConfig = {}) {
-    this._connectionManager = new ConnectionManager();
+  constructor(config: TransportConfig = {}, connectionConfig?: ConnectionConfig) {
+    this._connectionManager = new ConnectionManager(connectionConfig);
     this._config = {
       requestTimeout: config.requestTimeout ?? 30000,
       maxRetries: config.maxRetries ?? 3,

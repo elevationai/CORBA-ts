@@ -60,16 +60,17 @@ export * from "./proxy.ts";
 export { createEventHandler, type EventCallback, EventHandler, type EventListener } from "./event_handler.ts";
 
 // Main initialization function
-import { init as initORB } from "./orb.ts";
+import { init as initORB, type ORBInitOptions } from "./orb.ts";
 import { initPOA } from "./poa.ts";
 import { init_naming_service } from "./naming.ts";
 
 /**
  * Initialize the CORBA runtime
+ * @param options ORBInitOptions configuration object
  */
-export async function init(args: string[] = []): Promise<void> {
+export async function init(options: ORBInitOptions = {}): Promise<void> {
   // Initialize ORB (now returns Promise<ORB> and already calls init internally)
-  await initORB({ args });
+  await initORB(options);
 
   // Initialize POA
   initPOA();
