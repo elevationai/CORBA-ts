@@ -775,16 +775,36 @@ static createORBTypeComponent(orbType: string): TaggedComponent</code></pre>
     <section id="connectionconfig" class="api-section">
       <h2>ConnectionConfig</h2>
       <pre><code class="language-typescript">interface ConnectionConfig</code></pre>
-      <p>Connection configuration</p>
-      
+      <p>TCP connection configuration for IIOP connections. Controls connection establishment,
+      read timeouts, and socket options. Used when initializing the ORB via <a href="orb.html#orbinitoptions">ORBInitOptions</a>.</p>
+
       <h3>Properties</h3>
     <section class="properties-block">
-      <pre><code class="language-typescript">  connectTimeout?: number;
-  readTimeout?: number;
-  keepAlive?: boolean;
-  noDelay?: boolean;</code></pre>
+      <pre><code class="language-typescript">  connectTimeout?: number;  // TCP connection timeout
+  readTimeout?: number;     // Socket read timeout
+  keepAlive?: boolean;      // TCP keep-alive
+  noDelay?: boolean;        // Disable Nagle's algorithm</code></pre>
     </section>
-      
+      <h3>Property Details</h3>
+      <table class="api-table">
+        <tr>
+          <td><code>connectTimeout</code></td>
+          <td>Maximum time in milliseconds to wait for TCP connection establishment.</td>
+        </tr>
+        <tr>
+          <td><code>readTimeout</code></td>
+          <td>Maximum time in milliseconds to wait for data on socket read operations. Should be >= transportTimeout.</td>
+        </tr>
+        <tr>
+          <td><code>keepAlive</code></td>
+          <td>Enable TCP keep-alive to detect dead connections.</td>
+        </tr>
+        <tr>
+          <td><code>noDelay</code></td>
+          <td>Disable Nagle's algorithm (TCP_NODELAY) for lower latency at the cost of more small packets.</td>
+        </tr>
+      </table>
+
     </section>
   
 
@@ -963,15 +983,31 @@ setCleanupInterval(ms: number): void</code></pre>
     <section id="transportconfig" class="api-section">
       <h2>TransportConfig</h2>
       <pre><code class="language-typescript">interface TransportConfig</code></pre>
-      <p>Transport configuration</p>
-      
+      <p>Transport layer configuration for GIOP requests. Controls request timeout and retry behavior.
+      Used when initializing the ORB via <a href="orb.html#orbinitoptions">ORBInitOptions</a>.</p>
+
       <h3>Properties</h3>
     <section class="properties-block">
-      <pre><code class="language-typescript">  requestTimeout?: number;
-  maxRetries?: number;
-  retryDelay?: number;</code></pre>
+      <pre><code class="language-typescript">  requestTimeout?: number;  // Default: 30000ms
+  maxRetries?: number;      // Default: 3
+  retryDelay?: number;      // Default: 1000ms</code></pre>
     </section>
-      
+      <h3>Property Details</h3>
+      <table class="api-table">
+        <tr>
+          <td><code>requestTimeout</code></td>
+          <td>Maximum time in milliseconds to wait for a CORBA request to complete. Default: 30000 (30 seconds).</td>
+        </tr>
+        <tr>
+          <td><code>maxRetries</code></td>
+          <td>Number of times to retry a failed request before giving up. Default: 3.</td>
+        </tr>
+        <tr>
+          <td><code>retryDelay</code></td>
+          <td>Delay in milliseconds between retry attempts. Default: 1000 (1 second).</td>
+        </tr>
+      </table>
+
     </section>
   
 

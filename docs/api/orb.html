@@ -116,14 +116,47 @@
     <section id="orbinitoptions" class="api-section">
       <h2>ORBInitOptions</h2>
       <pre><code class="language-typescript">interface ORBInitOptions</code></pre>
-      <p>ORB initialization options</p>
-      
+      <p>ORB initialization options for configuring timeout and connection behavior.</p>
+
       <h3>Properties</h3>
     <section class="properties-block">
       <pre><code class="language-typescript">  orb_id?: string;
-  args?: string[];</code></pre>
+  transport?: <a href="giop.html#transportconfig">TransportConfig</a>;
+  connection?: <a href="giop.html#connectionconfig">ConnectionConfig</a>;</code></pre>
     </section>
-      
+      <h3>Property Details</h3>
+      <table class="api-table">
+        <tr>
+          <td><code>orb_id</code></td>
+          <td>Optional ORB identifier string</td>
+        </tr>
+        <tr>
+          <td><code>transport</code></td>
+          <td>Transport layer configuration including request timeout, retry settings. See <a href="giop.html#transportconfig">TransportConfig</a>.</td>
+        </tr>
+        <tr>
+          <td><code>connection</code></td>
+          <td>Connection configuration including connect timeout, read timeout, keepalive settings. See <a href="giop.html#connectionconfig">ConnectionConfig</a>.</td>
+        </tr>
+      </table>
+      <h3>Example</h3>
+      <pre><code class="language-typescript">import { init } from "corba";
+
+await init({
+  orb_id: "my-orb",
+  transport: {
+    requestTimeout: 30000,  // 30 second request timeout
+    maxRetries: 3,
+    retryDelay: 1000
+  },
+  connection: {
+    connectTimeout: 10000,  // 10 second connect timeout
+    readTimeout: 120000,    // 2 minute read timeout
+    keepAlive: true,
+    noDelay: true
+  }
+});</code></pre>
+
     </section>
   
 
