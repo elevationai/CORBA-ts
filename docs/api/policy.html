@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Policy API Reference - CORBA.ts Documentation</title>
-  <meta name="description" content="CORBA policies - configuration and quality of service policies for ORBs and objects">
+  <title>CORBA-ts - Policy API Reference</title>
+  <meta name="description" content="API documentation for policy module">
   <link rel="stylesheet" href="../assets/css/main.css">
   <!-- Prism.js CSS -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
@@ -15,13 +15,12 @@
   <!-- Top Navigation -->
   <nav class="top-nav">
     <a href="../" class="logo">
-      <span>⚡</span> CORBA.ts
+      CORBA-ts
     </a>
     <ul class="nav-links">
       <li><a href="../">Home</a></li>
-      <li><a href="./">API Reference</a></li>
-      <li><a href="../guides/">Guides & Examples</a></li>
-      <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
+<li><a href="../api">API Reference</a></li>
+<li><a href="https://github.com/elevationai/CORBA.ts" target="_blank">Github</a></li>
     </ul>
     <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
   </nav>
@@ -55,8 +54,7 @@
 <li><a href="#policy-copy">copy()</a></li>
 <li><a href="#policy-destroy">destroy()</a></li>
 <li><a href="#policy-value">value()</a></li>
-<li><a href="#policy-equals">equals()</a></li>
-<li><a href="#policy-_deepequal">_deepEqual()</a></li></ul>
+<li><a href="#policy-equals">equals()</a></li></ul>
       </li>
     
 
@@ -67,8 +65,26 @@
     
 
       <li>
+        <a href="#endpointpolicyvalue">EndpointPolicyValue</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#endpointpolicy">EndpointPolicy</a>
+        
+      </li>
+    
+
+      <li>
         <a href="#create-policy">create_policy</a>
         <ul><li><a href="#create-policy-create_policy">create_policy()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#create-endpoint-policy">create_endpoint_policy</a>
+        <ul><li><a href="#create-endpoint-policy-create_endpoint_policy">create_endpoint_policy()</a></li></ul>
       </li>
     
       </ul>
@@ -81,177 +97,162 @@
       <article class="content-wrapper">
         <div class="page-header">
           <h1>Policy API Reference</h1>
-          <p>CORBA policies - configuration and quality of service policies for ORBs and objects</p>
+          <p>API documentation for policy module</p>
         </div>
 
         
     <section id="policyinterface" class="api-section">
       <h2>PolicyInterface</h2>
+      <pre><code class="language-typescript">interface PolicyInterface</code></pre>
       <p>Policy interface</p>
       
       
-      
-      
-        
-        
+      <h3>Methods</h3>
+
     <section class="method" id="policyinterface-policy_type">
-      
       <pre><code class="language-typescript">// Get the policy type
 policy_type(): number</code></pre>
     </section>
   
 
     <section class="method" id="policyinterface-copy">
-      
       <pre><code class="language-typescript">// Copy the policy
 copy(): PolicyInterface</code></pre>
     </section>
   
 
     <section class="method" id="policyinterface-destroy">
-      
       <pre><code class="language-typescript">// Destroy the policy
 destroy(): void</code></pre>
     </section>
   
-      
     </section>
   
 
     <section id="policy" class="api-section">
       <h2>Policy</h2>
+      <pre><code class="language-typescript">class Policy extends ObjectReference implements PolicyInterface</code></pre>
       <p>Policy implementation</p>
       
       
-        <h3>Properties</h3>
-        <table class="api-table">
-          <tbody>
-            
-    <tr>
-      <td><code>_policy_type</code></td>
-      <td><span class="return-type">number</span></td>
-      <td></td>
-    </tr>
-    
-    <tr>
-      <td><code>_policy_value</code></td>
-      <td><span class="return-type">unknown</span></td>
-      <td></td>
-    </tr>
-    
-          </tbody>
-        </table>
-      
-      
-      
-        <h3>Methods</h3>
-        
+      <h3>Methods</h3>
+
     <section class="method" id="policy-policy_type">
-      
-      <pre><code class="language-typescript">policy_type(): void</code></pre>
+      <pre><code class="language-typescript">policy_type(): number</code></pre>
     </section>
   
 
     <section class="method" id="policy-copy">
-      
-      <pre><code class="language-typescript">copy(): void</code></pre>
+      <pre><code class="language-typescript">copy(): PolicyInterface</code></pre>
     </section>
   
 
     <section class="method" id="policy-destroy">
-      
       <pre><code class="language-typescript">destroy(): void</code></pre>
     </section>
   
 
     <section class="method" id="policy-value">
-      
       <pre><code class="language-typescript">// Get the policy value
-value(): void</code></pre>
+value(): T</code></pre>
     </section>
   
 
     <section class="method" id="policy-equals">
-      
       <pre><code class="language-typescript">// Check if this policy is equal to another
-equals(): void</code></pre>
+equals(other: Policy): boolean</code></pre>
     </section>
   
-
-    <section class="method" id="policy-_deepequal">
-      
-      <pre><code class="language-typescript">// Deep equality comparison for policy values
-_deepEqual(): void</code></pre>
-    </section>
-  
-      
     </section>
   
 
     <section id="policyerror" class="api-section">
       <h2>PolicyError</h2>
+      <pre><code class="language-typescript">class PolicyError extends CORBA.SystemException</code></pre>
       <p>Policy-related exceptions</p>
       
+      <h3>Properties</h3>
+    <section class="properties-block">
+      <pre><code class="language-typescript">  reason: number;</code></pre>
+    </section>
       
-        <h3>Properties</h3>
-        <table class="api-table">
-          <tbody>
-            
-    <tr>
-      <td><code>reason</code></td>
-      <td><span class="return-type">number</span></td>
-      <td></td>
-    </tr>
-    
-          </tbody>
-        </table>
+    </section>
+  
+
+    <section id="endpointpolicyvalue" class="api-section">
+      <h2>EndpointPolicyValue</h2>
+      <pre><code class="language-typescript">interface EndpointPolicyValue</code></pre>
+      <p>EndpointPolicy value structure</p>
       
+      <h3>Properties</h3>
+    <section class="properties-block">
+      <pre><code class="language-typescript">  host: string;
+  port: number;</code></pre>
+    </section>
       
+    </section>
+  
+
+    <section id="endpointpolicy" class="api-section">
+      <h2>EndpointPolicy</h2>
+      <pre><code class="language-typescript">class EndpointPolicy extends Policy</code></pre>
+      <p>EndpointPolicy class for configuring POA network endpoints</p>
+      
+      <h3>Properties</h3>
+    <section class="properties-block">
+      <pre><code class="language-typescript">  get host(): string;
+  get port(): number;</code></pre>
+    </section>
       
     </section>
   
 
     <section id="create-policy" class="api-section">
       <h2>create_policy</h2>
+      
       <p>Create a policy with the specified type and value</p>
       
       
-      
-      
-        
-        
+      <h3>Methods</h3>
+
     <section class="method" id="create-policy-create_policy">
-      
       <pre><code class="language-typescript">// Create a policy with the specified type and value
 create_policy(policy_type: number, policy_value: unknown): Policy</code></pre>
     </section>
   
-      
     </section>
   
 
-        <!-- Related Documentation -->
-        <div class="panel mt-3">
-          <h3>Related Documentation</h3>
-          <div class="grid mt-1">
-            <div class="feature-card">
-              <h4><a href="types.html">Types API</a></h4>
-              <p>TypeCode system and Any type</p>
-            </div>
-            <div class="feature-card">
-              <h4><a href="orb.html">ORB API</a></h4>
-              <p>Object Request Broker reference</p>
-            </div>
-            <div class="feature-card">
-              <h4><a href="exceptions.html">Exceptions API</a></h4>
-              <p>Exception handling in CORBA</p>
-            </div>
-          </div>
-        </div>
+    <section id="create-endpoint-policy" class="api-section">
+      <h2>create_endpoint_policy</h2>
+      
+      <p>Create an endpoint policy for POA configuration</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="create-endpoint-policy-create_endpoint_policy">
+      <pre><code class="language-typescript">// Create an endpoint policy for POA configuration
+create_endpoint_policy(host: string, port: number): EndpointPolicy</code></pre>
+    </section>
+  
+    </section>
+  
+
       </article>
     </main>
   </div>
   <!-- End layout-container -->
+
+  <!-- Footer -->
+  <footer class="api-footer">
+    <div class="footer-content">
+      <p>
+        &copy; 2025 Elevation AI. All rights reserved.
+         • <a href="https://github.com/elevationai/CORBA.ts" target="_blank">Github</a>
+      </p>
+    </div>
+  </footer>
 
   <!-- Prism.js JavaScript -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>

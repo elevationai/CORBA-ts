@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CORBA-ts - Proxy API Reference</title>
+  <meta name="description" content="API documentation for proxy module">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <!-- Prism.js CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body class="api-page">
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <a href="../" class="logo">
+      CORBA-ts
+    </a>
+    <ul class="nav-links">
+      <li><a href="../">Home</a></li>
+<li><a href="../api">API Reference</a></li>
+<li><a href="https://github.com/elevationai/CORBA.ts" target="_blank">Github</a></li>
+    </ul>
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+  </nav>
+
+  <!-- Layout Container -->
+  <div class="layout-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="api-sidebar-header">
+        <a href="./" class="api-back-link">
+          <span>←</span> Back to API Reference
+        </a>
+        <h2 class="api-page-title">Proxy</h2>
+      </div>
+      
+      
+    <nav class="on-page-nav">
+      <ul>
+        
+      <li>
+        <a href="#proxyconfig">ProxyConfig</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#methodinfo">MethodInfo</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#corbaproxy">CORBAProxy</a>
+        <ul><li><a href="#corbaproxy-registermethod">registerMethod()</a></li>
+<li><a href="#corbaproxy-createproxy">createProxy()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#proxyfactory">ProxyFactory</a>
+        <ul><li><a href="#proxyfactory-createproxy">createProxy()</a></li>
+<li><a href="#proxyfactory-createproxyfromstring">createProxyFromString()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#interfaceproxyfactory">InterfaceProxyFactory</a>
+        <ul><li><a href="#interfaceproxyfactory-create">create()</a></li>
+<li><a href="#interfaceproxyfactory-createfromstring">createFromString()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#proxyutil">ProxyUtil</a>
+        <ul><li><a href="#proxyutil-isproxy">isProxy()</a></li>
+<li><a href="#proxyutil-getobjectreference">getObjectReference()</a></li>
+<li><a href="#proxyutil-getrepositoryid">getRepositoryId()</a></li>
+<li><a href="#proxyutil-supportsinterface">supportsInterface()</a></li></ul>
+      </li>
+    
+      </ul>
+    </nav>
+  
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <article class="content-wrapper">
+        <div class="page-header">
+          <h1>Proxy API Reference</h1>
+          <p>API documentation for proxy module</p>
+        </div>
+
+        
+    <section id="proxyconfig" class="api-section">
+      <h2>ProxyConfig</h2>
+      <pre><code class="language-typescript">interface ProxyConfig</code></pre>
+      <p>Proxy configuration options</p>
+      
+      <h3>Properties</h3>
+    <section class="properties-block">
+      <pre><code class="language-typescript">  timeout?: number;
+  retries?: number;
+  oneway_operations?: string[];</code></pre>
+    </section>
+      
+    </section>
+  
+
+    <section id="methodinfo" class="api-section">
+      <h2>MethodInfo</h2>
+      <pre><code class="language-typescript">interface MethodInfo</code></pre>
+      <p>Method invocation metadata</p>
+      
+      <h3>Properties</h3>
+    <section class="properties-block">
+      <pre><code class="language-typescript">  operation: string;
+  isOneway: boolean;
+  parameterTypes?: string[];
+  returnType?: string;</code></pre>
+    </section>
+      
+    </section>
+  
+
+    <section id="corbaproxy" class="api-section">
+      <h2>CORBAProxy</h2>
+      <pre><code class="language-typescript">class CORBAProxy</code></pre>
+      <p>CORBA object proxy that implements dynamic method interception</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="corbaproxy-registermethod">
+      <pre><code class="language-typescript">// Register method metadata
+registerMethod(methodName: string, info: MethodInfo): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbaproxy-createproxy">
+      <pre><code class="language-typescript">// Create a proxy object with the specified interface
+createProxy(interfaceMethods: string[]): T</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="proxyfactory" class="api-section">
+      <h2>ProxyFactory</h2>
+      <pre><code class="language-typescript">class ProxyFactory</code></pre>
+      <p>Factory for creating CORBA object proxies</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="proxyfactory-createproxy">
+      <pre><code class="language-typescript">// Create a proxy for a CORBA object reference
+createProxy(
+  objRef: CORBA.ObjectRef,
+  interfaceMethods: string[],
+  config: ProxyConfig
+): T</code></pre>
+    </section>
+  
+
+    <section class="method" id="proxyfactory-createproxyfromstring">
+      <pre><code class="language-typescript">// Create a proxy from an IOR string
+async createProxyFromString(
+  iorString: string,
+  interfaceMethods: string[],
+  config: ProxyConfig
+): Promise&lt;T&gt;</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="interfaceproxyfactory" class="api-section">
+      <h2>InterfaceProxyFactory</h2>
+      <pre><code class="language-typescript">class InterfaceProxyFactory&lt;T extends object&gt;</code></pre>
+      <p>Interface-specific proxy creators</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="interfaceproxyfactory-create">
+      <pre><code class="language-typescript">// Create a strongly-typed proxy
+create(objRef: CORBA.ObjectRef, config?: ProxyConfig): T</code></pre>
+    </section>
+  
+
+    <section class="method" id="interfaceproxyfactory-createfromstring">
+      <pre><code class="language-typescript">// Create a proxy from IOR string
+createFromString(iorString: string, config?: ProxyConfig): Promise&lt;T&gt;</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="proxyutil" class="api-section">
+      <h2>ProxyUtil</h2>
+      <pre><code class="language-typescript">class ProxyUtil</code></pre>
+      <p>Utility functions for working with proxies</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="proxyutil-isproxy">
+      <pre><code class="language-typescript">// Check if an object is a CORBA proxy
+static isProxy(obj: unknown): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="proxyutil-getobjectreference">
+      <pre><code class="language-typescript">// Extract the object reference from a proxy
+static getObjectReference(_proxy: unknown): CORBA.ObjectRef | null</code></pre>
+    </section>
+  
+
+    <section class="method" id="proxyutil-getrepositoryid">
+      <pre><code class="language-typescript">// Get the repository ID from a proxy
+static getRepositoryId(proxy: unknown): string</code></pre>
+    </section>
+  
+
+    <section class="method" id="proxyutil-supportsinterface">
+      <pre><code class="language-typescript">// Test if a proxy supports a specific interface
+static async supportsInterface(
+  proxy: unknown,
+  repositoryId: string
+): Promise&lt;boolean&gt;</code></pre>
+    </section>
+  
+    </section>
+  
+
+      </article>
+    </main>
+  </div>
+  <!-- End layout-container -->
+
+  <!-- Footer -->
+  <footer class="api-footer">
+    <div class="footer-content">
+      <p>
+        &copy; 2025 Elevation AI. All rights reserved.
+         • <a href="https://github.com/elevationai/CORBA.ts" target="_blank">Github</a>
+      </p>
+    </div>
+  </footer>
+
+  <!-- Prism.js JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  
+  <!-- API Documentation JavaScript -->
+  <script src="../assets/js/api-docs.js"></script>
+</body>
+</html>

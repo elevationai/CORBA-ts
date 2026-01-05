@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CORBA-ts - Dii API Reference</title>
+  <meta name="description" content="API documentation for dii module">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <!-- Prism.js CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body class="api-page">
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <a href="../" class="logo">
+      CORBA-ts
+    </a>
+    <ul class="nav-links">
+      <li><a href="../">Home</a></li>
+<li><a href="../api">API Reference</a></li>
+<li><a href="https://github.com/elevationai/CORBA.ts" target="_blank">Github</a></li>
+    </ul>
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+  </nav>
+
+  <!-- Layout Container -->
+  <div class="layout-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="api-sidebar-header">
+        <a href="./" class="api-back-link">
+          <span>←</span> Back to API Reference
+        </a>
+        <h2 class="api-page-title">Dii</h2>
+      </div>
+      
+      
+    <nav class="on-page-nav">
+      <ul>
+        
+      <li>
+        <a href="#request">Request</a>
+        <ul><li><a href="#request-add_named_in_arg">add_named_in_arg()</a></li>
+<li><a href="#request-add_in_arg">add_in_arg()</a></li>
+<li><a href="#request-add_out_arg">add_out_arg()</a></li>
+<li><a href="#request-add_inout_arg">add_inout_arg()</a></li>
+<li><a href="#request-set_return_type">set_return_type()</a></li>
+<li><a href="#request-return_value">return_value()</a></li>
+<li><a href="#request-arguments">arguments()</a></li>
+<li><a href="#request-get_arg">get_arg()</a></li>
+<li><a href="#request-get_exception">get_exception()</a></li>
+<li><a href="#request-ctx">ctx()</a></li>
+<li><a href="#request-get_ctx">get_ctx()</a></li>
+<li><a href="#request-target">target()</a></li>
+<li><a href="#request-operation">operation()</a></li>
+<li><a href="#request-invoke">invoke()</a></li>
+<li><a href="#request-send_deferred">send_deferred()</a></li>
+<li><a href="#request-send_oneway">send_oneway()</a></li>
+<li><a href="#request-poll_response">poll_response()</a></li>
+<li><a href="#request-get_response">get_response()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#parameter">Parameter</a>
+        
+      </li>
+    
+
+      <li>
+        <a href="#requestimpl">RequestImpl</a>
+        <ul><li><a href="#requestimpl-add_named_in_arg">add_named_in_arg()</a></li>
+<li><a href="#requestimpl-add_in_arg">add_in_arg()</a></li>
+<li><a href="#requestimpl-add_out_arg">add_out_arg()</a></li>
+<li><a href="#requestimpl-add_inout_arg">add_inout_arg()</a></li>
+<li><a href="#requestimpl-set_return_type">set_return_type()</a></li>
+<li><a href="#requestimpl-get_return_type">get_return_type()</a></li>
+<li><a href="#requestimpl-return_value">return_value()</a></li>
+<li><a href="#requestimpl-arguments">arguments()</a></li>
+<li><a href="#requestimpl-get_arg">get_arg()</a></li>
+<li><a href="#requestimpl-get_exception">get_exception()</a></li>
+<li><a href="#requestimpl-ctx">ctx()</a></li>
+<li><a href="#requestimpl-get_ctx">get_ctx()</a></li>
+<li><a href="#requestimpl-target">target()</a></li>
+<li><a href="#requestimpl-operation">operation()</a></li>
+<li><a href="#requestimpl-invoke">invoke()</a></li>
+<li><a href="#requestimpl-send_deferred">send_deferred()</a></li>
+<li><a href="#requestimpl-send_oneway">send_oneway()</a></li>
+<li><a href="#requestimpl-poll_response">poll_response()</a></li>
+<li><a href="#requestimpl-get_response">get_response()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#create-request">create_request</a>
+        <ul><li><a href="#create-request-create_request">create_request()</a></li></ul>
+      </li>
+    
+      </ul>
+    </nav>
+  
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <article class="content-wrapper">
+        <div class="page-header">
+          <h1>Dii API Reference</h1>
+          <p>API documentation for dii module</p>
+        </div>
+
+        
+    <section id="request" class="api-section">
+      <h2>Request</h2>
+      <pre><code class="language-typescript">interface Request</code></pre>
+      <p>Request interface</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="request-add_named_in_arg">
+      <pre><code class="language-typescript">// Add a named parameter to the request
+add_named_in_arg(
+  name: string,
+  value: unknown,
+  type: TypeCode
+): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-add_in_arg">
+      <pre><code class="language-typescript">// Add an unnamed input parameter to the request
+add_in_arg(value: unknown, type: TypeCode): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-add_out_arg">
+      <pre><code class="language-typescript">// Add an unnamed output parameter to the request
+add_out_arg(type: TypeCode): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-add_inout_arg">
+      <pre><code class="language-typescript">// Add an unnamed input/output parameter to the request
+add_inout_arg(value: unknown, type: TypeCode): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-set_return_type">
+      <pre><code class="language-typescript">// Set the return type for the request
+set_return_type(tc: TypeCode): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-return_value">
+      <pre><code class="language-typescript">// Get the return value from the request
+return_value(): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-arguments">
+      <pre><code class="language-typescript">// Get a specific parameter value
+arguments(): unknown[]</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-get_arg">
+      <pre><code class="language-typescript">// Get a specific parameter value
+get_arg(index: number): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-get_exception">
+      <pre><code class="language-typescript">// Get the exception of the request if any
+get_exception(): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-ctx">
+      <pre><code class="language-typescript">// Set the context for the request
+ctx(context: Context): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-get_ctx">
+      <pre><code class="language-typescript">// Get the context for the request
+get_ctx(): Context | null</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-target">
+      <pre><code class="language-typescript">// Get the target object
+target(): object</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-operation">
+      <pre><code class="language-typescript">// Get the operation name
+operation(): string</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-invoke">
+      <pre><code class="language-typescript">// Send the request and wait for the response
+invoke(): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-send_deferred">
+      <pre><code class="language-typescript">// Send the request asynchronously
+send_deferred(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-send_oneway">
+      <pre><code class="language-typescript">// Send the request as a one-way operation
+send_oneway(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-poll_response">
+      <pre><code class="language-typescript">// Poll to see if the response has arrived
+poll_response(): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="request-get_response">
+      <pre><code class="language-typescript">// Get the response
+get_response(): void</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="parameter" class="api-section">
+      <h2>Parameter</h2>
+      <pre><code class="language-typescript">class Parameter</code></pre>
+      <p>Parameter placeholder for DII</p>
+      
+      <h3>Properties</h3>
+    <section class="properties-block">
+      <pre><code class="language-typescript">  get value(): unknown; // Get the parameter value
+  set value(value: unknown);
+  get type(): TypeCode; // Get the parameter type
+  get mode(): ParameterMode; // Get the parameter mode
+  get name(): string; // Get the parameter name</code></pre>
+    </section>
+      
+    </section>
+  
+
+    <section id="requestimpl" class="api-section">
+      <h2>RequestImpl</h2>
+      <pre><code class="language-typescript">class RequestImpl implements Request</code></pre>
+      <p>DII Request implementation</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="requestimpl-add_named_in_arg">
+      <pre><code class="language-typescript">add_named_in_arg(
+  name: string,
+  value: unknown,
+  type: TypeCode
+): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-add_in_arg">
+      <pre><code class="language-typescript">add_in_arg(value: unknown, type: TypeCode): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-add_out_arg">
+      <pre><code class="language-typescript">add_out_arg(type: TypeCode): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-add_inout_arg">
+      <pre><code class="language-typescript">add_inout_arg(value: unknown, type: TypeCode): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-set_return_type">
+      <pre><code class="language-typescript">set_return_type(tc: TypeCode): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-get_return_type">
+      <pre><code class="language-typescript">get_return_type(): TypeCode | null</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-return_value">
+      <pre><code class="language-typescript">return_value(): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-arguments">
+      <pre><code class="language-typescript">arguments(): unknown[]</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-get_arg">
+      <pre><code class="language-typescript">get_arg(index: number): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-get_exception">
+      <pre><code class="language-typescript">get_exception(): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-ctx">
+      <pre><code class="language-typescript">ctx(context: Context): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-get_ctx">
+      <pre><code class="language-typescript">get_ctx(): Context | null</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-target">
+      <pre><code class="language-typescript">target(): object</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-operation">
+      <pre><code class="language-typescript">operation(): string</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-invoke">
+      <pre><code class="language-typescript">async invoke(): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-send_deferred">
+      <pre><code class="language-typescript">send_deferred(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-send_oneway">
+      <pre><code class="language-typescript">send_oneway(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-poll_response">
+      <pre><code class="language-typescript">poll_response(): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="requestimpl-get_response">
+      <pre><code class="language-typescript">get_response(): void</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="create-request" class="api-section">
+      <h2>create_request</h2>
+      
+      <p>Create a request on an object</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="create-request-create_request">
+      <pre><code class="language-typescript">// Create a request on an object
+create_request(
+  target: object,
+  operation: string,
+  _arg_list: unknown[],
+  _result: unknown = null,
+  ctx: Context | null = null,
+  return_type: TypeCode | null = null
+): Request</code></pre>
+    </section>
+  
+    </section>
+  
+
+      </article>
+    </main>
+  </div>
+  <!-- End layout-container -->
+
+  <!-- Footer -->
+  <footer class="api-footer">
+    <div class="footer-content">
+      <p>
+        &copy; 2025 Elevation AI. All rights reserved.
+         • <a href="https://github.com/elevationai/CORBA.ts" target="_blank">Github</a>
+      </p>
+    </div>
+  </footer>
+
+  <!-- Prism.js JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  
+  <!-- API Documentation JavaScript -->
+  <script src="../assets/js/api-docs.js"></script>
+</body>
+</html>

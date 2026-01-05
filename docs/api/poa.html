@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>POA API Reference - CORBA.ts Documentation</title>
-  <meta name="description" content="Portable Object Adapter - manages object lifecycle, activation, and request dispatching">
+  <title>CORBA-ts - Poa API Reference</title>
+  <meta name="description" content="API documentation for poa module">
   <link rel="stylesheet" href="../assets/css/main.css">
   <!-- Prism.js CSS -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
@@ -15,13 +15,12 @@
   <!-- Top Navigation -->
   <nav class="top-nav">
     <a href="../" class="logo">
-      <span>⚡</span> CORBA.ts
+      CORBA-ts
     </a>
     <ul class="nav-links">
       <li><a href="../">Home</a></li>
-      <li><a href="./">API Reference</a></li>
-      <li><a href="../guides/">Guides & Examples</a></li>
-      <li><a href="https://github.com/elevationai/CORBA-ts" target="_blank">GitHub</a></li>
+<li><a href="../api">API Reference</a></li>
+<li><a href="https://github.com/elevationai/CORBA.ts" target="_blank">Github</a></li>
     </ul>
     <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
   </nav>
@@ -34,7 +33,7 @@
         <a href="./" class="api-back-link">
           <span>←</span> Back to API Reference
         </a>
-        <h2 class="api-page-title">POA</h2>
+        <h2 class="api-page-title">Poa</h2>
       </div>
       
       
@@ -64,6 +63,13 @@
         <a href="#servantlocator">ServantLocator</a>
         <ul><li><a href="#servantlocator-preinvoke">preinvoke()</a></li>
 <li><a href="#servantlocator-postinvoke">postinvoke()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#responsehandler">ResponseHandler</a>
+        <ul><li><a href="#responsehandler-createreply">createReply()</a></li>
+<li><a href="#responsehandler-createexceptionreply">createExceptionReply()</a></li></ul>
       </li>
     
 
@@ -147,7 +153,15 @@
 <li><a href="#rootpoa-reference_to_servant">reference_to_servant()</a></li>
 <li><a href="#rootpoa-reference_to_id">reference_to_id()</a></li>
 <li><a href="#rootpoa-id_to_servant">id_to_servant()</a></li>
-<li><a href="#rootpoa-id_to_reference">id_to_reference()</a></li></ul>
+<li><a href="#rootpoa-id_to_reference">id_to_reference()</a></li>
+<li><a href="#rootpoa-_startserver">_startServer()</a></li>
+<li><a href="#rootpoa-_stopserver">_stopServer()</a></li></ul>
+      </li>
+    
+
+      <li>
+        <a href="#initpoa">initPOA</a>
+        <ul><li><a href="#initpoa-initpoa">initPOA()</a></li></ul>
       </li>
     
       </ul>
@@ -159,649 +173,561 @@
     <main class="main-content">
       <article class="content-wrapper">
         <div class="page-header">
-          <h1>POA API Reference</h1>
-          <p>Portable Object Adapter - manages object lifecycle, activation, and request dispatching</p>
+          <h1>Poa API Reference</h1>
+          <p>API documentation for poa module</p>
         </div>
 
         
     <section id="adapteractivator" class="api-section">
       <h2>AdapterActivator</h2>
+      <pre><code class="language-typescript">interface AdapterActivator</code></pre>
       <p>AdapterActivator interface</p>
       
       
-      
-      
-        
-        
+      <h3>Methods</h3>
+
     <section class="method" id="adapteractivator-unknown_adapter">
-      
       <pre><code class="language-typescript">// Called when a POA is being activated
-unknown_adapter(parent: POA, name: string): Promise</code></pre>
+unknown_adapter(parent: POA, name: string): Promise&lt;boolean&gt;</code></pre>
     </section>
   
-      
     </section>
   
 
     <section id="servantmanager" class="api-section">
       <h2>ServantManager</h2>
+      <pre><code class="language-typescript">interface ServantManager</code></pre>
       <p>ServantManager interface</p>
       
-      
-        <h3>Properties</h3>
-        <table class="api-table">
-          <tbody>
-            
-    <tr>
-      <td><code>_servant_manager_id</code></td>
-      <td><span class="return-type">string</span></td>
-      <td><span class="badge badge-readonly">readonly</span> </td>
-    </tr>
-    
-          </tbody>
-        </table>
-      
-      
+      <h3>Properties</h3>
+    <section class="properties-block">
+      <pre><code class="language-typescript">  readonly _servant_manager_id?: string;</code></pre>
+    </section>
       
     </section>
   
 
     <section id="servantactivator" class="api-section">
       <h2>ServantActivator</h2>
+      <pre><code class="language-typescript">interface ServantActivator extends ServantManager</code></pre>
       <p>ServantActivator interface</p>
       
       
-      
-      
-        
-        
+      <h3>Methods</h3>
+
     <section class="method" id="servantactivator-incarnate">
-      
       <pre><code class="language-typescript">// Called when a servant is needed
-incarnate(oid: Uint8Array, adapter: POA): Promise</code></pre>
+incarnate(oid: Uint8Array, adapter: POA): Promise&lt;Servant&gt;</code></pre>
     </section>
   
 
     <section class="method" id="servantactivator-etherealize">
-      
       <pre><code class="language-typescript">// Called when a servant is deactivated
-etherealize(oid: Uint8Array, adapter: POA, serv: Servant, cleanup_in_progress: boolean, remaining_activations: boolean): Promise</code></pre>
+etherealize(
+  oid: Uint8Array,
+  adapter: POA,
+  serv: Servant,
+  cleanup_in_progress: boolean,
+  remaining_activations: boolean
+): Promise&lt;void&gt;</code></pre>
     </section>
   
-      
     </section>
   
 
     <section id="servantlocator" class="api-section">
       <h2>ServantLocator</h2>
+      <pre><code class="language-typescript">interface ServantLocator extends ServantManager</code></pre>
       <p>ServantLocator interface</p>
       
       
-      
-      
-        
-        
+      <h3>Methods</h3>
+
     <section class="method" id="servantlocator-preinvoke">
-      
       <pre><code class="language-typescript">// Called when a servant is needed for a request
-preinvoke(oid: Uint8Array, adapter: POA, operation: string): Promise</code></pre>
+preinvoke(
+  oid: Uint8Array,
+  adapter: POA,
+  operation: string
+): Promise&lt;object&gt;</code></pre>
     </section>
   
 
     <section class="method" id="servantlocator-postinvoke">
-      
       <pre><code class="language-typescript">// Called after a request is completed
-postinvoke(oid: Uint8Array, adapter: POA, operation: string, cookie: unknown, servant: Servant): Promise</code></pre>
+postinvoke(
+  oid: Uint8Array,
+  adapter: POA,
+  operation: string,
+  cookie: unknown,
+  servant: Servant
+): Promise&lt;void&gt;</code></pre>
     </section>
   
+    </section>
+  
+
+    <section id="responsehandler" class="api-section">
+      <h2>ResponseHandler</h2>
+      <pre><code class="language-typescript">interface ResponseHandler</code></pre>
+      <p>ResponseHandler interface for CORBA static skeleton _invoke method
+Based on CORBA 3.4 specification</p>
       
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="responsehandler-createreply">
+      <pre><code class="language-typescript">createReply(): CDROutputStream</code></pre>
+    </section>
+  
+
+    <section class="method" id="responsehandler-createexceptionreply">
+      <pre><code class="language-typescript">createExceptionReply(): CDROutputStream</code></pre>
+    </section>
+  
     </section>
   
 
     <section id="servant" class="api-section">
       <h2>Servant</h2>
+      <pre><code class="language-typescript">class Servant</code></pre>
       <p>Servant base class</p>
       
       
-      
-      
-        
-        
+      <h3>Methods</h3>
+
     <section class="method" id="servant-_default_poa">
-      
       <pre><code class="language-typescript">// Default POA for this servant
-_default_POA(): void</code></pre>
+_default_POA(): POA</code></pre>
     </section>
   
 
     <section class="method" id="servant-_is_a">
-      
       <pre><code class="language-typescript">// Check if this servant supports an interface
-_is_a(): void</code></pre>
+_is_a(repository_id: string): boolean</code></pre>
     </section>
   
 
     <section class="method" id="servant-_repository_id">
-      
       <pre><code class="language-typescript">// Get the interface repository ID
-_repository_id(): void</code></pre>
+_repository_id(): string</code></pre>
     </section>
   
 
     <section class="method" id="servant-_all_interfaces">
-      
       <pre><code class="language-typescript">// Get list of all repository IDs this servant supports
-_all_interfaces(): void</code></pre>
+_all_interfaces(_poa: POA, _oid: Uint8Array): string[]</code></pre>
     </section>
   
 
     <section class="method" id="servant-_non_existent">
-      
       <pre><code class="language-typescript">// Handle a non-existent operation
-_non_existent(): void</code></pre>
+_non_existent(): boolean</code></pre>
     </section>
   
-      
     </section>
   
 
     <section id="poa" class="api-section">
       <h2>POA</h2>
+      <pre><code class="language-typescript">interface POA extends [CORBA.ObjectRef]</code></pre>
       <p>POA interface and implementation</p>
       
       
-      
-      
-        
-        
+      <h3>Methods</h3>
+
     <section class="method" id="poa-create_poa">
-      
       <pre><code class="language-typescript">// Create a child POA
-create_POA(adapter_name: string, a_POAManager: POAManager | null, policies: Policy[]): Promise</code></pre>
+create_POA(
+  adapter_name: string,
+  a_POAManager: POAManager | null,
+  policies: Policy[]
+): Promise&lt;POA&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poa-find_poa">
-      
       <pre><code class="language-typescript">// Find a child POA
-find_POA(adapter_name: string, activate_it: boolean): Promise</code></pre>
+find_POA(adapter_name: string, activate_it: boolean): Promise&lt;POA&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poa-destroy">
-      
       <pre><code class="language-typescript">// Destroy the POA
-destroy(etherialize_objects: boolean, wait_for_completion: boolean): Promise</code></pre>
+destroy(
+  etherialize_objects: boolean,
+  wait_for_completion: boolean
+): Promise&lt;void&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poa-the_name">
-      
       <pre><code class="language-typescript">// Get the POA&#39;s name
 the_name(): string</code></pre>
     </section>
   
 
     <section class="method" id="poa-the_parent">
-      
       <pre><code class="language-typescript">// Get the parent POA
 the_parent(): POA | null</code></pre>
     </section>
   
 
     <section class="method" id="poa-the_poamanager">
-      
       <pre><code class="language-typescript">// Get the POAManager for this POA
 the_POAManager(): POAManager</code></pre>
     </section>
   
 
     <section class="method" id="poa-the_activator">
-      
       <pre><code class="language-typescript">// Get the adapter activator
 the_activator(): AdapterActivator | null</code></pre>
     </section>
   
 
     <section class="method" id="poa-set_activator">
-      
       <pre><code class="language-typescript">// Set the adapter activator
 set_activator(activator: AdapterActivator | null): AdapterActivator | null</code></pre>
     </section>
   
 
     <section class="method" id="poa-the_children">
-      
       <pre><code class="language-typescript">// Get all child POAs
 the_children(): string[]</code></pre>
     </section>
   
 
     <section class="method" id="poa-get_servant_manager">
-      
       <pre><code class="language-typescript">// Get the servant manager
-get_servant_manager(): Promise</code></pre>
+get_servant_manager(): Promise&lt;ServantManager&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poa-set_servant_manager">
-      
       <pre><code class="language-typescript">// Set the servant manager
-set_servant_manager(imgr: ServantManager): Promise</code></pre>
+set_servant_manager(imgr: ServantManager): Promise&lt;void&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poa-get_servant">
-      
       <pre><code class="language-typescript">// Get the default servant
-get_servant(): Promise</code></pre>
+get_servant(): Promise&lt;Servant&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poa-set_servant">
-      
       <pre><code class="language-typescript">// Set the default servant
-set_servant(servant: Servant): Promise</code></pre>
+set_servant(servant: Servant): Promise&lt;void&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poa-activate_object_with_id">
-      
       <pre><code class="language-typescript">// Activate an object with a specific ID
-activate_object_with_id(id: Uint8Array, servant: Servant): Promise</code></pre>
+activate_object_with_id(id: Uint8Array, servant: Servant): Promise&lt;void&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poa-activate_object">
-      
       <pre><code class="language-typescript">// Activate an object and generate an ID
-activate_object(servant: Servant): Promise</code></pre>
+activate_object(servant: Servant): Promise&lt;Uint8Array&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poa-deactivate_object">
-      
       <pre><code class="language-typescript">// Deactivate an object
-deactivate_object(oid: Uint8Array): Promise</code></pre>
+deactivate_object(oid: Uint8Array): Promise&lt;void&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poa-create_reference_with_id">
-      
       <pre><code class="language-typescript">// Create a reference with a specific ID
 create_reference_with_id(oid: Uint8Array, intf: string): Object</code></pre>
     </section>
   
 
     <section class="method" id="poa-create_reference">
-      
       <pre><code class="language-typescript">// Create a reference
 create_reference(intf: string): Object</code></pre>
     </section>
   
 
     <section class="method" id="poa-servant_to_id">
-      
       <pre><code class="language-typescript">// Get the ID for a servant
-servant_to_id(servant: Servant): Promise</code></pre>
+servant_to_id(servant: Servant): Promise&lt;Uint8Array&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poa-servant_to_reference">
-      
       <pre><code class="language-typescript">// Get the reference for a servant
-servant_to_reference(servant: Servant): Promise</code></pre>
+servant_to_reference(servant: Servant): Promise&lt;Object&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poa-reference_to_servant">
-      
       <pre><code class="language-typescript">// Get the servant for a reference
-reference_to_servant(reference: Object): Promise</code></pre>
+reference_to_servant(reference: Object): Promise&lt;Servant&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poa-reference_to_id">
-      
       <pre><code class="language-typescript">// Get the ID for a reference
-reference_to_id(reference: Object): Promise</code></pre>
+reference_to_id(reference: Object): Promise&lt;Uint8Array&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poa-id_to_servant">
-      
       <pre><code class="language-typescript">// Get the servant for an ID
-id_to_servant(oid: Uint8Array): Promise</code></pre>
+id_to_servant(oid: Uint8Array): Promise&lt;Servant&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poa-id_to_reference">
-      
       <pre><code class="language-typescript">// Get the reference for an ID
-id_to_reference(oid: Uint8Array): Promise</code></pre>
+id_to_reference(oid: Uint8Array): Promise&lt;Object&gt;</code></pre>
     </section>
   
-      
     </section>
   
 
     <section id="poamanager" class="api-section">
       <h2>POAManager</h2>
+      <pre><code class="language-typescript">interface POAManager extends [CORBA.ObjectRef]</code></pre>
       <p>POA Manager interface</p>
       
       
-      
-      
-        
-        
+      <h3>Methods</h3>
+
     <section class="method" id="poamanager-activate">
-      
       <pre><code class="language-typescript">// Activate the POA manager
-activate(): Promise</code></pre>
+activate(): Promise&lt;void&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poamanager-hold_requests">
-      
       <pre><code class="language-typescript">// Hold requests
-hold_requests(wait_for_completion: boolean): Promise</code></pre>
+hold_requests(wait_for_completion: boolean): Promise&lt;void&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poamanager-discard_requests">
-      
       <pre><code class="language-typescript">// Discard requests
-discard_requests(wait_for_completion: boolean): Promise</code></pre>
+discard_requests(wait_for_completion: boolean): Promise&lt;void&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poamanager-deactivate">
-      
       <pre><code class="language-typescript">// Deactivate the POA manager
-deactivate(etherealize_objects: boolean, wait_for_completion: boolean): Promise</code></pre>
+deactivate(
+  etherealize_objects: boolean,
+  wait_for_completion: boolean
+): Promise&lt;void&gt;</code></pre>
     </section>
   
 
     <section class="method" id="poamanager-get_state">
-      
       <pre><code class="language-typescript">// Get the current state
 get_state(): POAManagerState</code></pre>
     </section>
   
-      
     </section>
   
 
     <section id="getrootpoa" class="api-section">
       <h2>getRootPOA</h2>
+      
       <p>Get the root POA</p>
       
       
-      
-      
-        
-        
+      <h3>Methods</h3>
+
     <section class="method" id="getrootpoa-getrootpoa">
-      
       <pre><code class="language-typescript">// Get the root POA
-getRootPOA(): POA</code></pre>
+getRootPOA(policies?: Policy[]): POA</code></pre>
     </section>
   
-      
     </section>
   
 
     <section id="rootpoa" class="api-section">
       <h2>RootPOA</h2>
+      <pre><code class="language-typescript">class RootPOA extends ObjectReference implements POA</code></pre>
       <p>Simple POA implementation</p>
       
       
-        <h3>Properties</h3>
-        <table class="api-table">
-          <tbody>
-            
-    <tr>
-      <td><code>_name</code></td>
-      <td><span class="return-type">string</span></td>
-      <td></td>
-    </tr>
-    
-    <tr>
-      <td><code>_parent</code></td>
-      <td><span class="return-type">POA | null</span></td>
-      <td></td>
-    </tr>
-    
-    <tr>
-      <td><code>_manager</code></td>
-      <td><span class="return-type">POAManager</span></td>
-      <td></td>
-    </tr>
-    
-    <tr>
-      <td><code>_activator</code></td>
-      <td><span class="return-type">AdapterActivator | null</span></td>
-      <td></td>
-    </tr>
-    
-    <tr>
-      <td><code>_servants</code></td>
-      <td><span class="return-type">Map</span></td>
-      <td></td>
-    </tr>
-    
-    <tr>
-      <td><code>_children</code></td>
-      <td><span class="return-type">Map</span></td>
-      <td></td>
-    </tr>
-    
-    <tr>
-      <td><code>_servant_manager</code></td>
-      <td><span class="return-type">ServantManager | null</span></td>
-      <td></td>
-    </tr>
-    
-    <tr>
-      <td><code>_default_servant</code></td>
-      <td><span class="return-type">Servant | null</span></td>
-      <td></td>
-    </tr>
-    
-    <tr>
-      <td><code>_host</code></td>
-      <td><span class="return-type">string</span></td>
-      <td></td>
-    </tr>
-    
-    <tr>
-      <td><code>_port</code></td>
-      <td><span class="return-type">number</span></td>
-      <td></td>
-    </tr>
-    
-    <tr>
-      <td><code>_object_references</code></td>
-      <td><span class="return-type">Map</span></td>
-      <td></td>
-    </tr>
-    
-          </tbody>
-        </table>
-      
-      
-      
-        <h3>Methods</h3>
-        
+      <h3>Methods</h3>
+
     <section class="method" id="rootpoa-create_poa">
-      
-      <pre><code class="language-typescript">create_POA(): void</code></pre>
+      <pre><code class="language-typescript">create_POA(
+  adapter_name: string,
+  a_POAManager: POAManager | null,
+  policies: Policy[]
+): Promise&lt;POA&gt;</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-find_poa">
-      
-      <pre><code class="language-typescript">find_POA(): void</code></pre>
+      <pre><code class="language-typescript">async find_POA(adapter_name: string, activate_it: boolean): Promise&lt;POA&gt;</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-destroy">
-      
-      <pre><code class="language-typescript">destroy(): void</code></pre>
+      <pre><code class="language-typescript">async destroy(
+  etherialize_objects: boolean,
+  wait_for_completion: boolean
+): Promise&lt;void&gt;</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-the_name">
-      
-      <pre><code class="language-typescript">the_name(): void</code></pre>
+      <pre><code class="language-typescript">the_name(): string</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-the_parent">
-      
-      <pre><code class="language-typescript">the_parent(): void</code></pre>
+      <pre><code class="language-typescript">the_parent(): POA | null</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-the_poamanager">
-      
-      <pre><code class="language-typescript">the_POAManager(): void</code></pre>
+      <pre><code class="language-typescript">the_POAManager(): POAManager</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-the_activator">
-      
-      <pre><code class="language-typescript">the_activator(): void</code></pre>
+      <pre><code class="language-typescript">the_activator(): AdapterActivator | null</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-set_activator">
-      
-      <pre><code class="language-typescript">set_activator(): void</code></pre>
+      <pre><code class="language-typescript">set_activator(activator: AdapterActivator | null): AdapterActivator | null</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-the_children">
-      
-      <pre><code class="language-typescript">the_children(): void</code></pre>
+      <pre><code class="language-typescript">the_children(): string[]</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-get_servant_manager">
-      
-      <pre><code class="language-typescript">get_servant_manager(): void</code></pre>
+      <pre><code class="language-typescript">get_servant_manager(): Promise&lt;ServantManager&gt;</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-set_servant_manager">
-      
-      <pre><code class="language-typescript">set_servant_manager(): void</code></pre>
+      <pre><code class="language-typescript">set_servant_manager(imgr: ServantManager): Promise&lt;void&gt;</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-get_servant">
-      
-      <pre><code class="language-typescript">get_servant(): void</code></pre>
+      <pre><code class="language-typescript">get_servant(): Promise&lt;Servant&gt;</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-set_servant">
-      
-      <pre><code class="language-typescript">set_servant(): void</code></pre>
+      <pre><code class="language-typescript">set_servant(servant: Servant): Promise&lt;void&gt;</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-activate_object_with_id">
-      
-      <pre><code class="language-typescript">activate_object_with_id(): void</code></pre>
+      <pre><code class="language-typescript">activate_object_with_id(id: Uint8Array, servant: Servant): Promise&lt;void&gt;</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-activate_object">
-      
-      <pre><code class="language-typescript">activate_object(): void</code></pre>
+      <pre><code class="language-typescript">activate_object(servant: Servant): Promise&lt;Uint8Array&gt;</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-deactivate_object">
-      
-      <pre><code class="language-typescript">deactivate_object(): void</code></pre>
+      <pre><code class="language-typescript">deactivate_object(oid: Uint8Array): Promise&lt;void&gt;</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-create_reference_with_id">
-      
-      <pre><code class="language-typescript">create_reference_with_id(): void</code></pre>
+      <pre><code class="language-typescript">create_reference_with_id(oid: Uint8Array, intf: string): Object</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-create_reference">
-      
-      <pre><code class="language-typescript">create_reference(): void</code></pre>
+      <pre><code class="language-typescript">create_reference(intf: string): Object</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-servant_to_id">
-      
-      <pre><code class="language-typescript">servant_to_id(): void</code></pre>
+      <pre><code class="language-typescript">servant_to_id(servant: Servant): Promise&lt;Uint8Array&gt;</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-servant_to_reference">
-      
-      <pre><code class="language-typescript">servant_to_reference(): void</code></pre>
+      <pre><code class="language-typescript">async servant_to_reference(servant: Servant): Promise&lt;Object&gt;</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-reference_to_servant">
-      
-      <pre><code class="language-typescript">reference_to_servant(): void</code></pre>
+      <pre><code class="language-typescript">async reference_to_servant(reference: Object): Promise&lt;Servant&gt;</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-reference_to_id">
-      
-      <pre><code class="language-typescript">reference_to_id(): void</code></pre>
+      <pre><code class="language-typescript">async reference_to_id(reference: Object): Promise&lt;Uint8Array&gt;</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-id_to_servant">
-      
-      <pre><code class="language-typescript">id_to_servant(): void</code></pre>
+      <pre><code class="language-typescript">id_to_servant(oid: Uint8Array): Promise&lt;Servant&gt;</code></pre>
     </section>
   
 
     <section class="method" id="rootpoa-id_to_reference">
-      
-      <pre><code class="language-typescript">id_to_reference(): void</code></pre>
-    </section>
-  
-      
+      <pre><code class="language-typescript">async id_to_reference(oid: Uint8Array): Promise&lt;Object&gt;</code></pre>
     </section>
   
 
-        <!-- Related Documentation -->
-        <div class="panel mt-3">
-          <h3>Related Documentation</h3>
-          <div class="grid mt-1">
-            <div class="feature-card">
-              <h4><a href="types.html">Types API</a></h4>
-              <p>TypeCode system and Any type</p>
-            </div>
-            <div class="feature-card">
-              <h4><a href="orb.html">ORB API</a></h4>
-              <p>Object Request Broker reference</p>
-            </div>
-            <div class="feature-card">
-              <h4><a href="exceptions.html">Exceptions API</a></h4>
-              <p>Exception handling in CORBA</p>
-            </div>
-          </div>
-        </div>
+    <section class="method" id="rootpoa-_startserver">
+      <pre><code class="language-typescript">// Start the GIOP server for this POA
+// Called by POAManager when activated
+async _startServer(): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="rootpoa-_stopserver">
+      <pre><code class="language-typescript">// Stop the GIOP server
+async _stopServer(): Promise&lt;void&gt;</code></pre>
+    </section>
+  
+    </section>
+  
+
+    <section id="initpoa" class="api-section">
+      <h2>initPOA</h2>
+      
+      <p>Initialize the root POA</p>
+      
+      
+      <h3>Methods</h3>
+
+    <section class="method" id="initpoa-initpoa">
+      <pre><code class="language-typescript">// Initialize the root POA
+initPOA(): void</code></pre>
+    </section>
+  
+    </section>
+  
+
       </article>
     </main>
   </div>
   <!-- End layout-container -->
+
+  <!-- Footer -->
+  <footer class="api-footer">
+    <div class="footer-content">
+      <p>
+        &copy; 2025 Elevation AI. All rights reserved.
+         • <a href="https://github.com/elevationai/CORBA.ts" target="_blank">Github</a>
+      </p>
+    </div>
+  </footer>
 
   <!-- Prism.js JavaScript -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CORBA-ts - Stub API Reference</title>
+  <meta name="description" content="API documentation for stub module">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <!-- Prism.js CSS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body class="api-page">
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <a href="../" class="logo">
+      CORBA-ts
+    </a>
+    <ul class="nav-links">
+      <li><a href="../">Home</a></li>
+<li><a href="../api">API Reference</a></li>
+<li><a href="https://github.com/elevationai/CORBA.ts" target="_blank">Github</a></li>
+    </ul>
+    <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+  </nav>
+
+  <!-- Layout Container -->
+  <div class="layout-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="api-sidebar-header">
+        <a href="./" class="api-back-link">
+          <span>←</span> Back to API Reference
+        </a>
+        <h2 class="api-page-title">Stub</h2>
+      </div>
+      
+      
+    <nav class="on-page-nav">
+      <ul>
+        
+      <li>
+        <a href="#corbastub">CorbaStub</a>
+        <ul><li><a href="#corbastub-narrow">narrow()</a></li>
+<li><a href="#corbastub-narrowasync">narrowAsync()</a></li>
+<li><a href="#corbastub-get_interface">get_interface()</a></li>
+<li><a href="#corbastub-is_nil">is_nil()</a></li>
+<li><a href="#corbastub-is_equivalent">is_equivalent()</a></li>
+<li><a href="#corbastub-is_a">is_a()</a></li>
+<li><a href="#corbastub-non_existent">non_existent()</a></li>
+<li><a href="#corbastub-hash">hash()</a></li>
+<li><a href="#corbastub-duplicate">duplicate()</a></li>
+<li><a href="#corbastub-release">release()</a></li>
+<li><a href="#corbastub-get_domain_managers">get_domain_managers()</a></li>
+<li><a href="#corbastub-set_policy_overrides">set_policy_overrides()</a></li>
+<li><a href="#corbastub-get_policy">get_policy()</a></li>
+<li><a href="#corbastub-get_client_policy">get_client_policy()</a></li>
+<li><a href="#corbastub-get_policy_overrides">get_policy_overrides()</a></li>
+<li><a href="#corbastub-validate_connection">validate_connection()</a></li>
+<li><a href="#corbastub-get_component">get_component()</a></li>
+<li><a href="#corbastub-get_type_id">get_type_id()</a></li>
+<li><a href="#corbastub-_get_interface_id">_get_interface_id()</a></li></ul>
+      </li>
+    
+      </ul>
+    </nav>
+  
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <article class="content-wrapper">
+        <div class="page-header">
+          <h1>Stub API Reference</h1>
+          <p>API documentation for stub module</p>
+        </div>
+
+        
+    <section id="corbastub" class="api-section">
+      <h2>CorbaStub</h2>
+      <pre><code class="language-typescript">class CorbaStub implements Object</code></pre>
+      <p>Abstract base class for all CORBA stubs
+Provides narrow() and narrowAsync() static methods with proper typing</p>
+      
+      <h3>Properties</h3>
+    <section class="properties-block">
+      <pre><code class="language-typescript">  static readonly _repository_id: string;</code></pre>
+    </section>
+      <h3>Methods</h3>
+
+    <section class="method" id="corbastub-narrow">
+      <pre><code class="language-typescript">// Narrow (sync): returns an instance of the subclass
+// Uses the `this` type to ensure correct return type
+static narrow(
+  this: StubCtor&lt;TSub&gt;,
+  obj: CORBA.ObjectRef | Object | null | undefined
+): TSub | null</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-narrowasync">
+      <pre><code class="language-typescript">// Narrow (async): checks interface support via the subclass&#39;s repo id
+// Performs is_a() check before narrowing
+static async narrowAsync(
+  this: StubCtor&lt;TSub&gt; &amp; HasRepoId &amp; object,
+  obj: CORBA.ObjectRef | Object | null | undefined
+): Promise&lt;TSub | null&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-get_interface">
+      <pre><code class="language-typescript">get_interface(): Promise&lt;InterfaceDef&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-is_nil">
+      <pre><code class="language-typescript">is_nil(): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-is_equivalent">
+      <pre><code class="language-typescript">is_equivalent(other_object: Object): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-is_a">
+      <pre><code class="language-typescript">is_a(repository_id: string): Promise&lt;boolean&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-non_existent">
+      <pre><code class="language-typescript">non_existent(): Promise&lt;boolean&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-hash">
+      <pre><code class="language-typescript">hash(maximum: number): number</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-duplicate">
+      <pre><code class="language-typescript">duplicate(): Object</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-release">
+      <pre><code class="language-typescript">release(): void</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-get_domain_managers">
+      <pre><code class="language-typescript">get_domain_managers(): Promise&lt;Object[]&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-set_policy_overrides">
+      <pre><code class="language-typescript">set_policy_overrides(policies: unknown[], set_add: unknown): Object</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-get_policy">
+      <pre><code class="language-typescript">get_policy(policy_type: number): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-get_client_policy">
+      <pre><code class="language-typescript">get_client_policy(type: number): unknown</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-get_policy_overrides">
+      <pre><code class="language-typescript">get_policy_overrides(types: number[]): unknown[]</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-validate_connection">
+      <pre><code class="language-typescript">validate_connection(inconsistent_policies: unknown[]): boolean</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-get_component">
+      <pre><code class="language-typescript">get_component(): Object</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-get_type_id">
+      <pre><code class="language-typescript">get_type_id(): Promise&lt;string&gt;</code></pre>
+    </section>
+  
+
+    <section class="method" id="corbastub-_get_interface_id">
+      <pre><code class="language-typescript">_get_interface_id(): string</code></pre>
+    </section>
+  
+    </section>
+  
+
+      </article>
+    </main>
+  </div>
+  <!-- End layout-container -->
+
+  <!-- Footer -->
+  <footer class="api-footer">
+    <div class="footer-content">
+      <p>
+        &copy; 2025 Elevation AI. All rights reserved.
+         • <a href="https://github.com/elevationai/CORBA.ts" target="_blank">Github</a>
+      </p>
+    </div>
+  </footer>
+
+  <!-- Prism.js JavaScript -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+  
+  <!-- API Documentation JavaScript -->
+  <script src="../assets/js/api-docs.js"></script>
+</body>
+</html>
