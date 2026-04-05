@@ -288,6 +288,11 @@ export interface POA extends CORBA.ObjectRef {
    * Get the reference for an ID
    */
   id_to_reference(oid: Uint8Array): Promise<Object>;
+
+  /**
+   * Register a callback for client TCP disconnections.
+   */
+  onClientDisconnected(callback: (connectionId: number) => void): void;
 }
 
 /**
@@ -439,6 +444,7 @@ class POAImpl extends ObjectReference implements POA {
   private _object_references: Map<string, CORBA.ObjectRef> = new Map();
   private _server: GIOPServer | null = null;
   private _connectionManager: ConnectionManager;
+  private _disconnectListeners: Array<(connectionId: number) => void> = [];
 
   constructor(name: string, parent: POA | null = null, manager: POAManager | null = null, policies?: Policy[]) {
     super("IDL:omg.org/PortableServer/POA:1.0");
@@ -747,6 +753,13 @@ class POAImpl extends ObjectReference implements POA {
     return this.create_reference_with_id(oid, servant._repository_id());
   }
 
+  onClientDisconnected(callback: (connectionId: number) => void): void {
+    this._disconnectListeners.push(callback);
+    if (this._server) {
+      this._server.onClientDisconnected(callback);
+    }
+  }
+
   /**
    * Start the GIOP server for this POA
    * Called by POAManager when activated
@@ -777,6 +790,11 @@ class POAImpl extends ObjectReference implements POA {
     this._server.registerHandler("*", (request: GIOPRequest, connection: IIOPConnection) => {
       return this._dispatchRequest(request, connection);
     });
+
+    // Forward any pre-registered disconnect listeners to the server
+    for (const cb of this._disconnectListeners) {
+      this._server.onClientDisconnected(cb);
+    }
 
     await this._server.start();
 
@@ -936,8 +954,14 @@ class POAImpl extends ObjectReference implements POA {
       return reply;
     }
     catch (error) {
-      logger.error("Error dispatching request");
-      logger.exception(error);
+      // Missing servant is a normal condition during teardown — don't log stack traces
+      if (error instanceof CORBA.BAD_PARAM || error instanceof CORBA.OBJECT_NOT_EXIST) {
+        logger.warn("Dispatch: %s", error.message);
+      }
+      else {
+        logger.error("Error dispatching request");
+        logger.exception(error);
+      }
 
       // Create an exception reply
       const reply = new GIOPReply(request.version);

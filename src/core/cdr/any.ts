@@ -45,6 +45,7 @@ export class Any {
    * Create an Any from a value with automatic type detection
    */
   static fromValue(value: CORBAValue): Any {
+    if (value instanceof Any) return value;
     const type = detectTypeCode(value);
     return new Any(type, value);
   }

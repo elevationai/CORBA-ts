@@ -14,6 +14,7 @@ import { create_endpoint_policy } from "../../src/policy.ts";
 
 // Mock Servant for testing
 class TestServant implements Servant {
+  _connectionId = 0;
   _repository_id(): string {
     return "IDL:Test/Service:1.0";
   }
@@ -325,6 +326,7 @@ Deno.test("POA: _dispatchRequest _non_existent doesn't require _invoke method", 
 
   // Create a minimal servant without _invoke method
   class MinimalServant implements Servant {
+    _connectionId = 0;
     _repository_id(): string {
       return "IDL:Test/Minimal:1.0";
     }

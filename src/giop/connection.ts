@@ -53,6 +53,7 @@ export interface ConnectionConfig {
   readTimeout?: number; // Default: 60000ms
   keepAlive?: boolean; // Default: true
   noDelay?: boolean; // Default: true (disable Nagle's algorithm)
+  onDisconnect?: () => void; // Called when connection is unexpectedly lost
 }
 
 /**
@@ -67,6 +68,7 @@ export interface ConnectionEndpoint {
  * IIOP Connection interface
  */
 export interface IIOPConnection {
+  readonly connectionId?: number;
   readonly endpoint: ConnectionEndpoint;
   readonly state: ConnectionState;
   readonly isConnected: boolean;
@@ -106,6 +108,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
       readTimeout: config.readTimeout ?? 60000,
       keepAlive: config.keepAlive ?? true,
       noDelay: config.noDelay ?? true,
+      onDisconnect: config.onDisconnect ?? (() => {}),
     };
   }
 
@@ -318,8 +321,13 @@ export class IIOPConnectionImpl implements IIOPConnection {
       }
     }
 
-    // Connection closed
+    // Connection closed — if state is still CONNECTED, this was unexpected (peer close / read error).
+    // If disconnect() was called first, state is already CLOSING so callback won't fire.
+    const unexpected = this._state === ConnectionState.CONNECTED;
     await this.close();
+    if (unexpected) {
+      this._config.onDisconnect();
+    }
   }
 
   private _appendToBuffer(data: Uint8Array): void {

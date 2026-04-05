@@ -356,6 +356,8 @@ export class GIOPServer {
     string,
     (request: GIOPRequest, connection: IIOPConnection) => Promise<GIOPReply>
   > = new Map();
+  private _nextConnectionId = 1;
+  private _disconnectListeners: Array<(connectionId: number) => void> = [];
 
   constructor(endpoint: ConnectionEndpoint, _connectionManager: ConnectionManager) {
     this._endpoint = endpoint;
@@ -428,6 +430,13 @@ export class GIOPServer {
     return Promise.resolve();
   }
 
+  /**
+   * Register a callback for client TCP disconnections.
+   */
+  onClientDisconnected(callback: (connectionId: number) => void): void {
+    this._disconnectListeners.push(callback);
+  }
+
   private async _acceptConnections(): Promise<void> {
     if (!this._listener) return;
 
@@ -471,9 +480,7 @@ export class GIOPServer {
   }
 
   private async _handleConnection(conn: Deno.TcpConn): Promise<void> {
-    // Create connection wrapper
-    // Note: This is a simplified approach - in practice we'd need to integrate
-    // with the connection manager more tightly
+    const connectionId = this._nextConnectionId++;
 
     try {
       const buffer = new Uint8Array(8192);
@@ -509,7 +516,7 @@ export class GIOPServer {
           bytesLogger.debug("RECV %s:%d [%d bytes]: %s", addr.hostname, addr.port, messageData.length, lazyHex(messageData));
 
           try {
-            await this._processMessage(messageData, conn);
+            await this._processMessage(messageData, conn, connectionId);
           }
           catch (error) {
             if (error instanceof Error && error.message === "GIOP_CLOSE_CONNECTION") {
@@ -534,10 +541,18 @@ export class GIOPServer {
       catch {
         // Ignore close errors
       }
+      for (const cb of this._disconnectListeners) {
+        try {
+          cb(connectionId);
+        }
+        catch {
+          // Ignore callback errors
+        }
+      }
     }
   }
 
-  private async _processMessage(messageData: Uint8Array, conn: Deno.TcpConn): Promise<void> {
+  private async _processMessage(messageData: Uint8Array, conn: Deno.TcpConn, connectionId: number): Promise<void> {
     // Check GIOP magic bytes
     if (
       messageData[0] !== 0x47 || messageData[1] !== 0x49 ||
@@ -613,6 +628,7 @@ export class GIOPServer {
 
     // Create a basic connection wrapper for the handler
     const connectionWrapper = {
+      connectionId,
       endpoint: this._endpoint,
       state: "connected",
       isConnected: true,
