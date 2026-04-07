@@ -123,6 +123,9 @@ interface MarshalableResult {
  * Servant base class
  */
 export abstract class Servant {
+  /** Connection ID of the most recent GIOP request dispatched to this servant. Set by the POA before calling _invoke(). */
+  _connectionId: number = 0;
+
   /**
    * Default POA for this servant
    */
@@ -891,6 +894,9 @@ class POAImpl extends ObjectReference implements POA {
             return new CDROutputStream();
           },
         };
+
+        // Set connection ID on servant so it can identify the calling client
+        servant._connectionId = _connection?.connectionId ?? 0;
 
         // Call the standard CORBA _invoke method
         const outputCDR = await (invokableServant as InvokableServant)._invoke(operation, inputCDR, responseHandler);
