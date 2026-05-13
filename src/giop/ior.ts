@@ -19,6 +19,10 @@ export class IORUtil {
    */
   static toString(ior: IOR): string {
     const cdr = new CDROutputStream();
+    // CDR encapsulation prefix: byte_order flag (0 = big-endian).
+    // Subsequent writeString → writeULong → align(4) pads bytes 1-3 with zeros,
+    // producing a spec-compliant encapsulated stringified IOR (OMG CORBA 3.x §13.6.10).
+    cdr.writeOctet(0);
     this.encodeIOR(cdr, ior);
     const buffer = cdr.getBuffer();
 
