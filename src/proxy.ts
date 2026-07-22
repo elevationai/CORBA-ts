@@ -205,7 +205,7 @@ export class CORBAProxy {
 
     // Get transport from ORB - use proper interface
     const orbInternal = this._orb as {
-      _transport?: { sendOnewayRequest?: (...args: unknown[]) => Promise<void> };
+      _transport?: { sendOnewayRequest?: (target: IOR, operation: string, requestBody: Uint8Array, ...rest: unknown[]) => Promise<void> };
     };
 
     if (orbInternal._transport && typeof orbInternal._transport.sendOnewayRequest === "function") {
