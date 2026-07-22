@@ -204,8 +204,9 @@ export class CORBAProxy {
     const encodedArgs = cdr.getBuffer();
 
     // Get transport from ORB - use proper interface
-    // deno-lint-ignore no-explicit-any
-    const orbInternal = this._orb as any;
+    const orbInternal = this._orb as {
+      _transport?: { sendOnewayRequest?: (...args: unknown[]) => Promise<void> };
+    };
 
     if (orbInternal._transport && typeof orbInternal._transport.sendOnewayRequest === "function") {
       // Use dedicated oneway method if available
