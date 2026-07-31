@@ -29,7 +29,7 @@ interface RequestContext {
   requestId: number;
   resolve: (reply: GIOPReply) => void;
   reject: (error: Error) => void;
-  timer: number;
+  timer: ReturnType<typeof setTimeout>;
   startTime: number;
 }
 
@@ -41,7 +41,7 @@ export class GIOPTransport {
   private _config: Required<TransportConfig>;
   private _nextRequestId: number = 1;
   private _pendingRequests: Map<number, RequestContext> = new Map();
-  private _retryTimers: Set<number> = new Set();
+  private _retryTimers: Set<ReturnType<typeof setTimeout>> = new Set();
   private _closed: boolean = false;
 
   constructor(config: TransportConfig = {}, connectionConfig?: ConnectionConfig) {
