@@ -135,7 +135,7 @@ export class IIOPConnectionImpl implements IIOPConnection {
 
     this._state = ConnectionState.CONNECTING;
 
-    let timeoutTimer: number | undefined;
+    let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
 
     try {
       // Create connection with timeout
@@ -599,7 +599,7 @@ export class ConnectionManager {
   private _connections: Map<string, IIOPConnectionImpl> = new Map();
   private _connectingPromises: Map<string, Promise<IIOPConnection>> = new Map();
   private _config: ConnectionConfig;
-  private _cleanupTimer: number | null = null;
+  private _cleanupTimer: ReturnType<typeof setInterval> | null = null;
   private _maxIdleTime: number = 300000; // 5 minutes
   private _cleanupInterval: number = 60000; // 1 minute
 
