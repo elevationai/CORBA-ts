@@ -3,8 +3,10 @@ name: CI
 on:
   push:
     branches: [main, master]
+  # No `branches:` filter. That filter matches the pull request's BASE, so a PR
+  # targeting anything else — every layer of a stack above the bottom one — ran no
+  # workflow at all and reported "no checks", while still showing mergeable.
   pull_request:
-    branches: [main, master]
 
 permissions:
   contents: read
