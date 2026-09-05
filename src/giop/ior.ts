@@ -5,7 +5,7 @@
 
 import { getLogger } from "logging-ts";
 import { CDRInputStream, CDROutputStream } from "../core/cdr/index.ts";
-import { CodeSetComponentInfo, ComponentId, IIOPProfileBody, IOR, ProfileId, TaggedComponent, TaggedProfile } from "./types.ts";
+import { CodeSetComponentInfo, CodeSetId, ComponentId, IIOPProfileBody, IOR, ProfileId, TaggedComponent, TaggedProfile } from "./types.ts";
 import { CorbalocProtocol, parseCorbaloc as parseCorbalocURL } from "./corbaloc.ts";
 
 const logger = getLogger("CORBA");
@@ -329,11 +329,33 @@ export class IORUtil {
   }
 
   /**
-   * Add CodeSets component to IIOP profile
+   * Add CodeSets component to IIOP profile.
+   *
+   * The conversion code set lists matter for interoperability and must not be
+   * empty. CORBA 3.4 13.10.2.6 negotiates a transmission code set by looking
+   * for common ground between the two sides: native == native, then either
+   * side's native appearing in the other's conversion list, then a shared
+   * conversion set. A server that advertises only a native code set with an
+   * empty conversion list gives a client with a different native nothing to
+   * agree on, and strict ORBs raise CODESET_INCOMPATIBLE while establishing
+   * the binding -- before a single request byte is sent.
+   *
+   * This bit us with OpenORB (as bundled in Embross CUSSAppLink, used by
+   * several CUSS 1.x airline applications), whose native char set is
+   * ISO 8859-1. We advertised UTF-8 with no conversions, so every attempt to
+   * bind to an object reference handed out by our POA failed. Offering
+   * ISO 8859-1 for char and UCS-2 for wchar restores negotiation with legacy
+   * ORBs while leaving our native sets unchanged for modern ones.
+   *
+   * Note that references reached via corbaloc were unaffected, since a
+   * corbaloc URL carries no tagged components and therefore skips negotiation
+   * entirely -- which is what made the failure look selective.
    */
   static createCodeSetsComponent(
-    charCodeSet: number = 0x05010001, // UTF-8
-    wcharCodeSet: number = 0x00010109, // UTF-16
+    charCodeSet: number = CodeSetId.UTF_8,
+    wcharCodeSet: number = CodeSetId.UTF_16,
+    charConversionCodeSets: number[] = [CodeSetId.ISO_8859_1],
+    wcharConversionCodeSets: number[] = [CodeSetId.UCS_2_LEVEL_1],
   ): TaggedComponent {
     const cdr = new CDROutputStream();
 
@@ -341,15 +363,19 @@ export class IORUtil {
     // Start with byte order marker
     cdr.writeOctet(0); // 0 = big-endian
 
-    // Native char code set
+    // ForCharData: native code set, then the conversion code sets we accept
     cdr.writeULong(charCodeSet);
-    // Conversion char code sets count
-    cdr.writeULong(0);
+    cdr.writeULong(charConversionCodeSets.length);
+    for (const codeSet of charConversionCodeSets) {
+      cdr.writeULong(codeSet);
+    }
 
-    // Native wchar code set
+    // ForWcharData: native code set, then the conversion code sets we accept
     cdr.writeULong(wcharCodeSet);
-    // Conversion wchar code sets count
-    cdr.writeULong(0);
+    cdr.writeULong(wcharConversionCodeSets.length);
+    for (const codeSet of wcharConversionCodeSets) {
+      cdr.writeULong(codeSet);
+    }
 
     return {
       componentId: ComponentId.TAG_CODE_SETS,

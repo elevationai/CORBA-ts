@@ -193,6 +193,19 @@ export enum ComponentId {
 }
 
 /**
+ * OSF Character and Code Set Registry IDs, as used by CONV_FRAME::CodeSetId
+ * in the TAG_CODE_SETS component (CORBA 3.4 13.10.5.1).
+ */
+export enum CodeSetId {
+  ISO_8859_1 = 0x00010001,
+  UCS_2_LEVEL_1 = 0x00010100,
+  UCS_2_LEVEL_2 = 0x00010101,
+  UCS_4_LEVEL_1 = 0x00010104,
+  UTF_16 = 0x00010109,
+  UTF_8 = 0x05010001,
+}
+
+/**
  * System Exception Reply Body
  */
 export interface SystemExceptionReplyBody {

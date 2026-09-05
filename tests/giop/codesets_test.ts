@@ -241,9 +241,9 @@ Deno.test("CodeSets: Round-trip create and parse", () => {
   assertExists(parsed);
   assertEquals(parsed.ForCharData.native_code_set, 0x05010001);
   assertEquals(parsed.ForWcharData.native_code_set, 0x00010109);
-  // createCodeSetsComponent always creates format with empty conversion sets
-  assertEquals(parsed.ForCharData.conversion_code_sets.length, 0);
-  assertEquals(parsed.ForWcharData.conversion_code_sets.length, 0);
+  // Conversion sets default to the legacy-compatible entries and round-trip
+  assertEquals(parsed.ForCharData.conversion_code_sets, [0x00010001]);
+  assertEquals(parsed.ForWcharData.conversion_code_sets, [0x00010100]);
 });
 
 Deno.test("CodeSets: Default component round-trip", () => {
@@ -254,6 +254,45 @@ Deno.test("CodeSets: Default component round-trip", () => {
   assertExists(parsed);
   assertEquals(parsed.ForCharData.native_code_set, 0x05010001); // UTF-8
   assertEquals(parsed.ForWcharData.native_code_set, 0x00010109); // UTF-16
+});
+
+// Regression: an empty conversion list leaves a client whose native code set
+// differs from ours with no way to agree a transmission code set. Strict ORBs
+// (OpenORB, as bundled in Embross CUSSAppLink and used by CUSS 1.x airline
+// applications) raise CODESET_INCOMPATIBLE while establishing the binding, so
+// every call against a reference we hand out fails before it reaches the wire.
+Deno.test("CodeSets: default component offers negotiable conversion sets", () => {
+  const parsed = IORUtil.parseCodeSetsComponent(
+    IORUtil.createCodeSetsComponent().componentData,
+  );
+
+  assertEquals(parsed.ForCharData.conversion_code_sets.length > 0, true);
+  assertEquals(parsed.ForWcharData.conversion_code_sets.length > 0, true);
+
+  // ISO 8859-1 is the native char set of the legacy ORBs we must interoperate
+  // with, so it has to be reachable through negotiation.
+  assertEquals(parsed.ForCharData.conversion_code_sets.includes(0x00010001), true);
+});
+
+Deno.test("CodeSets: conversion sets are configurable and round-trip", () => {
+  const created = IORUtil.createCodeSetsComponent(
+    0x05010001,
+    0x00010109,
+    [0x00010001, 0x05010001],
+    [0x00010100, 0x00010101],
+  );
+  const parsed = IORUtil.parseCodeSetsComponent(created.componentData);
+
+  assertEquals(parsed.ForCharData.conversion_code_sets, [0x00010001, 0x05010001]);
+  assertEquals(parsed.ForWcharData.conversion_code_sets, [0x00010100, 0x00010101]);
+});
+
+Deno.test("CodeSets: empty conversion sets still encode when asked explicitly", () => {
+  const created = IORUtil.createCodeSetsComponent(0x05010001, 0x00010109, [], []);
+  const parsed = IORUtil.parseCodeSetsComponent(created.componentData);
+
+  assertEquals(parsed.ForCharData.conversion_code_sets.length, 0);
+  assertEquals(parsed.ForWcharData.conversion_code_sets.length, 0);
 });
 
 Deno.test("CodeSets: Little-endian format with conversion sets", () => {
