@@ -341,15 +341,21 @@ export class IORUtil {
     // Start with byte order marker
     cdr.writeOctet(0); // 0 = big-endian
 
-    // Native char code set
-    cdr.writeULong(charCodeSet);
-    // Conversion char code sets count
-    cdr.writeULong(0);
+    // A native code set advertised with an EMPTY conversion_code_sets list means
+    // "this set or nothing". A strictly conforming peer whose native char set
+    // differs then finds no negotiable intersection and raises
+    // CODESET_INCOMPATIBLE during codeset selection, before a single request is
+    // sent. Advertise the sets core/cdr can actually transcode.
 
-    // Native wchar code set
+    // ForCharData: native + conversion sets
+    cdr.writeULong(charCodeSet);
+    cdr.writeULong(1);
+    cdr.writeULong(0x00010001); // ISO-8859-1
+
+    // ForWcharData: native + conversion sets
     cdr.writeULong(wcharCodeSet);
-    // Conversion wchar code sets count
-    cdr.writeULong(0);
+    cdr.writeULong(1);
+    cdr.writeULong(0x00010100); // UCS-2
 
     return {
       componentId: ComponentId.TAG_CODE_SETS,
