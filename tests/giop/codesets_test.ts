@@ -241,9 +241,11 @@ Deno.test("CodeSets: Round-trip create and parse", () => {
   assertExists(parsed);
   assertEquals(parsed.ForCharData.native_code_set, 0x05010001);
   assertEquals(parsed.ForWcharData.native_code_set, 0x00010109);
-  // createCodeSetsComponent always creates format with empty conversion sets
-  assertEquals(parsed.ForCharData.conversion_code_sets.length, 0);
-  assertEquals(parsed.ForWcharData.conversion_code_sets.length, 0);
+  // Conversion sets must be non-empty: a native set advertised with an empty
+  // conversion list gives a strictly conforming peer (e.g. OpenORB, native
+  // ISO-8859-1) no negotiable intersection -> CODESET_INCOMPATIBLE at bind.
+  assertEquals(parsed.ForCharData.conversion_code_sets, [0x00010001]); // ISO-8859-1
+  assertEquals(parsed.ForWcharData.conversion_code_sets, [0x00010100]); // UCS-2
 });
 
 Deno.test("CodeSets: Default component round-trip", () => {
@@ -254,6 +256,8 @@ Deno.test("CodeSets: Default component round-trip", () => {
   assertExists(parsed);
   assertEquals(parsed.ForCharData.native_code_set, 0x05010001); // UTF-8
   assertEquals(parsed.ForWcharData.native_code_set, 0x00010109); // UTF-16
+  assertEquals(parsed.ForCharData.conversion_code_sets, [0x00010001]); // ISO-8859-1
+  assertEquals(parsed.ForWcharData.conversion_code_sets, [0x00010100]); // UCS-2
 });
 
 Deno.test("CodeSets: Little-endian format with conversion sets", () => {
