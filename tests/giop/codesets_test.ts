@@ -5,6 +5,8 @@
 
 import { assertEquals, assertExists, assertThrows } from "@std/assert";
 import { IORUtil } from "../../src/giop/ior.ts";
+import { CDROutputStream } from "../../src/core/cdr/encoder.ts";
+import { CDRInputStream } from "../../src/core/cdr/decoder.ts";
 
 Deno.test("CodeSets: Parse simplified format (IIOP.NET style) - little-endian", () => {
   // Simplified format: 12 bytes total
@@ -241,9 +243,10 @@ Deno.test("CodeSets: Round-trip create and parse", () => {
   assertExists(parsed);
   assertEquals(parsed.ForCharData.native_code_set, 0x05010001);
   assertEquals(parsed.ForWcharData.native_code_set, 0x00010109);
-  // createCodeSetsComponent always creates format with empty conversion sets
-  assertEquals(parsed.ForCharData.conversion_code_sets.length, 0);
-  assertEquals(parsed.ForWcharData.conversion_code_sets.length, 0);
+  // Conversion sets are non-empty and match what JacORB 3.9 advertises for
+  // this native pair, minus ISO-8859-15 which core/cdr does not implement.
+  assertEquals(parsed.ForCharData.conversion_code_sets, [0x00010001]); // ISO-8859-1
+  assertEquals(parsed.ForWcharData.conversion_code_sets, [0x05010001, 0x00010100]); // UTF-8, UCS-2
 });
 
 Deno.test("CodeSets: Default component round-trip", () => {
@@ -254,6 +257,67 @@ Deno.test("CodeSets: Default component round-trip", () => {
   assertExists(parsed);
   assertEquals(parsed.ForCharData.native_code_set, 0x05010001); // UTF-8
   assertEquals(parsed.ForWcharData.native_code_set, 0x00010109); // UTF-16
+  assertEquals(parsed.ForCharData.conversion_code_sets, [0x00010001]); // ISO-8859-1
+  assertEquals(parsed.ForWcharData.conversion_code_sets, [0x05010001, 0x00010100]); // UTF-8, UCS-2
+});
+
+/**
+ * Every advertised set has to survive a round trip through CDR.
+ *
+ * CONV_FRAME lets a peer select any set in the component, so a set we
+ * advertise but cannot transcode is worse than one we never offered: the peer
+ * negotiates happily and both sides corrupt every string. UCS-2 was in that
+ * state — encoded as UTF-8, decoded as Latin-1 — until the encoder and
+ * decoder learned it.
+ */
+const ADVERTISED_CHAR_SETS: ReadonlyArray<[string, number]> = [
+  ["UTF-8 (native)", 0x05010001],
+  ["ISO-8859-1", 0x00010001],
+];
+
+const ADVERTISED_WCHAR_SETS: ReadonlyArray<[string, number]> = [
+  ["UTF-16 (native)", 0x00010109],
+  ["UTF-8", 0x05010001],
+  ["UCS-2", 0x00010100],
+];
+
+/** Latin-1 is the narrowest advertised set, so stay inside it for char. */
+const CHAR_SAMPLE = "HDCSQOK#OS=0#SI=00 Ünïcode";
+/** BMP only: UCS-2 has no surrogate pairs, so astral characters are out of scope. */
+const WCHAR_SAMPLE = "Ünïcode wide ☃ 東京";
+
+for (const [name, codeset] of ADVERTISED_CHAR_SETS) {
+  Deno.test(`CodeSets: string round-trips through advertised char set ${name}`, () => {
+    const codesets = { charSet: codeset, wcharSet: 0x00010109 };
+    const out = new CDROutputStream(256, false, codesets);
+    out.writeString(CHAR_SAMPLE);
+
+    const input = new CDRInputStream(out.getBuffer(), false, codesets);
+    assertEquals(input.readString(), CHAR_SAMPLE);
+  });
+}
+
+for (const [name, codeset] of ADVERTISED_WCHAR_SETS) {
+  Deno.test(`CodeSets: wstring round-trips through advertised wchar set ${name}`, () => {
+    const codesets = { charSet: 0x05010001, wcharSet: codeset };
+    const out = new CDROutputStream(256, false, codesets);
+    out.writeWString(WCHAR_SAMPLE);
+
+    const input = new CDRInputStream(out.getBuffer(), false, codesets);
+    assertEquals(input.readWString(), WCHAR_SAMPLE);
+  });
+}
+
+Deno.test("CodeSets: UCS-2 and UTF-16 put the same bytes on the wire", () => {
+  // JacORB models both as one TwoByteCodeSet differing only in id and name.
+  // A peer that negotiates either must see the same stream from us.
+  const bytesFor = (wcharSet: number) => {
+    const out = new CDROutputStream(256, false, { charSet: 0x05010001, wcharSet });
+    out.writeWString(WCHAR_SAMPLE);
+    return Array.from(out.getBuffer());
+  };
+
+  assertEquals(bytesFor(0x00010100), bytesFor(0x00010109));
 });
 
 Deno.test("CodeSets: Little-endian format with conversion sets", () => {
