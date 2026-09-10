@@ -89,6 +89,7 @@ export class CDROutputStream {
       case 0x05010001: // UTF-8
         return new TextEncoder().encode(value);
       case 0x00010109: // UTF-16
+      case 0x00010100: // UCS-2 — the same two-byte form; see getDecoder
         return this.encodeUTF16(value, includeBOM);
       case 0x00010001: // ISO-8859-1
         return this.encodeISO88591(value);

@@ -341,11 +341,21 @@ export class IORUtil {
     // Start with byte order marker
     cdr.writeOctet(0); // 0 = big-endian
 
-    // A native code set advertised with an EMPTY conversion_code_sets list means
-    // "this set or nothing". A strictly conforming peer whose native char set
-    // differs then finds no negotiable intersection and raises
-    // CODESET_INCOMPATIBLE during codeset selection, before a single request is
-    // sent. Advertise the sets core/cdr can actually transcode.
+    // Advertise the conversion sets this ORB can actually transcode, not an
+    // empty list.
+    //
+    // A conforming peer offered an empty conversion_code_sets list may still
+    // fall back to UTF-8 (formal/99-10-07 section 13.7.2), so an empty list is
+    // not a spec violation on its own. In practice a peer we have to work with
+    // treated it as "this native set or nothing", found no intersection, and
+    // raised CODESET_INCOMPATIBLE during selection — before a single request
+    // was sent. Publishing the real list removes the ambiguity.
+    //
+    // The sets below match what JacORB 3.9 advertises for the same native
+    // pair, minus ISO-8859-15, which core/cdr does not implement. Only list a
+    // set that can genuinely be transcoded: CONV_FRAME requires it, and a peer
+    // that selects one we cannot honour gets silent corruption instead of a
+    // clean negotiation failure.
 
     // ForCharData: native + conversion sets
     cdr.writeULong(charCodeSet);
@@ -354,7 +364,8 @@ export class IORUtil {
 
     // ForWcharData: native + conversion sets
     cdr.writeULong(wcharCodeSet);
-    cdr.writeULong(1);
+    cdr.writeULong(2);
+    cdr.writeULong(0x05010001); // UTF-8
     cdr.writeULong(0x00010100); // UCS-2
 
     return {

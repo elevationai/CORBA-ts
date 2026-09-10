@@ -41,6 +41,16 @@ export class CDRInputStream {
       case 0x05010001: // UTF-8
         return new TextDecoder("utf-8");
       case 0x00010109: // UTF-16
+      case 0x00010100: // UCS-2
+        // UCS-2 is decoded as UTF-16: the two are byte-identical across the
+        // BMP, and differ only in that UTF-16 assigns meaning to surrogate
+        // pairs. JacORB models them the same way — Ucs2CodeSet and
+        // Utf16CodeSet are one TwoByteCodeSet differing only in id and name —
+        // so a peer that negotiates UCS-2 with us reads what it expects.
+        // Without this, UCS-2 fell to the ISO registry branch below and was
+        // decoded as Latin-1 while the encoder wrote UTF-8: silent corruption
+        // in both directions, and worse than refusing to negotiate at all.
+        //
         // For UTF-16 without a BOM, endianness must be specified.
         // We assume the stream's endianness. TextDecoder handles BOMs automatically if present.
         return new TextDecoder(this.littleEndian ? "utf-16le" : "utf-16be");
