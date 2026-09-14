@@ -9,6 +9,7 @@ import { type ConnectionConfig, ConnectionEndpoint, ConnectionManager, IIOPConne
 import { GIOPMessageType, GIOPVersion, IOR, ReplyStatusType, ServiceContext } from "./types.ts";
 import { IORUtil } from "./ior.ts";
 import { CDRInputStream, CDROutputStream } from "../core/cdr/index.ts";
+import { CompletionStatus } from "../core/exceptions/system.ts";
 
 const logger = getLogger("CORBA");
 const bytesLogger = getLogger("CORBA-bytes");
@@ -18,8 +19,13 @@ const bytesLogger = getLogger("CORBA-bytes");
  * it. A connection is read serially, so a handler that never settles would
  * otherwise stop that connection from ever being served again.
  *
- * Override with CORBA_HANDLER_TIMEOUT_MS when an application's operations are
- * legitimately slower than this.
+ * Override per server with `GIOPServerOptions.handlerTimeoutMs`, or process-wide with
+ * CORBA_HANDLER_TIMEOUT_MS, when an application's operations are legitimately slower.
+ *
+ * 45s is chosen to sit above the longest legitimate wait known for the application this was
+ * written against, with margin: a CUSS1 tenant switch can wait on an in-flight device directive
+ * and then on its own command, each bounded at 15s, so ~30s worst case. Anything slower than
+ * this default is a servant that should be saying so itself rather than holding a connection.
  */
 const HANDLER_TIMEOUT_MS = (() => {
   try {
@@ -33,11 +39,14 @@ const HANDLER_TIMEOUT_MS = (() => {
 })();
 
 /**
- * Operations that block by design and must not be bounded. CUSS1 waitEvent, for
- * instance, holds the request open until an event arrives or its own timeout
- * expires, and that timeout is chosen by the caller.
+ * Operations exempt from the deadline by default, because they block by design.
+ *
+ * CUSS1 `waitEvent` holds its request open until an event arrives or the caller's own timeout
+ * expires, so bounding it would break event delivery. It is a default rather than a rule:
+ * an application with a differently named blocking operation overrides this through
+ * `GIOPServerOptions.unboundedOperations`.
  */
-const UNBOUNDED_OPERATIONS = new Set<string>(["waitEvent"]);
+const DEFAULT_UNBOUNDED_OPERATIONS: readonly string[] = ["waitEvent"];
 
 /**
  * Transport configuration
@@ -378,6 +387,12 @@ export interface GIOPServerOptions {
    * Defaults to CORBA_HANDLER_TIMEOUT_MS, or 45000 when that is unset.
    */
   handlerTimeoutMs?: number;
+
+  /**
+   * Operations that block by design and are therefore served without a deadline.
+   * Defaults to `["waitEvent"]`. Pass an empty iterable to bound every operation.
+   */
+  unboundedOperations?: Iterable<string>;
 }
 
 /**
@@ -386,6 +401,7 @@ export interface GIOPServerOptions {
 export class GIOPServer {
   private _endpoint: ConnectionEndpoint;
   private _handlerTimeoutMs: number;
+  private _unboundedOperations: Set<string>;
   private _listener: Deno.TcpListener | null = null;
   private _running: boolean = false;
   private _acceptReady: Promise<void> | null = null;
@@ -400,6 +416,7 @@ export class GIOPServer {
   constructor(endpoint: ConnectionEndpoint, _connectionManager: ConnectionManager, options?: GIOPServerOptions) {
     this._endpoint = endpoint;
     this._handlerTimeoutMs = options?.handlerTimeoutMs ?? HANDLER_TIMEOUT_MS;
+    this._unboundedOperations = new Set(options?.unboundedOperations ?? DEFAULT_UNBOUNDED_OPERATIONS);
   }
 
   /**
@@ -688,7 +705,7 @@ export class GIOPServer {
 
     // Call handler. Bound it: this connection is read serially, so a handler
     // that never settles would silently stop it from serving anything again.
-    const reply = UNBOUNDED_OPERATIONS.has(request.operation)
+    const reply = this._unboundedOperations.has(request.operation)
       ? await handler(request, connectionWrapper)
       : await this._callHandlerBounded(handler, request, connectionWrapper);
 
@@ -742,7 +759,10 @@ export class GIOPServer {
       const exceptionCdr = new CDROutputStream();
       exceptionCdr.writeString("IDL:omg.org/CORBA/TIMEOUT:1.0");
       exceptionCdr.writeULong(0); // minor
-      exceptionCdr.writeULong(1); // completion_status: COMPLETED_MAYBE
+      // The abandoned handler is still running and may well finish, so the server cannot claim
+      // the operation did not execute. COMPLETED_MAYBE tells the client not to retry blindly,
+      // which matters when the operation was something like a print.
+      exceptionCdr.writeULong(CompletionStatus.COMPLETED_MAYBE);
       reply.body = exceptionCdr.getBuffer();
       return reply;
     }
