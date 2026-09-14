@@ -370,10 +370,22 @@ export class GIOPTransport {
 }
 
 /**
+ * Options for a GIOP server.
+ */
+export interface GIOPServerOptions {
+  /**
+   * How long a request handler may take to produce a reply, in milliseconds.
+   * Defaults to CORBA_HANDLER_TIMEOUT_MS, or 45000 when that is unset.
+   */
+  handlerTimeoutMs?: number;
+}
+
+/**
  * GIOP Server for handling incoming requests
  */
 export class GIOPServer {
   private _endpoint: ConnectionEndpoint;
+  private _handlerTimeoutMs: number;
   private _listener: Deno.TcpListener | null = null;
   private _running: boolean = false;
   private _acceptReady: Promise<void> | null = null;
@@ -385,8 +397,9 @@ export class GIOPServer {
   private _nextConnectionId = 1;
   private _disconnectListeners: Array<(connectionId: number) => void> = [];
 
-  constructor(endpoint: ConnectionEndpoint, _connectionManager: ConnectionManager) {
+  constructor(endpoint: ConnectionEndpoint, _connectionManager: ConnectionManager, options?: GIOPServerOptions) {
     this._endpoint = endpoint;
+    this._handlerTimeoutMs = options?.handlerTimeoutMs ?? HANDLER_TIMEOUT_MS;
   }
 
   /**
@@ -710,8 +723,8 @@ export class GIOPServer {
         handler(request, connection),
         new Promise<never>((_resolve, reject) => {
           timer = setTimeout(
-            () => reject(new Error(`handler for '${request.operation}' did not settle within ${HANDLER_TIMEOUT_MS}ms`)),
-            HANDLER_TIMEOUT_MS,
+            () => reject(new Error(`handler for '${request.operation}' did not settle within ${this._handlerTimeoutMs}ms`)),
+            this._handlerTimeoutMs,
           );
         }),
       ]);

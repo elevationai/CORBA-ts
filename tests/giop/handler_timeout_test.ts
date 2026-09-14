@@ -8,9 +8,13 @@ import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { GIOPServer } from "../../src/giop/transport.ts";
 import { GIOPReply, GIOPRequest } from "../../src/giop/messages.ts";
 import { ReplyStatusType } from "../../src/giop/types.ts";
+import type { ConnectionManager } from "../../src/giop/connection.ts";
 
 const V12 = { major: 1, minor: 2 };
 const encoder = new TextEncoder();
+
+/** The server does not consult the connection manager for inbound requests. */
+const NO_CONNECTION_MANAGER = undefined as unknown as ConnectionManager;
 
 /** Encode a minimal GIOP 1.2 request for `operation`. */
 function request(id: number, operation: string): Uint8Array {
@@ -51,9 +55,12 @@ function collectReplies(conn: Deno.Conn, into: Array<{ id: number; status: numbe
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Answers "ping" immediately and never answers "hang". */
-function startServer(port: number): GIOPServer {
-  const server = new GIOPServer({ host: "127.0.0.1", port }, undefined as never);
+/**
+ * A server that answers "ping" immediately and never answers "hang".
+ * The deadline is passed per server, so these tests need no environment access.
+ */
+function startServer(port: number, handlerTimeoutMs: number): GIOPServer {
+  const server = new GIOPServer({ host: "127.0.0.1", port }, NO_CONNECTION_MANAGER, { handlerTimeoutMs });
   server.registerHandler("*", (req: GIOPRequest) => {
     if (req.operation === "hang") return new Promise<GIOPReply>(() => {});
     const reply = new GIOPReply(V12);
@@ -65,19 +72,7 @@ function startServer(port: number): GIOPServer {
 }
 
 Deno.test("a stuck handler is answered and the connection keeps serving", async () => {
-  const previous = Deno.env.get("CORBA_HANDLER_TIMEOUT_MS");
-  Deno.env.set("CORBA_HANDLER_TIMEOUT_MS", "1000");
-
-  // The deadline is read at module load, so re-import under the new value.
-  const { GIOPServer: BoundedServer } = await import(`../../src/giop/transport.ts#${crypto.randomUUID()}`);
-  const server = new BoundedServer({ host: "127.0.0.1", port: 21_987 }, undefined as never) as GIOPServer;
-  server.registerHandler("*", (req: GIOPRequest) => {
-    if (req.operation === "hang") return new Promise<GIOPReply>(() => {});
-    const reply = new GIOPReply(V12);
-    reply.replyStatus = ReplyStatusType.NO_EXCEPTION;
-    reply.body = new Uint8Array(0);
-    return Promise.resolve(reply);
-  });
+  const server = startServer(21_987, 500);
   await server.start();
 
   const conn = await Deno.connect({ hostname: "127.0.0.1", port: 21_987 });
@@ -88,7 +83,7 @@ Deno.test("a stuck handler is answered and the connection keeps serving", async 
   await conn.write(request(2, "hang"));
   await conn.write(request(3, "ping"));
   await conn.write(request(4, "ping"));
-  await sleep(2500);
+  await sleep(1500);
 
   assertEquals(replies.map((r) => r.id), [1, 2, 3, 4], "every request is answered");
   assertEquals(
@@ -105,13 +100,10 @@ Deno.test("a stuck handler is answered and the connection keeps serving", async 
   conn.close();
   await server.stop();
   await sleep(50);
-
-  if (previous === undefined) Deno.env.delete("CORBA_HANDLER_TIMEOUT_MS");
-  else Deno.env.set("CORBA_HANDLER_TIMEOUT_MS", previous);
 });
 
 Deno.test("a healthy connection is unaffected by the deadline", async () => {
-  const server = startServer(21_988);
+  const server = startServer(21_988, 500);
   await server.start();
 
   const conn = await Deno.connect({ hostname: "127.0.0.1", port: 21_988 });
