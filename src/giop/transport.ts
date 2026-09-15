@@ -8,10 +8,58 @@ import { GIOPCloseConnection, GIOPMessage, GIOPMessageError, GIOPReply, GIOPRequ
 import { type ConnectionConfig, ConnectionEndpoint, ConnectionManager, IIOPConnection } from "./connection.ts";
 import { GIOPMessageType, GIOPVersion, IOR, ReplyStatusType, ServiceContext } from "./types.ts";
 import { IORUtil } from "./ior.ts";
-import { CDRInputStream } from "../core/cdr/index.ts";
+import { CDRInputStream, CDROutputStream } from "../core/cdr/index.ts";
+import { CompletionStatus } from "../core/exceptions/system.ts";
 
 const logger = getLogger("CORBA");
 const bytesLogger = getLogger("CORBA-bytes");
+
+/**
+ * Serialises writes to one socket. Requests on a connection are served concurrently, so replies
+ * finish in any order, and Deno.Conn.write may write only part of a buffer; without this two
+ * messages could interleave on the wire.
+ */
+class ConnectionWriter {
+  private readonly _addr: Deno.NetAddr;
+  private _tail: Promise<void> = Promise.resolve();
+
+  constructor(private readonly _conn: Deno.TcpConn) {
+    this._addr = _conn.remoteAddr as Deno.NetAddr;
+  }
+
+  write(data: Uint8Array): Promise<void> {
+    const write = this._tail.then(() => this._writeAll(data));
+    this._tail = write.catch(() => {});
+    return write;
+  }
+
+  private async _writeAll(data: Uint8Array): Promise<void> {
+    bytesLogger.debug("SEND %s:%d [%d bytes]: %s", this._addr.hostname, this._addr.port, data.length, lazyHex(data));
+    let sent = 0;
+    while (sent < data.length) {
+      sent += await this._conn.write(data.subarray(sent));
+    }
+  }
+}
+
+function systemExceptionReply(request: GIOPRequest, name: string, minor: number, completed: CompletionStatus): GIOPReply {
+  const body = new CDROutputStream();
+  body.writeString(`IDL:omg.org/CORBA/${name}:1.0`);
+  body.writeULong(minor);
+  body.writeULong(completed);
+
+  const reply = new GIOPReply(request.version);
+  reply.requestId = request.requestId;
+  reply.replyStatus = ReplyStatusType.SYSTEM_EXCEPTION;
+  reply.body = body.getBuffer();
+  return reply;
+}
+
+function isConnectionGone(error: unknown): boolean {
+  return error instanceof Deno.errors.BadResource ||
+    error instanceof Deno.errors.BrokenPipe ||
+    error instanceof Deno.errors.ConnectionReset;
+}
 
 /**
  * Transport configuration
@@ -481,12 +529,14 @@ export class GIOPServer {
 
   private async _handleConnection(conn: Deno.TcpConn): Promise<void> {
     const connectionId = this._nextConnectionId++;
+    const writer = new ConnectionWriter(conn);
 
     try {
       const buffer = new Uint8Array(8192);
       let readBuffer = new Uint8Array(0);
+      let closeRequested = false;
 
-      while (this._running) {
+      while (this._running && !closeRequested) {
         const bytesRead = await conn.read(buffer);
         if (bytesRead === null) break;
 
@@ -515,17 +565,21 @@ export class GIOPServer {
           const addr = conn.remoteAddr as Deno.NetAddr;
           bytesLogger.debug("RECV %s:%d [%d bytes]: %s", addr.hostname, addr.port, messageData.length, lazyHex(messageData));
 
-          try {
-            await this._processMessage(messageData, conn, connectionId);
+          if (messageData[7] === GIOPMessageType.CloseConnection) {
+            closeRequested = true;
+            break;
           }
-          catch (error) {
-            if (error instanceof Error && error.message === "GIOP_CLOSE_CONNECTION") {
-              // Server requested connection close - this is expected
-              break;
+
+          // Not awaited: the read loop must keep draining the socket while handlers run, or one
+          // slow servant would stall every request queued behind it on this connection.
+          this._processMessage(messageData, writer, connectionId).catch((error) => {
+            if (isConnectionGone(error)) {
+              logger.debug("Connection %d closed before a reply could be written", connectionId);
+              return;
             }
-            // Re-throw other errors
-            throw error;
-          }
+            logger.error("Request processing failed on connection %d", connectionId);
+            logger.exception(error);
+          });
         }
       }
     }
@@ -552,7 +606,7 @@ export class GIOPServer {
     }
   }
 
-  private async _processMessage(messageData: Uint8Array, conn: Deno.TcpConn, connectionId: number): Promise<void> {
+  private async _processMessage(messageData: Uint8Array, writer: ConnectionWriter, connectionId: number): Promise<void> {
     // Check GIOP magic bytes
     if (
       messageData[0] !== 0x47 || messageData[1] !== 0x49 ||
@@ -564,12 +618,6 @@ export class GIOPServer {
 
     // Check message type (byte 7)
     const messageType = messageData[7];
-
-    // Handle different message types
-    if (messageType === GIOPMessageType.CloseConnection) {
-      // Throw a specific error to signal connection should be closed
-      throw new Error("GIOP_CLOSE_CONNECTION");
-    }
 
     // Only handle Request messages for normal processing
     if (messageType !== GIOPMessageType.Request) {
@@ -609,58 +657,40 @@ export class GIOPServer {
       };
     }
 
+    let reply: GIOPReply;
     if (!handler) {
       logger.error("No handler found for operation '%s'", request.operation);
-      // Send exception reply
-      const errorReply = new GIOPReply(request.version);
-      errorReply.requestId = request.requestId;
-      errorReply.replyStatus = ReplyStatusType.SYSTEM_EXCEPTION;
-      // Use extracted codesets from request, or null (defaults) if not present
-      const replyData = errorReply.serialize(codesets);
-
-      // Log outgoing error response bytes
-      const addr1 = conn.remoteAddr as Deno.NetAddr;
-      bytesLogger.debug("SEND %s:%d [%d bytes]: %s", addr1.hostname, addr1.port, replyData.length, lazyHex(replyData));
-
-      await conn.write(replyData);
-      return;
+      reply = systemExceptionReply(request, "BAD_OPERATION", 0, CompletionStatus.COMPLETED_NO);
     }
+    else {
+      // Create a basic connection wrapper for the handler
+      const connectionWrapper = {
+        connectionId,
+        endpoint: this._endpoint,
+        state: "connected",
+        isConnected: true,
+        connect: async () => {},
+        disconnect: async () => {},
+        send: (message: GIOPMessage) => writer.write(message.serialize(codesets)),
+        receive: () => Promise.resolve(request),
+        close: async () => {},
+      } as IIOPConnection;
 
-    // Create a basic connection wrapper for the handler
-    const connectionWrapper = {
-      connectionId,
-      endpoint: this._endpoint,
-      state: "connected",
-      isConnected: true,
-      connect: async () => {},
-      disconnect: async () => {},
-      send: async (message: GIOPMessage) => {
-        const data = message.serialize(codesets);
-
-        // Log outgoing response bytes from wrapper
-        const addr2 = conn.remoteAddr as Deno.NetAddr;
-        bytesLogger.debug("SEND %s:%d [%d bytes]: %s", addr2.hostname, addr2.port, data.length, lazyHex(data));
-
-        await conn.write(data);
-      },
-      receive: () => Promise.resolve(request),
-      close: async () => {},
-    } as IIOPConnection;
-
-    // Call handler
-    const reply = await handler(request, connectionWrapper);
+      try {
+        reply = await handler(request, connectionWrapper);
+      }
+      catch (error) {
+        logger.error("Handler for operation '%s' requestId=%d threw", request.operation, request.requestId);
+        logger.exception(error);
+        reply = systemExceptionReply(request, "UNKNOWN", 0, CompletionStatus.COMPLETED_MAYBE);
+      }
+    }
 
     // Send reply if expected
     // Per CORBA spec: oneway operations (responseExpected=false) must NOT send replies
     if (request.responseExpected) {
       reply.requestId = request.requestId;
-      const replyData = reply.serialize(codesets);
-
-      // Log outgoing reply bytes
-      const addr3 = conn.remoteAddr as Deno.NetAddr;
-      bytesLogger.debug("SEND %s:%d [%d bytes]: %s", addr3.hostname, addr3.port, replyData.length, lazyHex(replyData));
-
-      await conn.write(replyData);
+      await writer.write(reply.serialize(codesets));
     }
   }
 }
