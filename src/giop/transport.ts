@@ -22,10 +22,16 @@ const bytesLogger = getLogger("CORBA-bytes");
  * Override per server with `GIOPServerOptions.handlerTimeoutMs`, or process-wide with
  * CORBA_HANDLER_TIMEOUT_MS, when an application's operations are legitimately slower.
  *
- * 45s is chosen to sit above the longest legitimate wait known for the application this was
- * written against, with margin: a CUSS1 tenant switch can wait on an in-flight device directive
- * and then on its own command, each bounded at 15s, so ~30s worst case. Anything slower than
- * this default is a servant that should be saying so itself rather than holding a connection.
+ * 15s is deliberately tight: the failure this bounds is silent, so the default favours surfacing
+ * it quickly over absorbing a slow servant. It matches the response timeout on the device link of
+ * the application this was written against, which makes it the shortest interval that still admits
+ * one full device round trip.
+ *
+ * It is therefore below the worst case of a path that stacks two bounded waits -- a CUSS1 tenant
+ * switch can wait on an in-flight directive and then on its own command, ~30s in the limit -- and
+ * such a path would be cut off while healthy. That is the intended trade: a servant legitimately
+ * slower than one device round trip should say so through `handlerTimeoutMs` rather than have the
+ * default stretched to cover it.
  */
 const HANDLER_TIMEOUT_MS = (() => {
   try {
@@ -35,7 +41,7 @@ const HANDLER_TIMEOUT_MS = (() => {
   catch {
     // Env access is not granted; fall through to the default.
   }
-  return 45_000;
+  return 15_000;
 })();
 
 /**
@@ -384,7 +390,7 @@ export class GIOPTransport {
 export interface GIOPServerOptions {
   /**
    * How long a request handler may take to produce a reply, in milliseconds.
-   * Defaults to CORBA_HANDLER_TIMEOUT_MS, or 45000 when that is unset.
+   * Defaults to CORBA_HANDLER_TIMEOUT_MS, or 15000 when that is unset.
    */
   handlerTimeoutMs?: number;
 
