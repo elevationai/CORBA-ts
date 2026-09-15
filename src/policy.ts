@@ -7,33 +7,33 @@ import { CORBA } from "./types.ts";
 import { ObjectReference } from "./object.ts";
 
 /**
- * Standard Policy Types
+ * Standard Policy Types, numbered per the OMG policy type registry (CORBA 3.4 Part 1, Annex A)
  */
 export enum PolicyType {
-  LIFESPAN_POLICY_TYPE = 1,
-  ID_UNIQUENESS_POLICY_TYPE = 2,
-  ID_ASSIGNMENT_POLICY_TYPE = 3,
-  IMPLICIT_ACTIVATION_POLICY_TYPE = 4,
-  SERVANT_RETENTION_POLICY_TYPE = 5,
-  REQUEST_PROCESSING_POLICY_TYPE = 6,
-  THREAD_POLICY_TYPE = 7,
-  TRANSACTION_POLICY_TYPE = 8,
-  REBIND_POLICY_TYPE = 9,
-  SYNC_SCOPE_POLICY_TYPE = 10,
-  REQUEST_PRIORITY_POLICY_TYPE = 11,
-  REPLY_PRIORITY_POLICY_TYPE = 12,
-  REQUEST_START_TIME_POLICY_TYPE = 13,
-  REQUEST_END_TIME_POLICY_TYPE = 14,
-  REPLY_START_TIME_POLICY_TYPE = 15,
-  REPLY_END_TIME_POLICY_TYPE = 16,
-  RELATIVE_REQ_TIMEOUT_POLICY_TYPE = 17,
-  RELATIVE_RT_TIMEOUT_POLICY_TYPE = 18,
-  ROUTING_POLICY_TYPE = 19,
-  MAX_HOPS_POLICY_TYPE = 20,
-  QUEUE_ORDER_POLICY_TYPE = 21,
-  FIREWALL_POLICY_TYPE = 22,
-  BIDIRECTIONAL_POLICY_TYPE = 23,
-  SECURE_INVOCATION_POLICY_TYPE = 24,
+  SECURE_INVOCATION_POLICY_TYPE = 9, // SecTargetSecureInvocation
+  THREAD_POLICY_TYPE = 16,
+  LIFESPAN_POLICY_TYPE = 17,
+  ID_UNIQUENESS_POLICY_TYPE = 18,
+  ID_ASSIGNMENT_POLICY_TYPE = 19,
+  IMPLICIT_ACTIVATION_POLICY_TYPE = 20,
+  SERVANT_RETENTION_POLICY_TYPE = 21,
+  REQUEST_PROCESSING_POLICY_TYPE = 22,
+  REBIND_POLICY_TYPE = 23,
+  SYNC_SCOPE_POLICY_TYPE = 24,
+  REQUEST_PRIORITY_POLICY_TYPE = 25,
+  REPLY_PRIORITY_POLICY_TYPE = 26,
+  REQUEST_START_TIME_POLICY_TYPE = 27,
+  REQUEST_END_TIME_POLICY_TYPE = 28,
+  REPLY_START_TIME_POLICY_TYPE = 29,
+  REPLY_END_TIME_POLICY_TYPE = 30,
+  RELATIVE_REQ_TIMEOUT_POLICY_TYPE = 31,
+  RELATIVE_RT_TIMEOUT_POLICY_TYPE = 32,
+  ROUTING_POLICY_TYPE = 33,
+  MAX_HOPS_POLICY_TYPE = 34,
+  QUEUE_ORDER_POLICY_TYPE = 35,
+  FIREWALL_POLICY_TYPE = 36,
+  BIDIRECTIONAL_POLICY_TYPE = 37,
+  TRANSACTION_POLICY_TYPE = 56, // CosTransactions::OTS_POLICY_TYPE
   // Implementation-specific policies
   ENDPOINT_POLICY_TYPE = 1000, // Custom policy for POA endpoint configuration
 }
@@ -190,6 +190,29 @@ export class EndpointPolicy extends Policy {
 }
 
 /**
+ * PortableServer::ThreadPolicyValue
+ */
+export enum ThreadPolicyValue {
+  ORB_CTRL_MODEL = 0,
+  SINGLE_THREAD_MODEL = 1,
+  MAIN_THREAD_MODEL = 2,
+}
+
+/**
+ * ThreadPolicy class controlling how a POA dispatches concurrent requests.
+ *
+ * ORB_CTRL_MODEL, the default, dispatches requests concurrently. SINGLE_THREAD_MODEL runs the
+ * POA's upcalls one at a time; MAIN_THREAD_MODEL runs the upcalls of every main-thread POA one
+ * at a time. Under either sequential model a servant that calls back into its own POA over the
+ * network waits behind itself.
+ */
+export class ThreadPolicy extends Policy {
+  constructor(value: ThreadPolicyValue) {
+    super(PolicyType.THREAD_POLICY_TYPE, value);
+  }
+}
+
+/**
  * Create a policy with the specified type and value
  */
 export function create_policy(policy_type: number, policy_value: unknown): Policy {
@@ -201,4 +224,11 @@ export function create_policy(policy_type: number, policy_value: unknown): Polic
  */
 export function create_endpoint_policy(host: string, port: number): EndpointPolicy {
   return new EndpointPolicy({ host, port });
+}
+
+/**
+ * Create a thread policy for POA configuration
+ */
+export function create_thread_policy(value: ThreadPolicyValue): ThreadPolicy {
+  return new ThreadPolicy(value);
 }

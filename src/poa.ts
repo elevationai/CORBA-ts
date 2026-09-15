@@ -3,10 +3,19 @@
  * Based on CORBA 3.4 specification
  */
 
+import { AsyncLocalStorage } from "node:async_hooks";
 import { getLogger } from "logging-ts";
 import { CORBA } from "./types.ts";
 import { Object, ObjectReference } from "./object.ts";
-import { EndpointPolicy, Policy, PolicyType } from "./policy.ts";
+import { EndpointPolicy, Policy, PolicyType, ThreadPolicyValue } from "./policy.ts";
+import {
+  BAD_INV_ORDER,
+  CompletionStatus,
+  OBJ_ADAPTER,
+  OMGVMCID,
+  SystemException as CoreSystemException,
+  TRANSIENT,
+} from "./core/exceptions/system.ts";
 import { IORUtil } from "./giop/ior.ts";
 import type { IOR } from "./giop/types.ts";
 import { GIOPServer } from "./giop/transport.ts";
@@ -123,8 +132,10 @@ interface MarshalableResult {
  * Servant base class
  */
 export abstract class Servant {
-  /** Connection ID of the most recent GIOP request dispatched to this servant. Set by the POA before calling _invoke(). */
-  _connectionId: number = 0;
+  /** Connection ID of the GIOP request being dispatched to this servant, or 0 outside a request. */
+  get _connectionId(): number {
+    return invocationContext.getStore()?.connectionId ?? 0;
+  }
 
   /**
    * Default POA for this servant
@@ -342,12 +353,39 @@ export interface POAManager extends CORBA.ObjectRef {
 }
 
 /**
+ * Runs tasks one at a time, in arrival order
+ */
+class Serializer {
+  private _tail: Promise<unknown> = Promise.resolve();
+
+  run<T>(task: () => Promise<T>): Promise<T> {
+    const result = this._tail.then(task);
+    this._tail = result.catch(() => {});
+    return result;
+  }
+}
+
+// MAIN_THREAD_MODEL serialises across every POA that uses it, not per POA.
+const mainThreadSerializer = new Serializer();
+
+interface InvocationContext {
+  connectionId: number;
+}
+
+// Set for the duration of a servant upcall: it identifies the request to the servant, and lets a
+// manager refuse to wait for completion from within the very request that called it.
+const invocationContext = new AsyncLocalStorage<InvocationContext>();
+
+/**
  * Simple POA Manager implementation
  */
 class POAManagerImpl extends ObjectReference implements POAManager {
   [key: string]: unknown;
   private _state: POAManagerState;
   private _poas: Set<POAImpl> = new Set();
+  private _active = 0;
+  private _stateWaiters: Array<() => void> = [];
+  private _drainWaiters: Array<() => void> = [];
 
   constructor() {
     super("IDL:omg.org/PortableServer/POAManager:1.0");
@@ -372,59 +410,120 @@ class POAManagerImpl extends ObjectReference implements POAManager {
       await poa._startServer();
     }
 
-    this._state = POAManagerState.ACTIVE;
+    this._setState(POAManagerState.ACTIVE);
   }
 
-  hold_requests(_wait_for_completion: boolean): Promise<void> {
+  async hold_requests(wait_for_completion: boolean): Promise<void> {
     if (this._state === POAManagerState.INACTIVE) {
       throw new CORBA.BAD_PARAM("POAManager is in INACTIVE state");
     }
-    this._state = POAManagerState.HOLDING;
+    this._assertMayWait(wait_for_completion);
+    this._setState(POAManagerState.HOLDING);
 
-    // In a complete implementation, we would wait for in-progress requests
-    // if (_wait_for_completion) {
-    // Wait for in-progress requests to complete
-    // }
-    return Promise.resolve();
+    if (wait_for_completion) {
+      await this._drained(POAManagerState.HOLDING);
+    }
   }
 
-  discard_requests(_wait_for_completion: boolean): Promise<void> {
+  async discard_requests(wait_for_completion: boolean): Promise<void> {
     if (this._state === POAManagerState.INACTIVE) {
       throw new CORBA.BAD_PARAM("POAManager is in INACTIVE state");
     }
-    this._state = POAManagerState.DISCARDING;
+    this._assertMayWait(wait_for_completion);
+    this._setState(POAManagerState.DISCARDING);
 
-    // In a complete implementation, we would wait for in-progress requests
-    // if (_wait_for_completion) {
-    // Wait for in-progress requests to complete
-    // }
-    return Promise.resolve();
+    if (wait_for_completion) {
+      await this._drained(POAManagerState.DISCARDING);
+    }
   }
 
   async deactivate(
     _etherealize_objects: boolean,
-    _wait_for_completion: boolean,
+    wait_for_completion: boolean,
   ): Promise<void> {
-    if (this._state === POAManagerState.INACTIVE) {
-      return;
+    this._assertMayWait(wait_for_completion);
+
+    if (this._state !== POAManagerState.INACTIVE) {
+      this._setState(POAManagerState.INACTIVE);
+
+      // Stop all GIOP servers
+      for (const poa of this._poas) {
+        await poa._stopServer();
+      }
     }
 
-    this._state = POAManagerState.INACTIVE;
-
-    // Stop all GIOP servers
-    for (const poa of this._poas) {
-      await poa._stopServer();
+    if (wait_for_completion) {
+      await this._drained(POAManagerState.INACTIVE);
     }
-
-    // In a complete implementation, we would etherealize objects
-    // and wait for in-progress requests
-    // if (_wait_for_completion) {
-    // Wait for in-progress requests to complete
-    // }
   }
 
   get_state(): POAManagerState {
     return this._state;
+  }
+
+  /**
+   * Resolves once the manager is active. While holding, the request waits here; while discarding
+   * or inactive it is rejected with the system exception the specification prescribes.
+   */
+  async _admit(): Promise<void> {
+    while (this._state === POAManagerState.HOLDING) {
+      await this._stateChanged();
+    }
+    if (this._state === POAManagerState.DISCARDING) {
+      throw new TRANSIENT("POAManager is discarding requests", OMGVMCID | 1);
+    }
+    if (this._state === POAManagerState.INACTIVE) {
+      throw new OBJ_ADAPTER("POAManager is inactive", OMGVMCID | 1);
+    }
+  }
+
+  /**
+   * Run a servant upcall as an actively executing request of this manager
+   */
+  async _execute<T>(connectionId: number, task: () => Promise<T>): Promise<T> {
+    this._active++;
+    try {
+      return await invocationContext.run({ connectionId }, task);
+    }
+    finally {
+      this._active--;
+      if (this._active === 0) {
+        this._notify(this._drainWaiters);
+      }
+    }
+  }
+
+  private _setState(state: POAManagerState): void {
+    this._state = state;
+    this._notify(this._stateWaiters);
+  }
+
+  private _notify(waiters: Array<() => void>): void {
+    for (const resolve of waiters.splice(0)) {
+      resolve();
+    }
+  }
+
+  private _stateChanged(): Promise<void> {
+    return new Promise((resolve) => this._stateWaiters.push(resolve));
+  }
+
+  private _assertMayWait(wait_for_completion: boolean): void {
+    if (wait_for_completion && invocationContext.getStore()) {
+      throw new BAD_INV_ORDER("wait_for_completion requested from within a request", OMGVMCID | 3);
+    }
+  }
+
+  /**
+   * Wait until no request is executing, or until the manager leaves `state`
+   */
+  private async _drained(state: POAManagerState): Promise<void> {
+    while (this._active > 0 && this._state === state) {
+      await Promise.race([
+        new Promise<void>((resolve) => this._drainWaiters.push(resolve)),
+        this._stateChanged(),
+      ]);
+    }
   }
 }
 
@@ -448,6 +547,7 @@ class POAImpl extends ObjectReference implements POA {
   private _server: GIOPServer | null = null;
   private _connectionManager: ConnectionManager;
   private _disconnectListeners: Array<(connectionId: number) => void> = [];
+  private _serializer: Serializer | null = null;
 
   constructor(name: string, parent: POA | null = null, manager: POAManager | null = null, policies?: Policy[]) {
     super("IDL:omg.org/PortableServer/POA:1.0");
@@ -475,6 +575,18 @@ class POAImpl extends ObjectReference implements POA {
         const endpointPolicy = policy as EndpointPolicy;
         this._host = endpointPolicy.host;
         this._port = endpointPolicy.port;
+      }
+      else if (policy.policy_type() === PolicyType.THREAD_POLICY_TYPE) {
+        switch (policy.value<ThreadPolicyValue>()) {
+          case ThreadPolicyValue.SINGLE_THREAD_MODEL:
+            this._serializer = new Serializer();
+            break;
+          case ThreadPolicyValue.MAIN_THREAD_MODEL:
+            this._serializer = mainThreadSerializer;
+            break;
+          default:
+            this._serializer = null;
+        }
       }
       // Handle other policy types as needed
     }
@@ -791,7 +903,7 @@ class POAImpl extends ObjectReference implements POA {
 
     // Register a generic handler that dispatches to servants
     this._server.registerHandler("*", (request: GIOPRequest, connection: IIOPConnection) => {
-      return this._dispatchRequest(request, connection);
+      return this._handleRequest(request, connection);
     });
 
     // Forward any pre-registered disconnect listeners to the server
@@ -816,9 +928,67 @@ class POAImpl extends ObjectReference implements POA {
   }
 
   /**
+   * Admit a request through the POAManager's state and the thread policy, then dispatch it
+   */
+  private async _handleRequest(request: GIOPRequest, connection: IIOPConnection): Promise<GIOPReply> {
+    const manager = this._manager instanceof POAManagerImpl ? this._manager : null;
+    const dispatch = (): Promise<GIOPReply> =>
+      manager ? manager._execute(connection?.connectionId ?? 0, () => this._dispatchRequest(request)) : this._dispatchRequest(request);
+
+    try {
+      if (!this._serializer) {
+        await manager?._admit();
+        return await dispatch();
+      }
+      // Wait for admission outside the queue, and give the turn back if the manager left the active
+      // state while this request was queued, so a held POA never blocks the queue it shares.
+      let reply: GIOPReply | null = null;
+      while (reply === null) {
+        await manager?._admit();
+        reply = await this._serializer.run(() =>
+          manager && manager.get_state() !== POAManagerState.ACTIVE ? Promise.resolve(null) : dispatch()
+        );
+      }
+      return reply;
+    }
+    catch (error) {
+      logger.debug("Request '%s' requestId=%d not admitted: %s", request.operation, request.requestId, (error as Error).message);
+      return this._exceptionReply(request, error);
+    }
+  }
+
+  /**
+   * Build a SYSTEM_EXCEPTION reply carrying the exception's repository ID, minor code, and completion status
+   */
+  private _exceptionReply(request: GIOPRequest, error: unknown): GIOPReply {
+    let name = "UNKNOWN";
+    let minor = 0;
+    let completed: number = CompletionStatus.COMPLETED_MAYBE;
+    if (error instanceof CORBA.SystemException || error instanceof CoreSystemException) {
+      name = error.name.replace(/^CORBA\./, "");
+      minor = error.minor;
+      completed = error.completed;
+    }
+    if (name === "SystemException") {
+      name = "UNKNOWN";
+    }
+
+    const body = new CDROutputStream();
+    body.writeString(`IDL:omg.org/CORBA/${name}:1.0`);
+    body.writeULong(minor);
+    body.writeULong(completed);
+
+    const reply = new GIOPReply(request.version);
+    reply.requestId = request.requestId;
+    reply.replyStatus = 2; // SYSTEM_EXCEPTION
+    reply.body = body.getBuffer();
+    return reply;
+  }
+
+  /**
    * Dispatch a GIOP request to the appropriate servant
    */
-  private async _dispatchRequest(request: GIOPRequest, _connection: IIOPConnection): Promise<GIOPReply> {
+  private async _dispatchRequest(request: GIOPRequest): Promise<GIOPReply> {
     logger.debug("Dispatching request: operation='%s' requestId=%d", request.operation, request.requestId);
     try {
       // Extract the object ID from the request
@@ -895,9 +1065,6 @@ class POAImpl extends ObjectReference implements POA {
           },
         };
 
-        // Set connection ID on servant so it can identify the calling client
-        servant._connectionId = _connection?.connectionId ?? 0;
-
         // Call the standard CORBA _invoke method
         const outputCDR = await (invokableServant as InvokableServant)._invoke(operation, inputCDR, responseHandler);
 
@@ -969,35 +1136,7 @@ class POAImpl extends ObjectReference implements POA {
         logger.exception(error);
       }
 
-      // Create an exception reply
-      const reply = new GIOPReply(request.version);
-      reply.requestId = request.requestId;
-      reply.replyStatus = 2; // SYSTEM_EXCEPTION
-
-      // Marshal the exception
-      // Format: RepositoryId, MinorCode, CompletionStatus
-      const outputCDR = new CDROutputStream();
-
-      // Get exception name
-      let exceptionName = "UNKNOWN";
-      if (error instanceof CORBA.SystemException) {
-        exceptionName = error.name || "UNKNOWN";
-      }
-      else if (error instanceof Error) {
-        exceptionName = error.name || "UNKNOWN";
-      }
-
-      // Write repository ID for the exception
-      outputCDR.writeString(`IDL:omg.org/CORBA/${exceptionName}:1.0`);
-
-      // Write minor code
-      outputCDR.writeULong(0);
-
-      // Write completion status (0 = COMPLETED_YES, 1 = COMPLETED_NO, 2 = COMPLETED_MAYBE)
-      outputCDR.writeULong(0);
-
-      reply.body = outputCDR.getBuffer();
-      return reply;
+      return this._exceptionReply(request, error);
     }
   }
 

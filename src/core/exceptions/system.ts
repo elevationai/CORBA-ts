@@ -13,6 +13,11 @@ export enum CompletionStatus {
 }
 
 /**
+ * Vendor minor code ID reserved for the standard minor codes in the specification
+ */
+export const OMGVMCID = 0x4f4d0000;
+
+/**
  * Base class for all CORBA system exceptions
  */
 export abstract class SystemException extends Error {
