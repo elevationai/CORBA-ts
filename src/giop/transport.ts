@@ -8,10 +8,51 @@ import { GIOPCloseConnection, GIOPMessage, GIOPMessageError, GIOPReply, GIOPRequ
 import { type ConnectionConfig, ConnectionEndpoint, ConnectionManager, IIOPConnection } from "./connection.ts";
 import { GIOPMessageType, GIOPVersion, IOR, ReplyStatusType, ServiceContext } from "./types.ts";
 import { IORUtil } from "./ior.ts";
-import { CDRInputStream } from "../core/cdr/index.ts";
+import { CDRInputStream, CDROutputStream } from "../core/cdr/index.ts";
+import { CompletionStatus } from "../core/exceptions/system.ts";
 
 const logger = getLogger("CORBA");
 const bytesLogger = getLogger("CORBA-bytes");
+
+/**
+ * How long a servant may take to produce a reply before the server gives up on
+ * it. A connection is read serially, so a handler that never settles would
+ * otherwise stop that connection from ever being served again.
+ *
+ * Override per server with `GIOPServerOptions.handlerTimeoutMs`, or process-wide with
+ * CORBA_HANDLER_TIMEOUT_MS, when an application's operations are legitimately slower.
+ *
+ * 15s is deliberately tight: the failure this bounds is silent, so the default favours surfacing
+ * it quickly over absorbing a slow servant. It matches the response timeout on the device link of
+ * the application this was written against, which makes it the shortest interval that still admits
+ * one full device round trip.
+ *
+ * It is therefore below the worst case of a path that stacks two bounded waits -- a CUSS1 tenant
+ * switch can wait on an in-flight directive and then on its own command, ~30s in the limit -- and
+ * such a path would be cut off while healthy. That is the intended trade: a servant legitimately
+ * slower than one device round trip should say so through `handlerTimeoutMs` rather than have the
+ * default stretched to cover it.
+ */
+const HANDLER_TIMEOUT_MS = (() => {
+  try {
+    const configured = Number(Deno.env.get("CORBA_HANDLER_TIMEOUT_MS"));
+    if (Number.isFinite(configured) && configured > 0) return configured;
+  }
+  catch {
+    // Env access is not granted; fall through to the default.
+  }
+  return 15_000;
+})();
+
+/**
+ * Operations exempt from the deadline by default, because they block by design.
+ *
+ * CUSS1 `waitEvent` holds its request open until an event arrives or the caller's own timeout
+ * expires, so bounding it would break event delivery. It is a default rather than a rule:
+ * an application with a differently named blocking operation overrides this through
+ * `GIOPServerOptions.unboundedOperations`.
+ */
+const DEFAULT_UNBOUNDED_OPERATIONS: readonly string[] = ["waitEvent"];
 
 /**
  * Transport configuration
@@ -344,10 +385,29 @@ export class GIOPTransport {
 }
 
 /**
+ * Options for a GIOP server.
+ */
+export interface GIOPServerOptions {
+  /**
+   * How long a request handler may take to produce a reply, in milliseconds.
+   * Defaults to CORBA_HANDLER_TIMEOUT_MS, or 15000 when that is unset.
+   */
+  handlerTimeoutMs?: number;
+
+  /**
+   * Operations that block by design and are therefore served without a deadline.
+   * Defaults to `["waitEvent"]`. Pass an empty iterable to bound every operation.
+   */
+  unboundedOperations?: Iterable<string>;
+}
+
+/**
  * GIOP Server for handling incoming requests
  */
 export class GIOPServer {
   private _endpoint: ConnectionEndpoint;
+  private _handlerTimeoutMs: number;
+  private _unboundedOperations: Set<string>;
   private _listener: Deno.TcpListener | null = null;
   private _running: boolean = false;
   private _acceptReady: Promise<void> | null = null;
@@ -359,8 +419,10 @@ export class GIOPServer {
   private _nextConnectionId = 1;
   private _disconnectListeners: Array<(connectionId: number) => void> = [];
 
-  constructor(endpoint: ConnectionEndpoint, _connectionManager: ConnectionManager) {
+  constructor(endpoint: ConnectionEndpoint, _connectionManager: ConnectionManager, options?: GIOPServerOptions) {
     this._endpoint = endpoint;
+    this._handlerTimeoutMs = options?.handlerTimeoutMs ?? HANDLER_TIMEOUT_MS;
+    this._unboundedOperations = new Set(options?.unboundedOperations ?? DEFAULT_UNBOUNDED_OPERATIONS);
   }
 
   /**
@@ -647,8 +709,11 @@ export class GIOPServer {
       close: async () => {},
     } as IIOPConnection;
 
-    // Call handler
-    const reply = await handler(request, connectionWrapper);
+    // Call handler. Bound it: this connection is read serially, so a handler
+    // that never settles would silently stop it from serving anything again.
+    const reply = this._unboundedOperations.has(request.operation)
+      ? await handler(request, connectionWrapper)
+      : await this._callHandlerBounded(handler, request, connectionWrapper);
 
     // Send reply if expected
     // Per CORBA spec: oneway operations (responseExpected=false) must NOT send replies
@@ -661,6 +726,54 @@ export class GIOPServer {
       bytesLogger.debug("SEND %s:%d [%d bytes]: %s", addr3.hostname, addr3.port, replyData.length, lazyHex(replyData));
 
       await conn.write(replyData);
+    }
+  }
+
+  /**
+   * Run a request handler with a deadline. If it does not settle in time, or
+   * throws, log it and answer the client with a system exception so the
+   * connection stays usable. The abandoned handler is left to finish on its
+   * own; only its hold on this connection is released.
+   */
+  private async _callHandlerBounded(
+    handler: (request: GIOPRequest, connection: IIOPConnection) => Promise<GIOPReply>,
+    request: GIOPRequest,
+    connection: IIOPConnection,
+  ): Promise<GIOPReply> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        handler(request, connection),
+        new Promise<never>((_resolve, reject) => {
+          timer = setTimeout(
+            () => reject(new Error(`handler for '${request.operation}' did not settle within ${this._handlerTimeoutMs}ms`)),
+            this._handlerTimeoutMs,
+          );
+        }),
+      ]);
+    }
+    catch (error) {
+      logger.error(
+        "Handler failed for operation '%s' requestId=%d: %s",
+        request.operation,
+        request.requestId,
+        error instanceof Error ? error.message : String(error),
+      );
+
+      const reply = new GIOPReply(request.version);
+      reply.replyStatus = ReplyStatusType.SYSTEM_EXCEPTION;
+      const exceptionCdr = new CDROutputStream();
+      exceptionCdr.writeString("IDL:omg.org/CORBA/TIMEOUT:1.0");
+      exceptionCdr.writeULong(0); // minor
+      // The abandoned handler is still running and may well finish, so the server cannot claim
+      // the operation did not execute. COMPLETED_MAYBE tells the client not to retry blindly,
+      // which matters when the operation was something like a print.
+      exceptionCdr.writeULong(CompletionStatus.COMPLETED_MAYBE);
+      reply.body = exceptionCdr.getBuffer();
+      return reply;
+    }
+    finally {
+      clearTimeout(timer);
     }
   }
 }
