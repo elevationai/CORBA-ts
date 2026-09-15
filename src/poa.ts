@@ -1005,7 +1005,9 @@ class POAImpl extends ObjectReference implements POA {
       }
 
       // Look up the servant
-      const servant = await this.id_to_servant(objectId);
+      const servant = await this.id_to_servant(objectId).catch(() => {
+        throw new CORBA.OBJECT_NOT_EXIST("No servant for object key");
+      });
 
       // Get the operation name
       const operation = request.operation;

@@ -309,12 +309,12 @@ Deno.test("POA: _dispatchRequest handles _non_existent for non-existent servant"
   // Should return SYSTEM_EXCEPTION (2) because servant not found
   assertEquals(reply.replyStatus, 2);
 
-  // The exception should be BAD_PARAM in the reply body
+  // The exception should be OBJECT_NOT_EXIST in the reply body
   const { CDRInputStream } = await import("../../src/core/cdr/decoder.ts");
   const inputCDR = new CDRInputStream(reply.body);
   const exceptionId = inputCDR.readString();
 
-  assertEquals(exceptionId.includes("BAD_PARAM"), true);
+  assertEquals(exceptionId.includes("OBJECT_NOT_EXIST"), true);
 });
 
 Deno.test("POA: _dispatchRequest _non_existent doesn't require _invoke method", async () => {

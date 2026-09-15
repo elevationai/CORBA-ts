@@ -69,6 +69,11 @@ export interface ORB {
   ): Promise<{ returnValue: unknown; outputBuffer: Uint8Array; isLittleEndian: boolean }>;
 
   /**
+   * Ask the remote object whether it still exists. Rejects when it cannot be reached.
+   */
+  non_existent(target: CORBA.ObjectRef): Promise<boolean>;
+
+  /**
    * Convert a stringified object reference to an object
    */
   string_to_object(str: string): Promise<CORBA.ObjectRef>;
@@ -361,13 +366,26 @@ export class ORBImpl implements ORB {
       _is_equivalent: (other: CORBA.ObjectRef): boolean => {
         return IORUtil.toString(ior) === IORUtil.toString((other as { _ior: IOR })._ior);
       },
-      _non_existent: (): Promise<boolean> => {
-        // Would ping the object to check if it exists
-        return Promise.resolve(false);
-      },
+      _non_existent: (): Promise<boolean> => this.non_existent(objRef),
     };
 
     return Promise.resolve(objRef);
+  }
+
+  async non_existent(target: CORBA.ObjectRef): Promise<boolean> {
+    try {
+      const { returnValue } = await this.invokeWithEncodedArgs(
+        target,
+        "_non_existent",
+        new Uint8Array(0),
+        new TypeCode(TypeCode.Kind.tk_boolean),
+      );
+      return returnValue === true;
+    }
+    catch (error) {
+      if (error instanceof CORBA.SystemException && error.message.includes("OBJECT_NOT_EXIST")) return true;
+      throw error;
+    }
   }
 
   object_to_string(obj: CORBA.ObjectRef): Promise<string> {
