@@ -279,7 +279,7 @@ export class NamingClient {
    */
   private _ensureConnected(): void {
     if (!this._rootContext) {
-      throw new BAD_INV_ORDER("Not connected to naming service. Call connect() first.");
+      throw new CORBA.BAD_INV_ORDER("Not connected to naming service. Call connect() first.");
     }
   }
 
@@ -452,15 +452,5 @@ export class NameBuilder {
     }
 
     return builder;
-  }
-}
-
-/**
- * Extended CORBA system exception for naming operations
- */
-class BAD_INV_ORDER extends CORBA.SystemException {
-  constructor(message: string) {
-    super(message);
-    this.name = "CORBA.BAD_INV_ORDER";
   }
 }

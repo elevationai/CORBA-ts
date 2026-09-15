@@ -5,6 +5,7 @@
 
 import { getLogger } from "logging-ts";
 import { CORBA } from "./types.ts";
+import { createSystemException } from "./core/exceptions/system.ts";
 import { TypeCode } from "./typecode.ts";
 import { Policy } from "./policy.ts";
 import { ValueFactory } from "./valuetype.ts";
@@ -67,6 +68,11 @@ export interface ORB {
     encodedArgs: Uint8Array,
     returnTypeCode?: TypeCode,
   ): Promise<{ returnValue: unknown; outputBuffer: Uint8Array; isLittleEndian: boolean }>;
+
+  /**
+   * Ask the remote object whether it still exists. Rejects when it cannot be reached.
+   */
+  non_existent(target: CORBA.ObjectRef): Promise<boolean>;
 
   /**
    * Convert a stringified object reference to an object
@@ -361,13 +367,26 @@ export class ORBImpl implements ORB {
       _is_equivalent: (other: CORBA.ObjectRef): boolean => {
         return IORUtil.toString(ior) === IORUtil.toString((other as { _ior: IOR })._ior);
       },
-      _non_existent: (): Promise<boolean> => {
-        // Would ping the object to check if it exists
-        return Promise.resolve(false);
-      },
+      _non_existent: (): Promise<boolean> => this.non_existent(objRef),
     };
 
     return Promise.resolve(objRef);
+  }
+
+  async non_existent(target: CORBA.ObjectRef): Promise<boolean> {
+    try {
+      const { returnValue } = await this.invokeWithEncodedArgs(
+        target,
+        "_non_existent",
+        new Uint8Array(0),
+        new TypeCode(TypeCode.Kind.tk_boolean),
+      );
+      return returnValue === true;
+    }
+    catch (error) {
+      if (error instanceof CORBA.OBJECT_NOT_EXIST) return true;
+      throw error;
+    }
   }
 
   object_to_string(obj: CORBA.ObjectRef): Promise<string> {
@@ -549,7 +568,8 @@ export class ORBImpl implements ORB {
       else if (reply.replyStatus === 2) { // SYSTEM_EXCEPTION
         const sysEx = reply.getSystemException();
         if (sysEx) {
-          throw new CORBA.SystemException(sysEx.exceptionId, sysEx.minor, sysEx.completionStatus);
+          const name = /^IDL:omg\.org\/CORBA\/(\w+):\d+\.\d+$/.exec(sysEx.exceptionId)?.[1] ?? sysEx.exceptionId;
+          throw createSystemException(name, sysEx.exceptionId, sysEx.minor, sysEx.completionStatus);
         }
         throw new CORBA.INTERNAL("System exception with no details");
       }

@@ -8,14 +8,7 @@ import { getLogger } from "logging-ts";
 import { CORBA } from "./types.ts";
 import { Object, ObjectReference } from "./object.ts";
 import { EndpointPolicy, Policy, PolicyType, ThreadPolicyValue } from "./policy.ts";
-import {
-  BAD_INV_ORDER,
-  CompletionStatus,
-  OBJ_ADAPTER,
-  OMGVMCID,
-  SystemException as CoreSystemException,
-  TRANSIENT,
-} from "./core/exceptions/system.ts";
+import { BAD_INV_ORDER, CompletionStatus, OBJ_ADAPTER, OMGVMCID, TRANSIENT } from "./core/exceptions/system.ts";
 import { IORUtil } from "./giop/ior.ts";
 import type { IOR } from "./giop/types.ts";
 import { GIOPServer } from "./giop/transport.ts";
@@ -26,6 +19,54 @@ import { CDROutputStream } from "./core/cdr/encoder.ts";
 import type { IIOPConnection } from "./giop/connection.ts";
 
 const logger = getLogger("CORBA");
+
+/**
+ * PortableServer::POAManager::AdapterInactive
+ */
+export class AdapterInactive extends CORBA.UserException {
+  constructor() {
+    super("IDL:omg.org/PortableServer/POAManager/AdapterInactive:1.0", "AdapterInactive");
+  }
+}
+
+/**
+ * PortableServer::POA user exceptions
+ */
+export class AdapterAlreadyExists extends CORBA.UserException {
+  constructor() {
+    super("IDL:omg.org/PortableServer/POA/AdapterAlreadyExists:1.0", "AdapterAlreadyExists");
+  }
+}
+
+export class AdapterNonExistent extends CORBA.UserException {
+  constructor() {
+    super("IDL:omg.org/PortableServer/POA/AdapterNonExistent:1.0", "AdapterNonExistent");
+  }
+}
+
+export class NoServant extends CORBA.UserException {
+  constructor() {
+    super("IDL:omg.org/PortableServer/POA/NoServant:1.0", "NoServant");
+  }
+}
+
+export class ObjectAlreadyActive extends CORBA.UserException {
+  constructor() {
+    super("IDL:omg.org/PortableServer/POA/ObjectAlreadyActive:1.0", "ObjectAlreadyActive");
+  }
+}
+
+export class ObjectNotActive extends CORBA.UserException {
+  constructor() {
+    super("IDL:omg.org/PortableServer/POA/ObjectNotActive:1.0", "ObjectNotActive");
+  }
+}
+
+export class WrongAdapter extends CORBA.UserException {
+  constructor() {
+    super("IDL:omg.org/PortableServer/POA/WrongAdapter:1.0", "WrongAdapter");
+  }
+}
 
 /**
  * AdapterActivator interface
@@ -231,7 +272,7 @@ export interface POA extends CORBA.ObjectRef {
   /**
    * Get the servant manager
    */
-  get_servant_manager(): Promise<ServantManager>;
+  get_servant_manager(): Promise<ServantManager | null>;
 
   /**
    * Set the servant manager
@@ -402,7 +443,7 @@ class POAManagerImpl extends ObjectReference implements POAManager {
 
   async activate(): Promise<void> {
     if (this._state === POAManagerState.INACTIVE) {
-      throw new CORBA.BAD_PARAM("POAManager is in INACTIVE state");
+      throw new AdapterInactive();
     }
 
     // Start the GIOP server for each POA
@@ -415,7 +456,7 @@ class POAManagerImpl extends ObjectReference implements POAManager {
 
   async hold_requests(wait_for_completion: boolean): Promise<void> {
     if (this._state === POAManagerState.INACTIVE) {
-      throw new CORBA.BAD_PARAM("POAManager is in INACTIVE state");
+      throw new AdapterInactive();
     }
     this._assertMayWait(wait_for_completion);
     this._setState(POAManagerState.HOLDING);
@@ -427,7 +468,7 @@ class POAManagerImpl extends ObjectReference implements POAManager {
 
   async discard_requests(wait_for_completion: boolean): Promise<void> {
     if (this._state === POAManagerState.INACTIVE) {
-      throw new CORBA.BAD_PARAM("POAManager is in INACTIVE state");
+      throw new AdapterInactive();
     }
     this._assertMayWait(wait_for_completion);
     this._setState(POAManagerState.DISCARDING);
@@ -598,7 +639,7 @@ class POAImpl extends ObjectReference implements POA {
     policies: Policy[],
   ): Promise<POA> {
     if (this._children.has(adapter_name)) {
-      return Promise.reject(new CORBA.BAD_PARAM(`Child POA '${adapter_name}' already exists`));
+      return Promise.reject(new AdapterAlreadyExists());
     }
 
     const child = new POAImpl(
@@ -628,7 +669,7 @@ class POAImpl extends ObjectReference implements POA {
       }
     }
 
-    throw new CORBA.BAD_PARAM(`Child POA '${adapter_name}' not found`);
+    throw new AdapterNonExistent();
   }
 
   async destroy(etherialize_objects: boolean, wait_for_completion: boolean): Promise<void> {
@@ -678,16 +719,13 @@ class POAImpl extends ObjectReference implements POA {
     return Array.from(this._children.keys());
   }
 
-  get_servant_manager(): Promise<ServantManager> {
-    if (!this._servant_manager) {
-      return Promise.reject(new CORBA.BAD_PARAM("No ServantManager set"));
-    }
+  get_servant_manager(): Promise<ServantManager | null> {
     return Promise.resolve(this._servant_manager);
   }
 
   set_servant_manager(imgr: ServantManager): Promise<void> {
     if (this._servant_manager) {
-      return Promise.reject(new CORBA.BAD_PARAM("ServantManager already set"));
+      return Promise.reject(new BAD_INV_ORDER("ServantManager already set", OMGVMCID | 6));
     }
     this._servant_manager = imgr;
     return Promise.resolve();
@@ -695,7 +733,7 @@ class POAImpl extends ObjectReference implements POA {
 
   get_servant(): Promise<Servant> {
     if (!this._default_servant) {
-      return Promise.reject(new CORBA.BAD_PARAM("No default servant set"));
+      return Promise.reject(new NoServant());
     }
     return Promise.resolve(this._default_servant);
   }
@@ -708,7 +746,7 @@ class POAImpl extends ObjectReference implements POA {
   activate_object_with_id(id: Uint8Array, servant: Servant): Promise<void> {
     const oid = bytesToHex(id);
     if (this._servants.has(oid)) {
-      return Promise.reject(new CORBA.BAD_PARAM("Object already active"));
+      return Promise.reject(new ObjectAlreadyActive());
     }
     this._servants.set(oid, servant);
     return Promise.resolve();
@@ -725,7 +763,7 @@ class POAImpl extends ObjectReference implements POA {
   deactivate_object(oid: Uint8Array): Promise<void> {
     const id = bytesToHex(oid);
     if (!this._servants.has(id)) {
-      return Promise.reject(new CORBA.BAD_PARAM("Object not active"));
+      return Promise.reject(new ObjectNotActive());
     }
     this._servants.delete(id);
     return Promise.resolve();
@@ -804,7 +842,7 @@ class POAImpl extends ObjectReference implements POA {
     const objRef = reference as unknown as CORBA.ObjectRef;
 
     if (!objRef._ior) {
-      return Promise.reject(new CORBA.BAD_PARAM("Invalid object reference: missing IOR"));
+      return Promise.reject(new WrongAdapter());
     }
 
     const ior = objRef._ior as IOR;
@@ -813,7 +851,7 @@ class POAImpl extends ObjectReference implements POA {
     const iiopProfile = ior.profiles.find((p: { profileId: number }) => p.profileId === 0); // TAG_INTERNET_IOP
 
     if (!iiopProfile) {
-      return Promise.reject(new CORBA.BAD_PARAM("No IIOP profile found in IOR"));
+      return Promise.reject(new WrongAdapter());
     }
 
     // Parse the IIOP profile to extract object key
@@ -858,7 +896,7 @@ class POAImpl extends ObjectReference implements POA {
     const id = bytesToHex(oid);
     const servant = this._servants.get(id);
     if (!servant) {
-      return Promise.reject(new CORBA.BAD_PARAM("No servant found for the given ID"));
+      return Promise.reject(new ObjectNotActive());
     }
     return Promise.resolve(servant);
   }
@@ -964,13 +1002,10 @@ class POAImpl extends ObjectReference implements POA {
     let name = "UNKNOWN";
     let minor = 0;
     let completed: number = CompletionStatus.COMPLETED_MAYBE;
-    if (error instanceof CORBA.SystemException || error instanceof CoreSystemException) {
-      name = error.name.replace(/^CORBA\./, "");
+    if (error instanceof CORBA.SystemException) {
+      name = error.name;
       minor = error.minor;
       completed = error.completed;
-    }
-    if (name === "SystemException") {
-      name = "UNKNOWN";
     }
 
     const body = new CDROutputStream();
@@ -1005,7 +1040,16 @@ class POAImpl extends ObjectReference implements POA {
       }
 
       // Look up the servant
-      const servant = await this.id_to_servant(objectId);
+      let servant: Servant;
+      try {
+        servant = await this.id_to_servant(objectId);
+      }
+      catch (error) {
+        if (error instanceof ObjectNotActive) {
+          throw new CORBA.OBJECT_NOT_EXIST("No servant for object key");
+        }
+        throw error;
+      }
 
       // Get the operation name
       const operation = request.operation;
@@ -1128,7 +1172,7 @@ class POAImpl extends ObjectReference implements POA {
     }
     catch (error) {
       // Missing servant is a normal condition during teardown — don't log stack traces
-      if (error instanceof CORBA.BAD_PARAM || error instanceof CORBA.OBJECT_NOT_EXIST) {
+      if (error instanceof CORBA.OBJECT_NOT_EXIST) {
         logger.warn("Dispatch: %s", error.message);
       }
       else {

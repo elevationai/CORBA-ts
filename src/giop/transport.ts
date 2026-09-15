@@ -9,7 +9,7 @@ import { type ConnectionConfig, ConnectionEndpoint, ConnectionManager, IIOPConne
 import { GIOPMessageType, GIOPVersion, IOR, ReplyStatusType, ServiceContext } from "./types.ts";
 import { IORUtil } from "./ior.ts";
 import { CDRInputStream, CDROutputStream, type NegotiatedCodeSets } from "../core/cdr/index.ts";
-import { CompletionStatus } from "../core/exceptions/system.ts";
+import { BAD_INV_ORDER, COMM_FAILURE, CompletionStatus, OMGVMCID, SystemException, TIMEOUT, TRANSIENT } from "../core/exceptions/system.ts";
 
 const logger = getLogger("CORBA");
 const bytesLogger = getLogger("CORBA-bytes");
@@ -80,6 +80,7 @@ export interface TransportConfig {
  */
 interface RequestContext {
   requestId: number;
+  connection: IIOPConnection;
   resolve: (reply: GIOPReply) => void;
   reject: (error: Error) => void;
   timer: ReturnType<typeof setTimeout>;
@@ -94,7 +95,7 @@ export class GIOPTransport {
   private _config: Required<TransportConfig>;
   private _nextRequestId: number = 1;
   private _pendingRequests: Map<number, RequestContext> = new Map();
-  private _retryTimers: Set<ReturnType<typeof setTimeout>> = new Set();
+  private _retryTimers: Map<ReturnType<typeof setTimeout>, () => void> = new Map();
   private _closed: boolean = false;
 
   constructor(config: TransportConfig = {}, connectionConfig?: ConnectionConfig) {
@@ -116,7 +117,6 @@ export class GIOPTransport {
     serviceContext: ServiceContext[] = [],
     version: GIOPVersion = { major: 1, minor: 2 },
   ): Promise<GIOPReply> {
-    const connection = await this._connectionManager.getConnectionForIOR(target);
     const requestId = this._getNextRequestId();
 
     // Create GIOP request
@@ -141,8 +141,7 @@ export class GIOPTransport {
       request.objectKey = objectKey;
     }
 
-    // Send request with retry logic
-    return this._sendRequestWithRetry(connection, request);
+    return await this._sendRequestWithRetry(target, request);
   }
 
   /**
@@ -155,7 +154,8 @@ export class GIOPTransport {
     serviceContext: ServiceContext[] = [],
     version: GIOPVersion = { major: 1, minor: 2 },
   ): Promise<void> {
-    const connection = await this._connectionManager.getConnectionForIOR(target);
+    const objectKey = this._extractObjectKey(target);
+    const connection = await this._connect(target);
     const requestId = this._getNextRequestId();
 
     // Create GIOP request
@@ -170,14 +170,19 @@ export class GIOPTransport {
     if (version.major === 1 && version.minor >= 2) {
       request.target = {
         disposition: 0, // KeyAddr
-        objectKey: this._extractObjectKey(target),
+        objectKey,
       };
     }
     else {
-      request.objectKey = this._extractObjectKey(target);
+      request.objectKey = objectKey;
     }
 
-    await connection.send(request);
+    try {
+      await connection.send(request);
+    }
+    catch (error) {
+      throw new COMM_FAILURE(`Failed to send oneway request: ${(error as Error).message}`, 0, CompletionStatus.COMPLETED_MAYBE);
+    }
   }
 
   /**
@@ -196,13 +201,14 @@ export class GIOPTransport {
     // Cancel all pending requests first
     for (const [_requestId, context] of this._pendingRequests) {
       clearTimeout(context.timer);
-      context.reject(new Error("Transport closed"));
+      context.reject(new BAD_INV_ORDER("ORB has shutdown", OMGVMCID | 4, CompletionStatus.COMPLETED_MAYBE));
     }
     this._pendingRequests.clear();
 
     // Clear retry timers
-    for (const timer of this._retryTimers) {
+    for (const [timer, wake] of this._retryTimers) {
       clearTimeout(timer);
+      wake();
     }
     this._retryTimers.clear();
 
@@ -213,33 +219,51 @@ export class GIOPTransport {
     await this._connectionManager.closeAll();
   }
 
-  private async _sendRequestWithRetry(
-    connection: IIOPConnection,
-    request: GIOPRequest,
-  ): Promise<GIOPReply> {
-    let lastError: Error | null = null;
-
-    for (let attempt = 0; attempt <= this._config.maxRetries; attempt++) {
+  /**
+   * Reissues only requests the server did not process (TRANSIENT, COMPLETED_NO), preserving at-most-once semantics
+   */
+  private async _sendRequestWithRetry(target: IOR, request: GIOPRequest): Promise<GIOPReply> {
+    for (let attempt = 0;; attempt++) {
+      const connection = await this._connect(target);
       try {
         return await this._sendRequestOnce(connection, request);
       }
       catch (error) {
-        lastError = error as Error;
-
-        if (attempt < this._config.maxRetries && !this._closed) {
-          // Wait before retry
-          await new Promise<void>((resolve) => {
-            const timer = setTimeout(() => {
-              this._retryTimers.delete(timer);
-              resolve();
-            }, this._config.retryDelay);
-            this._retryTimers.add(timer);
-          });
+        const reissuable = error instanceof TRANSIENT && error.completed === CompletionStatus.COMPLETED_NO;
+        if (!reissuable || attempt >= this._config.maxRetries || this._closed) {
+          throw error;
+        }
+        await new Promise<void>((resolve) => {
+          const timer = setTimeout(() => {
+            this._retryTimers.delete(timer);
+            resolve();
+          }, this._config.retryDelay);
+          this._retryTimers.set(timer, resolve);
+        });
+        if (this._closed) {
+          throw error;
         }
       }
     }
+  }
 
-    throw lastError || new Error("Request failed after retries");
+  private async _connect(target: IOR): Promise<IIOPConnection> {
+    try {
+      return await this._connectionManager.getConnectionForIOR(target);
+    }
+    catch (error) {
+      if (error instanceof SystemException) throw error;
+      throw new TRANSIENT(`Failed to connect: ${(error as Error).message}`, 0, CompletionStatus.COMPLETED_NO);
+    }
+  }
+
+  private _rejectPending(connection: IIOPConnection, error: SystemException): void {
+    for (const [requestId, context] of this._pendingRequests) {
+      if (context.connection !== connection) continue;
+      this._pendingRequests.delete(requestId);
+      clearTimeout(context.timer);
+      context.reject(error);
+    }
   }
 
   private _processingConnections = new WeakSet<IIOPConnection>();
@@ -252,12 +276,13 @@ export class GIOPTransport {
       // Set up timeout
       const timer = setTimeout(() => {
         this._pendingRequests.delete(request.requestId);
-        reject(new Error("Request timeout"));
+        reject(new TIMEOUT("Request timeout", OMGVMCID | 3, CompletionStatus.COMPLETED_MAYBE));
       }, this._config.requestTimeout);
 
       // Store request context
       this._pendingRequests.set(request.requestId, {
         requestId: request.requestId,
+        connection,
         resolve,
         reject,
         timer,
@@ -268,7 +293,7 @@ export class GIOPTransport {
       connection.send(request).catch((error) => {
         this._pendingRequests.delete(request.requestId);
         clearTimeout(timer);
-        reject(error);
+        reject(new COMM_FAILURE(`Failed to send request: ${(error as Error).message}`, 0, CompletionStatus.COMPLETED_MAYBE));
       });
 
       // Start processing replies for this connection (only once per connection)
@@ -296,12 +321,8 @@ export class GIOPTransport {
           }
         }
         else if (message instanceof GIOPCloseConnection) {
-          // Reject all pending requests for this connection
-          for (const [requestId, context] of this._pendingRequests) {
-            this._pendingRequests.delete(requestId);
-            clearTimeout(context.timer);
-            context.reject(new Error("Connection closed by server"));
-          }
+          // The server did not process requests still pending on a connection it closes
+          this._rejectPending(connection, new TRANSIENT("Connection closed by server", 0, CompletionStatus.COMPLETED_NO));
           // Close the connection
           await connection.close();
           // Remove the closed connection from the manager so it won't be recreated
@@ -310,12 +331,7 @@ export class GIOPTransport {
         }
         else if (message instanceof GIOPMessageError) {
           logger.error("Received MessageError from server - protocol error");
-          // Reject all pending requests due to protocol error
-          for (const [requestId, context] of this._pendingRequests) {
-            this._pendingRequests.delete(requestId);
-            clearTimeout(context.timer);
-            context.reject(new Error("GIOP protocol error"));
-          }
+          this._rejectPending(connection, new COMM_FAILURE("GIOP protocol error", 0, CompletionStatus.COMPLETED_MAYBE));
           // Close the connection after protocol error
           await connection.close();
           break;
@@ -332,6 +348,9 @@ export class GIOPTransport {
         logger.exception(error);
       }
     }
+    if (!this._closed) {
+      this._rejectPending(connection, new COMM_FAILURE("Connection lost", 0, CompletionStatus.COMPLETED_MAYBE));
+    }
   }
 
   private _getNextRequestId(): number {
@@ -341,18 +360,18 @@ export class GIOPTransport {
   private _extractObjectKey(ior: IOR): Uint8Array {
     const endpoint = IORUtil.getIIOPEndpoint(ior);
     if (!endpoint) {
-      throw new Error("No IIOP endpoint in IOR");
+      throw new TRANSIENT("No usable profile in IOR", OMGVMCID | 2, CompletionStatus.COMPLETED_NO);
     }
 
     // Parse IIOP profile to get object key
     const profile = ior.profiles.find((p) => p.profileId === 0); // TAG_INTERNET_IOP
     if (!profile) {
-      throw new Error("No IIOP profile found");
+      throw new TRANSIENT("No usable profile in IOR", OMGVMCID | 2, CompletionStatus.COMPLETED_NO);
     }
 
     const parsedProfile = IORUtil.parseIIOPProfile(profile);
     if (!parsedProfile) {
-      throw new Error("Failed to parse IIOP profile");
+      throw new TRANSIENT("No usable profile in IOR", OMGVMCID | 2, CompletionStatus.COMPLETED_NO);
     }
 
     return parsedProfile.object_key;
@@ -378,8 +397,14 @@ export class GIOPTransport {
       const context = this._pendingRequests.get(requestId);
       if (context) {
         this._pendingRequests.delete(requestId);
-        const error = new Error(`Request ${requestId} timed out after ${this._config.requestTimeout}ms`);
-        context.reject(error);
+        clearTimeout(context.timer);
+        context.reject(
+          new TIMEOUT(
+            `Request ${requestId} timed out after ${this._config.requestTimeout}ms`,
+            OMGVMCID | 3,
+            CompletionStatus.COMPLETED_MAYBE,
+          ),
+        );
       }
     }
 

@@ -3,6 +3,8 @@
  * Based on CORBA 3.4 specification
  */
 
+import * as SystemExceptions from "./core/exceptions/system.ts";
+
 /**
  * Basic CORBA Types mapped to TypeScript
  */
@@ -45,172 +47,44 @@ export namespace CORBA {
   // Sequence - maps to array in TypeScript
   export type Sequence<T> = Array<T>;
 
-  /**
-   * CORBA System Exception base class
-   */
-  export class SystemException extends Error {
-    minor: number;
-    completed: CompletionStatus;
-
-    constructor(
-      message: string,
-      minor: number | string = 0,
-      completed: CompletionStatus = CompletionStatus.COMPLETED_NO,
-    ) {
-      super(message);
-      this.name = "CORBA.SystemException";
-      this.minor = typeof minor === "string" ? 0 : minor;
-      this.completed = completed;
-    }
-  }
-
-  /**
-   * Completion status for operations
-   */
-  export enum CompletionStatus {
-    COMPLETED_YES = 0,
-    COMPLETED_NO = 1,
-    COMPLETED_MAYBE = 2,
-  }
-
-  /**
-   * Standard System Exceptions
-   */
-  export class UNKNOWN extends SystemException {
-    constructor(
-      minor: number | string = 0,
-      completed: CompletionStatus = CompletionStatus.COMPLETED_NO,
-    ) {
-      super("CORBA.UNKNOWN", minor, completed);
-      this.name = "CORBA.UNKNOWN";
-    }
-  }
-
-  export class BAD_PARAM extends SystemException {
-    constructor(
-      minor: number | string = 0,
-      completed: CompletionStatus = CompletionStatus.COMPLETED_NO,
-    ) {
-      super(
-        typeof minor === "string" ? `CORBA.BAD_PARAM: ${minor}` : "CORBA.BAD_PARAM",
-        minor,
-        completed,
-      );
-      this.name = "CORBA.BAD_PARAM";
-    }
-  }
-
-  export class NO_MEMORY extends SystemException {
-    constructor(
-      minor: number | string = 0,
-      completed: CompletionStatus = CompletionStatus.COMPLETED_NO,
-    ) {
-      super(
-        typeof minor === "string" ? `CORBA.NO_MEMORY: ${minor}` : "CORBA.NO_MEMORY",
-        minor,
-        completed,
-      );
-      this.name = "CORBA.NO_MEMORY";
-    }
-  }
-
-  export class INV_OBJREF extends SystemException {
-    constructor(
-      minor: number | string = 0,
-      completed: CompletionStatus = CompletionStatus.COMPLETED_NO,
-    ) {
-      super(
-        typeof minor === "string" ? `CORBA.INV_OBJREF: ${minor}` : "CORBA.INV_OBJREF",
-        minor,
-        completed,
-      );
-      this.name = "CORBA.INV_OBJREF";
-    }
-  }
-
-  export class COMM_FAILURE extends SystemException {
-    constructor(
-      minor: number | string = 0,
-      completed: CompletionStatus = CompletionStatus.COMPLETED_NO,
-    ) {
-      super(
-        typeof minor === "string" ? `CORBA.COMM_FAILURE: ${minor}` : "CORBA.COMM_FAILURE",
-        minor,
-        completed,
-      );
-      this.name = "CORBA.COMM_FAILURE";
-    }
-  }
-
-  export class MARSHAL extends SystemException {
-    constructor(
-      minor: number | string = 0,
-      completed: CompletionStatus = CompletionStatus.COMPLETED_NO,
-    ) {
-      super(
-        typeof minor === "string" ? `CORBA.MARSHAL: ${minor}` : "CORBA.MARSHAL",
-        minor,
-        completed,
-      );
-      this.name = "CORBA.MARSHAL";
-    }
-  }
-
-  export class NO_IMPLEMENT extends SystemException {
-    constructor(
-      minor: number | string = 0,
-      completed: CompletionStatus = CompletionStatus.COMPLETED_NO,
-    ) {
-      super(
-        typeof minor === "string" ? `CORBA.NO_IMPLEMENT: ${minor}` : "CORBA.NO_IMPLEMENT",
-        minor,
-        completed,
-      );
-      this.name = "CORBA.NO_IMPLEMENT";
-    }
-  }
-
-  export class INTERNAL extends SystemException {
-    constructor(
-      minor: number | string = 0,
-      completed: CompletionStatus = CompletionStatus.COMPLETED_NO,
-    ) {
-      super(
-        typeof minor === "string" ? `CORBA.INTERNAL: ${minor}` : "CORBA.INTERNAL",
-        minor,
-        completed,
-      );
-      this.name = "CORBA.INTERNAL";
-    }
-  }
-
-  export class BAD_OPERATION extends SystemException {
-    constructor(
-      minor: number | string = 0,
-      completed: CompletionStatus = CompletionStatus.COMPLETED_NO,
-    ) {
-      super(
-        typeof minor === "string" ? `CORBA.BAD_OPERATION: ${minor}` : "CORBA.BAD_OPERATION",
-        minor,
-        completed,
-      );
-      this.name = "CORBA.BAD_OPERATION";
-    }
-  }
-
-  export class OBJECT_NOT_EXIST extends SystemException {
-    constructor(
-      minor: number | string = 0,
-      completed: CompletionStatus = CompletionStatus.COMPLETED_NO,
-    ) {
-      super(
-        typeof minor === "string" ? `CORBA.OBJECT_NOT_EXIST: ${minor}` : "CORBA.OBJECT_NOT_EXIST",
-        minor,
-        completed,
-      );
-      this.name = "CORBA.OBJECT_NOT_EXIST";
-    }
-  }
+  export import CompletionStatus = SystemExceptions.CompletionStatus;
+  export import SystemException = SystemExceptions.SystemException;
+  export import UNKNOWN = SystemExceptions.UNKNOWN;
+  export import BAD_PARAM = SystemExceptions.BAD_PARAM;
+  export import NO_MEMORY = SystemExceptions.NO_MEMORY;
+  export import IMP_LIMIT = SystemExceptions.IMP_LIMIT;
+  export import COMM_FAILURE = SystemExceptions.COMM_FAILURE;
+  export import INV_OBJREF = SystemExceptions.INV_OBJREF;
+  export import NO_PERMISSION = SystemExceptions.NO_PERMISSION;
+  export import INTERNAL = SystemExceptions.INTERNAL;
+  export import MARSHAL = SystemExceptions.MARSHAL;
+  export import INITIALIZE = SystemExceptions.INITIALIZE;
+  export import NO_IMPLEMENT = SystemExceptions.NO_IMPLEMENT;
+  export import BAD_TYPECODE = SystemExceptions.BAD_TYPECODE;
+  export import BAD_OPERATION = SystemExceptions.BAD_OPERATION;
+  export import NO_RESOURCES = SystemExceptions.NO_RESOURCES;
+  export import NO_RESPONSE = SystemExceptions.NO_RESPONSE;
+  export import PERSIST_STORE = SystemExceptions.PERSIST_STORE;
+  export import BAD_INV_ORDER = SystemExceptions.BAD_INV_ORDER;
+  export import TRANSIENT = SystemExceptions.TRANSIENT;
+  export import FREE_MEM = SystemExceptions.FREE_MEM;
+  export import INV_IDENT = SystemExceptions.INV_IDENT;
+  export import INV_FLAG = SystemExceptions.INV_FLAG;
+  export import INTF_REPOS = SystemExceptions.INTF_REPOS;
+  export import BAD_CONTEXT = SystemExceptions.BAD_CONTEXT;
+  export import OBJ_ADAPTER = SystemExceptions.OBJ_ADAPTER;
+  export import DATA_CONVERSION = SystemExceptions.DATA_CONVERSION;
+  export import OBJECT_NOT_EXIST = SystemExceptions.OBJECT_NOT_EXIST;
+  export import TRANSACTION_REQUIRED = SystemExceptions.TRANSACTION_REQUIRED;
+  export import TRANSACTION_ROLLEDBACK = SystemExceptions.TRANSACTION_ROLLEDBACK;
+  export import INVALID_TRANSACTION = SystemExceptions.INVALID_TRANSACTION;
+  export import INV_POLICY = SystemExceptions.INV_POLICY;
+  export import CODESET_INCOMPATIBLE = SystemExceptions.CODESET_INCOMPATIBLE;
+  export import REBIND = SystemExceptions.REBIND;
+  export import TIMEOUT = SystemExceptions.TIMEOUT;
+  export import TRANSACTION_UNAVAILABLE = SystemExceptions.TRANSACTION_UNAVAILABLE;
+  export import TRANSACTION_MODE = SystemExceptions.TRANSACTION_MODE;
+  export import BAD_QOS = SystemExceptions.BAD_QOS;
 
   /**
    * Base class for CORBA User Exceptions
