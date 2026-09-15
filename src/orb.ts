@@ -5,6 +5,7 @@
 
 import { getLogger } from "logging-ts";
 import { CORBA } from "./types.ts";
+import { createSystemException } from "./core/exceptions/system.ts";
 import { TypeCode } from "./typecode.ts";
 import { Policy } from "./policy.ts";
 import { ValueFactory } from "./valuetype.ts";
@@ -383,7 +384,7 @@ export class ORBImpl implements ORB {
       return returnValue === true;
     }
     catch (error) {
-      if (error instanceof CORBA.SystemException && error.message.includes("OBJECT_NOT_EXIST")) return true;
+      if (error instanceof CORBA.OBJECT_NOT_EXIST) return true;
       throw error;
     }
   }
@@ -567,7 +568,8 @@ export class ORBImpl implements ORB {
       else if (reply.replyStatus === 2) { // SYSTEM_EXCEPTION
         const sysEx = reply.getSystemException();
         if (sysEx) {
-          throw new CORBA.SystemException(sysEx.exceptionId, sysEx.minor, sysEx.completionStatus);
+          const name = /^IDL:omg\.org\/CORBA\/(\w+):\d+\.\d+$/.exec(sysEx.exceptionId)?.[1] ?? sysEx.exceptionId;
+          throw createSystemException(name, sysEx.exceptionId, sysEx.minor, sysEx.completionStatus);
         }
         throw new CORBA.INTERNAL("System exception with no details");
       }

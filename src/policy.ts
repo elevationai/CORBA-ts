@@ -143,11 +143,11 @@ export class Policy extends ObjectReference implements PolicyInterface {
 /**
  * Policy-related exceptions
  */
-export class PolicyError extends CORBA.SystemException {
+export class PolicyError extends CORBA.UserException {
   reason: number;
 
   constructor(reason: number) {
-    super("PolicyError", 0, CORBA.CompletionStatus.COMPLETED_NO);
+    super("IDL:omg.org/CORBA/PolicyError:1.0", "PolicyError");
     this.name = "PolicyError";
     this.reason = reason;
   }

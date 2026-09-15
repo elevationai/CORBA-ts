@@ -3,8 +3,19 @@
  * Testing proper IOR creation and object ID extraction
  */
 
-import { assertEquals, assertExists } from "@std/assert";
-import { POA, RootPOA, type Servant } from "../../src/poa.ts";
+import { assertEquals, assertExists, assertRejects } from "@std/assert";
+import {
+  AdapterAlreadyExists,
+  AdapterInactive,
+  AdapterNonExistent,
+  NoServant,
+  ObjectAlreadyActive,
+  ObjectNotActive,
+  POA,
+  RootPOA,
+  type Servant,
+  WrongAdapter,
+} from "../../src/poa.ts";
 import { IORUtil } from "../../src/giop/ior.ts";
 import { CDRInputStream } from "../../src/core/cdr/decoder.ts";
 import { CORBA } from "../../src/types.ts";
@@ -210,14 +221,7 @@ Deno.test("POA: reference_to_id handles invalid references", async () => {
   // Object without IOR
   const invalidRef = {} as Object;
 
-  try {
-    await poa.reference_to_id(invalidRef);
-    throw new Error("Should have thrown BAD_PARAM");
-  }
-  catch (error) {
-    assertEquals((error as Error).constructor.name, "BAD_PARAM");
-    assertEquals((error as Error).message.includes("missing IOR"), true);
-  }
+  await assertRejects(() => poa.reference_to_id(invalidRef), WrongAdapter);
 });
 
 Deno.test("POA: reference_to_id handles IOR without IIOP profile", async () => {
@@ -236,14 +240,7 @@ Deno.test("POA: reference_to_id handles IOR without IIOP profile", async () => {
     },
   } as unknown as Object;
 
-  try {
-    await poa.reference_to_id(invalidRef);
-    throw new Error("Should have thrown BAD_PARAM");
-  }
-  catch (error) {
-    assertEquals((error as Error).constructor.name, "BAD_PARAM");
-    assertEquals((error as Error).message.includes("No IIOP profile"), true);
-  }
+  await assertRejects(() => poa.reference_to_id(invalidRef), WrongAdapter);
 });
 
 Deno.test("POA: _dispatchRequest handles _non_existent for existing servant", async () => {
@@ -314,7 +311,7 @@ Deno.test("POA: _dispatchRequest handles _non_existent for non-existent servant"
   const inputCDR = new CDRInputStream(reply.body);
   const exceptionId = inputCDR.readString();
 
-  assertEquals(exceptionId.includes("OBJECT_NOT_EXIST"), true);
+  assertEquals(exceptionId, "IDL:omg.org/CORBA/OBJECT_NOT_EXIST:1.0");
 });
 
 Deno.test("POA: _dispatchRequest _non_existent doesn't require _invoke method", async () => {
@@ -371,4 +368,67 @@ Deno.test("POA: _dispatchRequest _non_existent doesn't require _invoke method", 
   const result = inputCDR.readBoolean();
 
   assertEquals(result, false);
+});
+
+Deno.test("POA: servant lookups raise ObjectNotActive for an inactive object id", async () => {
+  const poa = new RootPOA("TestPOA", null, null, [create_endpoint_policy("localhost", 9000)]);
+  const oid = new Uint8Array([9, 8, 7]);
+  const ref = poa.create_reference_with_id(oid, "IDL:Test/Service:1.0");
+
+  await assertRejects(() => poa.id_to_servant(oid), ObjectNotActive);
+  await assertRejects(() => poa.id_to_reference(oid), ObjectNotActive);
+  await assertRejects(() => poa.reference_to_servant(ref), ObjectNotActive);
+});
+
+Deno.test("POA: _dispatchRequest replies OBJECT_NOT_EXIST for a regular operation on a missing servant", async () => {
+  const poa = new RootPOA("TestPOA", null, null, [create_endpoint_policy("localhost", 9000)]);
+  const { GIOPRequest } = await import("../../src/giop/messages.ts");
+
+  const request = new GIOPRequest({ major: 1, minor: 2 });
+  request.requestId = 3;
+  request.operation = "getData";
+  request.objectKey = new Uint8Array([1, 1, 1]);
+  request.body = new Uint8Array(0);
+
+  const poaWithPrivate = poa as unknown as {
+    _dispatchRequest: (req: typeof request, conn: unknown) => Promise<{ replyStatus: number; body: Uint8Array }>;
+  };
+  const reply = await poaWithPrivate._dispatchRequest(request, null);
+
+  assertEquals(reply.replyStatus, 2);
+  const body = new CDRInputStream(reply.body);
+  assertEquals(body.readString(), "IDL:omg.org/CORBA/OBJECT_NOT_EXIST:1.0");
+  body.readULong();
+  assertEquals(body.readULong(), CORBA.CompletionStatus.COMPLETED_NO);
+});
+
+Deno.test("POA: adapter and object operations raise the PortableServer user exceptions", async () => {
+  const poa = new RootPOA("TestPOA", null, null, [create_endpoint_policy("localhost", 9000)]);
+  await poa.create_POA("child", null, []);
+
+  await assertRejects(() => poa.create_POA("child", null, []), AdapterAlreadyExists);
+  await assertRejects(() => poa.find_POA("missing", false), AdapterNonExistent);
+  await assertRejects(() => poa.get_servant(), NoServant);
+  assertEquals(await poa.get_servant_manager(), null);
+
+  const manager = {};
+  await poa.set_servant_manager(manager);
+  const error = await assertRejects(() => poa.set_servant_manager(manager), CORBA.BAD_INV_ORDER);
+  assertEquals(error.minor, 0x4f4d0006);
+
+  const oid = new Uint8Array([1, 2, 3]);
+  await poa.activate_object_with_id(oid, new TestServant());
+  await assertRejects(() => poa.activate_object_with_id(oid, new TestServant()), ObjectAlreadyActive);
+  await poa.deactivate_object(oid);
+  await assertRejects(() => poa.deactivate_object(oid), ObjectNotActive);
+});
+
+Deno.test("POAManager: state changes on an inactive manager raise AdapterInactive", async () => {
+  const poa = new RootPOA("TestPOA", null, null, [create_endpoint_policy("localhost", 9000)]);
+  const manager = poa.the_POAManager();
+  await manager.deactivate(false, false);
+
+  await assertRejects(() => manager.activate(), AdapterInactive);
+  await assertRejects(() => manager.hold_requests(false), AdapterInactive);
+  await assertRejects(() => manager.discard_requests(false), AdapterInactive);
 });
