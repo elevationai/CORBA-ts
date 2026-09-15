@@ -132,8 +132,10 @@ interface MarshalableResult {
  * Servant base class
  */
 export abstract class Servant {
-  /** Connection ID of the most recent GIOP request dispatched to this servant. Set by the POA before calling _invoke(). */
-  _connectionId: number = 0;
+  /** Connection ID of the GIOP request being dispatched to this servant, or 0 outside a request. */
+  get _connectionId(): number {
+    return invocationContext.getStore()?.connectionId ?? 0;
+  }
 
   /**
    * Default POA for this servant
@@ -366,8 +368,13 @@ class Serializer {
 // MAIN_THREAD_MODEL serialises across every POA that uses it, not per POA.
 const mainThreadSerializer = new Serializer();
 
-// Set while a servant upcall runs, so a manager can refuse to wait on the very request that called it.
-const invocationContext = new AsyncLocalStorage<true>();
+interface InvocationContext {
+  connectionId: number;
+}
+
+// Set for the duration of a servant upcall: it identifies the request to the servant, and lets a
+// manager refuse to wait for completion from within the very request that called it.
+const invocationContext = new AsyncLocalStorage<InvocationContext>();
 
 /**
  * Simple POA Manager implementation
@@ -473,10 +480,10 @@ class POAManagerImpl extends ObjectReference implements POAManager {
   /**
    * Run a servant upcall as an actively executing request of this manager
    */
-  async _execute<T>(task: () => Promise<T>): Promise<T> {
+  async _execute<T>(connectionId: number, task: () => Promise<T>): Promise<T> {
     this._active++;
     try {
-      return await invocationContext.run(true, task);
+      return await invocationContext.run({ connectionId }, task);
     }
     finally {
       this._active--;
@@ -925,21 +932,24 @@ class POAImpl extends ObjectReference implements POA {
    */
   private async _handleRequest(request: GIOPRequest, connection: IIOPConnection): Promise<GIOPReply> {
     const manager = this._manager instanceof POAManagerImpl ? this._manager : null;
-    const dispatch = async (): Promise<GIOPReply> => {
-      if (!manager) {
-        return this._dispatchRequest(request, connection);
-      }
-      await manager._admit();
-      return manager._execute(() => this._dispatchRequest(request, connection));
-    };
+    const dispatch = (): Promise<GIOPReply> =>
+      manager ? manager._execute(connection?.connectionId ?? 0, () => this._dispatchRequest(request)) : this._dispatchRequest(request);
 
     try {
       if (!this._serializer) {
+        await manager?._admit();
         return await dispatch();
       }
-      // Admit before taking a turn, so a held POA does not occupy the queue while it waits.
-      await manager?._admit();
-      return await this._serializer.run(dispatch);
+      // Wait for admission outside the queue, and give the turn back if the manager left the active
+      // state while this request was queued, so a held POA never blocks the queue it shares.
+      let reply: GIOPReply | null = null;
+      while (reply === null) {
+        await manager?._admit();
+        reply = await this._serializer.run(() =>
+          manager && manager.get_state() !== POAManagerState.ACTIVE ? Promise.resolve(null) : dispatch()
+        );
+      }
+      return reply;
     }
     catch (error) {
       logger.debug("Request '%s' requestId=%d not admitted: %s", request.operation, request.requestId, (error as Error).message);
@@ -978,7 +988,7 @@ class POAImpl extends ObjectReference implements POA {
   /**
    * Dispatch a GIOP request to the appropriate servant
    */
-  private async _dispatchRequest(request: GIOPRequest, _connection: IIOPConnection): Promise<GIOPReply> {
+  private async _dispatchRequest(request: GIOPRequest): Promise<GIOPReply> {
     logger.debug("Dispatching request: operation='%s' requestId=%d", request.operation, request.requestId);
     try {
       // Extract the object ID from the request
@@ -1054,9 +1064,6 @@ class POAImpl extends ObjectReference implements POA {
             return new CDROutputStream();
           },
         };
-
-        // Set connection ID on servant so it can identify the calling client
-        servant._connectionId = _connection?.connectionId ?? 0;
 
         // Call the standard CORBA _invoke method
         const outputCDR = await (invokableServant as InvokableServant)._invoke(operation, inputCDR, responseHandler);

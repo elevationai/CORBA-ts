@@ -115,6 +115,57 @@ Deno.test("a SINGLE_THREAD_MODEL POA does not serialise against an ORB_CTRL_MODE
   assertEquals(gauge.maxActive, 2);
 });
 
+Deno.test("a held main-thread POA does not block the queue it shares", async () => {
+  const a = await poaWith(ThreadPolicyValue.MAIN_THREAD_MODEL);
+  const b = await poaWith(ThreadPolicyValue.MAIN_THREAD_MODEL);
+  const gauge = new Gauge();
+  const oidA = await a.poa.activate_object(new ProbeServant(gauge, 30));
+  const oidB = await b.poa.activate_object(new ProbeServant(gauge, 100));
+
+  const b1 = b.dispatch._handleRequest(requestFor(oidB, 1), null);
+  await sleep(10);
+  const a2 = a.dispatch._handleRequest(requestFor(oidA, 2), null);
+  await sleep(10);
+  await a.poa.the_POAManager().hold_requests(false);
+  const b3 = b.dispatch._handleRequest(requestFor(oidB, 3), null);
+
+  await b1;
+  await b3;
+  assertEquals(gauge.completed, [1, 3], "B kept running while A's queued request was held");
+
+  await a.poa.the_POAManager().activate();
+  await a2;
+  assertEquals(gauge.completed, [1, 3, 2]);
+});
+
+class ConnectionIdServant extends Servant {
+  seen: number[] = [];
+
+  override _repository_id(): string {
+    return "IDL:Test/ConnectionId:1.0";
+  }
+
+  async _invoke(_operation: string, _input: CDRInputStream, handler: ResponseHandler): Promise<CDROutputStream> {
+    await sleep(20);
+    this.seen.push(this._connectionId);
+    return handler.createReply();
+  }
+}
+
+Deno.test("a servant sees its own request's connection id even after awaiting under concurrent dispatch", async () => {
+  const { poa, dispatch } = await poaWith();
+  const servant = new ConnectionIdServant();
+  const oid = await poa.activate_object(servant);
+
+  await Promise.all([
+    dispatch._handleRequest(requestFor(oid, 1), { connectionId: 7 }),
+    dispatch._handleRequest(requestFor(oid, 2), { connectionId: 8 }),
+  ]);
+
+  assertEquals(servant.seen.toSorted(), [7, 8]);
+  assertEquals(servant._connectionId, 0, "outside a request there is no connection");
+});
+
 Deno.test("create_thread_policy carries its type and value", () => {
   const policy = create_thread_policy(ThreadPolicyValue.SINGLE_THREAD_MODEL);
   assertEquals(policy.policy_type(), PolicyType.THREAD_POLICY_TYPE);

@@ -8,7 +8,7 @@ import { GIOPCloseConnection, GIOPMessage, GIOPMessageError, GIOPReply, GIOPRequ
 import { type ConnectionConfig, ConnectionEndpoint, ConnectionManager, IIOPConnection } from "./connection.ts";
 import { GIOPMessageType, GIOPVersion, IOR, ReplyStatusType, ServiceContext } from "./types.ts";
 import { IORUtil } from "./ior.ts";
-import { CDRInputStream, CDROutputStream } from "../core/cdr/index.ts";
+import { CDRInputStream, CDROutputStream, type NegotiatedCodeSets } from "../core/cdr/index.ts";
 import { CompletionStatus } from "../core/exceptions/system.ts";
 
 const logger = getLogger("CORBA");
@@ -53,6 +53,11 @@ function systemExceptionReply(request: GIOPRequest, name: string, minor: number,
   reply.replyStatus = ReplyStatusType.SYSTEM_EXCEPTION;
   reply.body = body.getBuffer();
   return reply;
+}
+
+interface ParsedRequest {
+  request: GIOPRequest;
+  codesets: NegotiatedCodeSets | null;
 }
 
 function isConnectionGone(error: unknown): boolean {
@@ -530,11 +535,12 @@ export class GIOPServer {
   private async _handleConnection(conn: Deno.TcpConn): Promise<void> {
     const connectionId = this._nextConnectionId++;
     const writer = new ConnectionWriter(conn);
+    const inFlight = new Set<Promise<void>>();
+    let closeRequested = false;
 
     try {
       const buffer = new Uint8Array(8192);
       let readBuffer = new Uint8Array(0);
-      let closeRequested = false;
 
       while (this._running && !closeRequested) {
         const bytesRead = await conn.read(buffer);
@@ -570,16 +576,34 @@ export class GIOPServer {
             break;
           }
 
+          let parsed: ParsedRequest | null;
+          try {
+            parsed = this._parseRequest(messageData);
+          }
+          catch (error) {
+            // The stream cannot be resynchronised after a malformed message, and the client must
+            // not be left waiting for a reply that will never come.
+            logger.error("Malformed GIOP message on connection %d; closing it", connectionId);
+            logger.exception(error);
+            await writer.write(new GIOPMessageError().serialize(null)).catch(() => {});
+            closeRequested = true;
+            break;
+          }
+          if (!parsed) continue;
+
           // Not awaited: the read loop must keep draining the socket while handlers run, or one
           // slow servant would stall every request queued behind it on this connection.
-          this._processMessage(messageData, writer, connectionId).catch((error) => {
-            if (isConnectionGone(error)) {
-              logger.debug("Connection %d closed before a reply could be written", connectionId);
-              return;
-            }
-            logger.error("Request processing failed on connection %d", connectionId);
-            logger.exception(error);
-          });
+          const task: Promise<void> = this._serveRequest(parsed, writer, connectionId)
+            .catch((error) => {
+              if (isConnectionGone(error)) {
+                logger.debug("Connection %d closed before a reply could be written", connectionId);
+                return;
+              }
+              logger.error("Request processing failed on connection %d", connectionId);
+              logger.exception(error);
+            })
+            .finally(() => inFlight.delete(task));
+          inFlight.add(task);
         }
       }
     }
@@ -589,6 +613,11 @@ export class GIOPServer {
       logger.exception(error);
     }
     finally {
+      // On EOF the client may have only half-closed and still be reading, so deliver what is in
+      // flight first. After CloseConnection the client has said it will read nothing more.
+      if (!closeRequested) {
+        await Promise.allSettled(inFlight);
+      }
       try {
         conn.close();
       }
@@ -606,14 +635,17 @@ export class GIOPServer {
     }
   }
 
-  private async _processMessage(messageData: Uint8Array, writer: ConnectionWriter, connectionId: number): Promise<void> {
+  /**
+   * Decode one framed message. Returns null for message types the server ignores and throws
+   * when the message is malformed.
+   */
+  private _parseRequest(messageData: Uint8Array): ParsedRequest | null {
     // Check GIOP magic bytes
     if (
       messageData[0] !== 0x47 || messageData[1] !== 0x49 ||
       messageData[2] !== 0x4F || messageData[3] !== 0x50
     ) {
-      logger.error("Invalid GIOP magic bytes");
-      return;
+      throw new Error("Invalid GIOP magic bytes");
     }
 
     // Check message type (byte 7)
@@ -622,7 +654,7 @@ export class GIOPServer {
     // Only handle Request messages for normal processing
     if (messageType !== GIOPMessageType.Request) {
       logger.warn("Unexpected message type on server: %d", messageType);
-      return;
+      return null;
     }
 
     // Parse as request
@@ -638,14 +670,6 @@ export class GIOPServer {
     requestCdr.setPosition(12); // Start after header
     request.deserialize(requestCdr, 12);
 
-    logger.debug("Processing request: operation='%s' requestId=%d", request.operation, request.requestId);
-
-    // Find handler - check for specific operation first, then wildcard
-    let handler = this._handlers.get(request.operation);
-    if (!handler) {
-      handler = this._handlers.get("*"); // Check for wildcard handler
-    }
-
     // Extract codesets from request service context
     let codesets = null;
     const codeSetContext = request.serviceContext.find((ctx) => ctx.contextId === 1); // ServiceContextId.CodeSets
@@ -655,6 +679,18 @@ export class GIOPServer {
         charSet: codeSetsCtx.charCodeSet,
         wcharSet: codeSetsCtx.wcharCodeSet,
       };
+    }
+
+    return { request, codesets };
+  }
+
+  private async _serveRequest({ request, codesets }: ParsedRequest, writer: ConnectionWriter, connectionId: number): Promise<void> {
+    logger.debug("Processing request: operation='%s' requestId=%d", request.operation, request.requestId);
+
+    // Find handler - check for specific operation first, then wildcard
+    let handler = this._handlers.get(request.operation);
+    if (!handler) {
+      handler = this._handlers.get("*"); // Check for wildcard handler
     }
 
     let reply: GIOPReply;

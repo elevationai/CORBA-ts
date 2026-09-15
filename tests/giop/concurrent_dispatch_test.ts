@@ -7,7 +7,7 @@
 import { assertEquals } from "@std/assert";
 import { GIOPServer } from "../../src/giop/transport.ts";
 import { GIOPReply, GIOPRequest } from "../../src/giop/messages.ts";
-import { ReplyStatusType } from "../../src/giop/types.ts";
+import { GIOPMessageType, ReplyStatusType } from "../../src/giop/types.ts";
 import { CompletionStatus } from "../../src/core/exceptions/system.ts";
 import { CDRInputStream } from "../../src/core/cdr/index.ts";
 import type { ConnectionManager } from "../../src/giop/connection.ts";
@@ -200,6 +200,47 @@ Deno.test("a handler that throws is answered with UNKNOWN and the connection kee
     });
     assertEquals(replies[1].status, ReplyStatusType.NO_EXCEPTION);
   });
+});
+
+Deno.test("replies still in flight are delivered after the client half-closes", async () => {
+  await withConnection(async (conn, replies) => {
+    await send(conn, request(1, "slow"));
+    await conn.closeWrite();
+    await sleep(450);
+
+    assertEquals(replies.map((r) => r.id), [1]);
+    assertEquals(replies[0].status, ReplyStatusType.NO_EXCEPTION);
+  });
+});
+
+Deno.test("a malformed message is answered with MessageError and the connection is closed", async () => {
+  const { server, port } = await startServer();
+  const conn = await Deno.connect({ hostname: "127.0.0.1", port });
+  try {
+    const bogus = new Uint8Array(12);
+    bogus.set(encoder.encode("NOPE"));
+    bogus[4] = 1;
+    bogus[5] = 2;
+    bogus[7] = GIOPMessageType.Request;
+    await send(conn, bogus);
+
+    const received: number[] = [];
+    const buf = new Uint8Array(64);
+    while (true) {
+      const n = await conn.read(buf);
+      if (n === null) break;
+      received.push(...buf.subarray(0, n));
+    }
+
+    assertEquals(received.length, 12, "exactly one header-only message came back before EOF");
+    assertEquals(new TextDecoder().decode(new Uint8Array(received.slice(0, 4))), "GIOP");
+    assertEquals(received[7], GIOPMessageType.MessageError);
+  }
+  finally {
+    conn.close();
+    await server.stop();
+    await sleep(50);
+  }
 });
 
 Deno.test("an operation with no handler is answered with BAD_OPERATION", async () => {
